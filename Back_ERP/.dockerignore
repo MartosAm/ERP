@@ -1,0 +1,21 @@
+# ============================================================
+# .dockerignore — Excluir archivos innecesarios del build
+# ============================================================
+node_modules
+dist
+.env
+.env.*
+*.log
+.git
+.gitignore
+README.md
+SETUP_VERIFICATION.md
+docs/
+http/
+test-flujo-completo.sh
+docker-compose*.yml
+Dockerfile
+.dockerignore
+coverage/
+.vscode/
+*.http

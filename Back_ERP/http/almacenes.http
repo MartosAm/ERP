@@ -33,7 +33,7 @@ Authorization: Bearer {{token}}
   "esPrincipal": false
 }
 
-###
+### 
 @almacenId = {{crearAlmacen.response.body.datos.id}}
 
 ### ============================================================

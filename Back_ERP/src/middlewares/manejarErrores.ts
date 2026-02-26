@@ -5,9 +5,14 @@
  * Unico lugar en la aplicacion donde se producen respuestas de error.
  *
  * Cubre los siguientes tipos de error:
+ * - SyntaxError: JSON malformado en body (400)
+ * - PayloadTooLargeError: body excede el limite (413)
  * - ZodError: errores de validacion de DTOs (400)
  * - Prisma P2002: violacion de constraint unique (409)
  * - Prisma P2025: registro no encontrado en update/delete (404)
+ * - Prisma P2003: violacion de foreign key (400)
+ * - Prisma P2014: violacion de relacion requerida (400)
+ * - Prisma P2024: timeout del pool de conexiones (503)
  * - AppError: errores operacionales del sistema (status variable)
  * - Error generico: bugs no controlados (500)
  *
@@ -40,6 +45,19 @@ const esErrorPrisma = (err: unknown): err is ErrorPrismaConocido =>
   err instanceof Error && 'code' in err && typeof (err as ErrorPrismaConocido).code === 'string';
 
 /**
+ * Verifica si el error es un SyntaxError de JSON malformado.
+ * Express lanza SyntaxError con type='entity.parse.failed' al recibir JSON invalido.
+ */
+const esErrorJsonMalformado = (err: unknown): boolean =>
+  err instanceof SyntaxError && 'type' in err && (err as any).type === 'entity.parse.failed';
+
+/**
+ * Verifica si el error es PayloadTooLarge (body excede el limite configurado).
+ */
+const esPayloadMuyGrande = (err: unknown): boolean =>
+  err instanceof Error && 'type' in err && (err as any).type === 'entity.too.large';
+
+/**
  * Middleware de error global. Debe ser el ULTIMO middleware registrado en app.ts.
  * Express lo identifica como error handler por tener 4 parametros.
  */
@@ -49,12 +67,34 @@ export const manejarErrores = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  // Registrar el error en el logger para depuracion
+  // Obtener request ID para correlacion
+  const requestId = req.headers['x-request-id'] as string | undefined;
+
+  // Registrar el error con contexto completo para depuracion
   logger.error({
+    requestId,
     ruta: req.path,
     metodo: req.method,
+    usuarioId: (req as any).usuario?.id,
     error: err instanceof Error ? err.message : String(err),
+    stack: env.NODE_ENV !== 'production' && err instanceof Error ? err.stack : undefined,
   });
+
+  // 0a. JSON malformado en body (SyntaxError del parser de Express)
+  if (esErrorJsonMalformado(err)) {
+    res.status(400).json(
+      ApiResponse.fail('JSON malformado en el cuerpo de la peticion', 'BAD_REQUEST'),
+    );
+    return;
+  }
+
+  // 0b. Payload demasiado grande (excede limit de express.json)
+  if (esPayloadMuyGrande(err)) {
+    res.status(413).json(
+      ApiResponse.fail('El cuerpo de la peticion excede el tamano maximo permitido', 'PAYLOAD_TOO_LARGE'),
+    );
+    return;
+  }
 
   // 1. Errores de validacion Zod (schemas de DTOs)
   if (err instanceof ZodError) {
@@ -79,6 +119,16 @@ export const manejarErrores = (
     // P2003: Violacion de foreign key (referencia a registro inexistente)
     if (err.code === 'P2003') {
       res.status(400).json(ApiResponse.fail('Referencia a registro inexistente', 'BAD_REQUEST'));
+      return;
+    }
+    // P2014: Violacion de relacion requerida
+    if (err.code === 'P2014') {
+      res.status(400).json(ApiResponse.fail('Violacion de relacion requerida', 'BAD_REQUEST'));
+      return;
+    }
+    // P2024: Timeout del pool de conexiones a la base de datos
+    if (err.code === 'P2024') {
+      res.status(503).json(ApiResponse.fail('Servicio temporalmente no disponible', 'SERVICE_UNAVAILABLE'));
       return;
     }
   }

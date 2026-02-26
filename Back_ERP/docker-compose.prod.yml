@@ -1,0 +1,113 @@
+# ============================================================
+# docker-compose.prod.yml — ERP Backend en Produccion
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Incluye:
+#   - PostgreSQL 16 con pool sizing y backups
+#   - Backend Node.js con multi-stage build
+#   - Nginx como reverse proxy con TLS
+#   - Red aislada (BD no expuesta al host)
+# ============================================================
+
+services:
+  # ---- Base de datos PostgreSQL ----
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-erp_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definir DB_PASSWORD en .env}
+      POSTGRES_DB: ${DB_NAME:-ERP_db}
+      # Tuning para conexiones concurrentes
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command:
+      - "postgres"
+      - "-c" 
+      - "max_connections=100"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "log_min_duration_statement=1000"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    # NO exponer puerto al host en produccion
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-erp_user} -d ${DB_NAME:-ERP_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  # ---- Backend API ----
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-erp_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-ERP_db}?connection_limit=20&pool_timeout=10
+      JWT_SECRET: ${JWT_SECRET:?Definir JWT_SECRET en .env (min 32 chars)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      NODE_ENV: production
+      PORT: 3001
+      BCRYPT_SALT_ROUNDS: 12
+      CORS_ORIGIN: ${CORS_ORIGIN:?Definir CORS_ORIGIN en .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY: 2
+    networks:
+      - backend
+    # NO exponer puerto al host; Nginx lo hace
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+
+  # ---- Nginx Reverse Proxy ----
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  backend:
+    driver: bridge

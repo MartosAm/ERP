@@ -31,6 +31,29 @@ import type {
   FiltroExistencias,
 } from './inventario.schema';
 
+/**
+ * Mapea los tipos simplificados de la API a los valores del enum Prisma.
+ * API usa: ENTRADA, SALIDA, AJUSTE, TRASLADO (simplificados)
+ * Prisma usa: ENTRADA, SALIDA_VENTA, AJUSTE_MANUAL, MERMA, DEVOLUCION, TRASLADO
+ */
+const mapearTipoMovimiento = (tipo: string, referenciaTipo?: string): TipoMovimiento => {
+  switch (tipo) {
+    case 'ENTRADA':
+      return TipoMovimiento.ENTRADA;
+    case 'SALIDA':
+      // Si la referencia indica merma, usar MERMA; si no, SALIDA_VENTA
+      if (referenciaTipo === 'MERMA') return TipoMovimiento.MERMA;
+      if (referenciaTipo === 'DEVOLUCION') return TipoMovimiento.DEVOLUCION;
+      return TipoMovimiento.SALIDA_VENTA;
+    case 'AJUSTE':
+      return TipoMovimiento.AJUSTE_MANUAL;
+    case 'TRASLADO':
+      return TipoMovimiento.TRASLADO;
+    default:
+      return TipoMovimiento.AJUSTE_MANUAL;
+  }
+};
+
 export const InventarioService = {
 
   // ================================================================
@@ -159,7 +182,7 @@ export const InventarioService = {
           productoId: dto.productoId,
           almacenId: dto.almacenId,
           almacenDestinoId: dto.almacenDestinoId,
-          tipoMovimiento: dto.tipoMovimiento as TipoMovimiento,
+          tipoMovimiento: mapearTipoMovimiento(dto.tipoMovimiento, dto.referenciaTipo),
           cantidad: dto.cantidad,
           cantidadAnterior: dto.tipoMovimiento === 'AJUSTE' ? cantidadAnterior : cantidadAnterior,
           cantidadPosterior,

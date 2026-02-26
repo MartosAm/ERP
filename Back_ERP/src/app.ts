@@ -27,11 +27,12 @@ import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 
-import { env } from './config/env';
+import { env, corsOrigins } from './config/env';
 import { swaggerSpec, swaggerUiOptions, swaggerHabilitado } from './config/swagger';
 import { limitarGeneral } from './middlewares/limitarRates';
 import { manejarErrores } from './middlewares/manejarErrores';
 import { ApiResponse } from './compartido/respuesta';
+import { prisma } from './config/database';
 import {
   asignarRequestId,
   medirTiempoRespuesta,
@@ -75,8 +76,8 @@ app.use(medirTiempoRespuesta);
 // 2. Seguridad HTTP
 // ------------------------------------------------------------------
 
-// Confiar en el primer proxy (Nginx en produccion)
-app.set('trust proxy', 1);
+// Confiar en proxies segun configuracion (Nginx, ALB, CDN)
+app.set('trust proxy', env.TRUST_PROXY);
 
 // Ocultar headers que revelan tecnologia del servidor
 app.use(ocultarTecnologia);
@@ -117,10 +118,10 @@ app.use(
   }),
 );
 
-// CORS: permitir requests desde el frontend Angular
+// CORS: permitir requests desde el/los frontend(s) configurados
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
@@ -166,6 +167,8 @@ app.use('/api/', limitarGeneral);
 // ------------------------------------------------------------------
 // 7. Health check (no requiere autenticacion)
 // ------------------------------------------------------------------
+
+// Liveness: el proceso responde (para k8s/Docker liveness probes)
 app.get('/api/health', (_req, res) => {
   res.json(
     ApiResponse.ok({
@@ -174,6 +177,28 @@ app.get('/api/health', (_req, res) => {
       uptime: process.uptime(),
     }),
   );
+});
+
+// Readiness: el proceso puede atender trafico (verifica BD)
+app.get('/api/health/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json(
+      ApiResponse.ok({
+        estado: 'listo',
+        timestamp: new Date().toISOString(),
+        componentes: {
+          baseDatos: 'conectada',
+          memoria: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+          uptime: process.uptime(),
+        },
+      }),
+    );
+  } catch {
+    res.status(503).json(
+      ApiResponse.fail('Base de datos no disponible', 'SERVICE_UNAVAILABLE'),
+    );
+  }
 });
 
 // ------------------------------------------------------------------

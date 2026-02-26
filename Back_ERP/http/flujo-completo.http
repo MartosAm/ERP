@@ -1,0 +1,937 @@
+# ============================================================
+# FLUJO COMPLETO DE PRUEBA - ERP/POS PyME
+# ============================================================
+# Simula un DIA LABORAL COMPLETO en un negocio PyME
+# desde la apertura hasta el cierre, con todos los módulos.
+#
+# Credenciales de prueba:
+#   ADMIN:      admin@minegocio.com / Admin12345
+#   CAJERO:     cajero@minegocio.com / Cajero12345
+#   REPARTIDOR: repartidor@minegocio.com / Repartidor12345
+#
+# Ejecutar en orden (de arriba hacia abajo).
+# Variables: @token, @tokenCajero, @tokenRepartidor, etc.
+# ============================================================
+
+### ========================================================
+### FASE 1: AUTENTICACION Y SESION
+### Problema: ¿Como controlar acceso del personal?
+### Solución: Login por rol, horarios, bloqueo por intentos
+### ========================================================
+
+### 1.1 Login ADMIN
+# @name loginAdmin
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.datos.token}}
+
+### 1.2 Perfil del ADMIN (verifica datos de sesion)
+GET http://localhost:3001/api/v1/auth/perfil
+Authorization: Bearer {{tokenAdmin}}
+
+### 1.3 Login CAJERO
+# @name loginCajero
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "cajero@minegocio.com",
+  "contrasena": "Cajero12345"
+}
+
+###
+@tokenCajero = {{loginCajero.response.body.datos.token}}
+
+### 1.4 Registrar REPARTIDOR (solo ADMIN puede)
+# @name registrarRepartidor
+POST http://localhost:3001/api/v1/auth/registro
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Repartidor Test",
+  "correo": "repartidor.test@minegocio.com",
+  "contrasena": "Repartidor1234",
+  "rol": "REPARTIDOR",
+  "telefono": "5550001111",
+  "horarioInicio": "08:00",
+  "horarioFin": "22:00",
+  "diasLaborales": [0, 1, 2, 3, 4, 5, 6]
+}
+
+### 1.5 Login REPARTIDOR
+# @name loginRepartidor
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "repartidor.test@minegocio.com",
+  "contrasena": "Repartidor1234"
+}
+
+###
+@tokenRepartidor = {{loginRepartidor.response.body.datos.token}}
+
+
+### ========================================================
+### FASE 2: CONFIGURACION INICIAL (ADMIN)
+### Problema: ¿Como organizar catálogos, almacenes, proveedores?
+### Solución: CRUD completo multitenant aislado por empresa
+### ========================================================
+
+### 2.1 Crear categoría raíz: Abarrotes
+# @name crearCategoria1
+POST http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Abarrotes",
+  "descripcion": "Productos de consumo basico y abarrotes en general",
+  "colorHex": "#FF6B35",
+  "nombreIcono": "shopping_basket",
+  "orden": 1
+}
+
+###
+@categoriaAbarrotesId = {{crearCategoria1.response.body.datos.id}}
+
+### 2.2 Crear categoría raíz: Bebidas
+# @name crearCategoria2
+POST http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Bebidas",
+  "descripcion": "Refrescos, jugos, agua y bebidas en general",
+  "colorHex": "#2196F3",
+  "nombreIcono": "local_drink",
+  "orden": 2
+}
+
+###
+@categoriaBebidasId = {{crearCategoria2.response.body.datos.id}}
+
+### 2.3 Crear subcategoría: Refrescos (hija de Bebidas)
+# @name crearSubcategoria
+POST http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Refrescos",
+  "descripcion": "Bebidas carbonatadas",
+  "padreId": "{{categoriaBebidasId}}",
+  "colorHex": "#03A9F4",
+  "orden": 1
+}
+
+###
+@categoriaRefrescosId = {{crearSubcategoria.response.body.datos.id}}
+
+### 2.4 Crear categoría: Limpieza
+# @name crearCategoria3
+POST http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Limpieza",
+  "descripcion": "Productos de limpieza del hogar",
+  "colorHex": "#4CAF50",
+  "nombreIcono": "cleaning_services",
+  "orden": 3
+}
+
+###
+@categoriaLimpiezaId = {{crearCategoria3.response.body.datos.id}}
+
+### 2.5 Listar categorías (verifica las 4 creadas)
+GET http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenAdmin}}
+
+### 2.6 Obtener árbol jerárquico de categorías
+GET http://localhost:3001/api/v1/categorias/arbol
+Authorization: Bearer {{tokenAdmin}}
+
+### 2.7 Crear proveedor: Distribuidora Nacional
+# @name crearProveedor1
+POST http://localhost:3001/api/v1/proveedores
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Distribuidora Nacional SA",
+  "nombreContacto": "Carlos Martinez",
+  "telefono": "5551234567",
+  "correo": "ventas@distribuidoranacional.com",
+  "direccion": "Av. Industria #456, CDMX",
+  "rfc": "DNA201115AB3",
+  "notas": "Entrega cada lunes y jueves"
+}
+
+###
+@proveedor1Id = {{crearProveedor1.response.body.datos.id}}
+
+### 2.8 Crear proveedor: Bebidas del Centro
+# @name crearProveedor2
+POST http://localhost:3001/api/v1/proveedores
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Bebidas del Centro SA",
+  "nombreContacto": "Maria Lopez",
+  "telefono": "5559876543",
+  "correo": "pedidos@bebidascentro.com",
+  "direccion": "Calle Reforma #789, Guadalajara",
+  "rfc": "BDC190520XY9"
+}
+
+###
+@proveedor2Id = {{crearProveedor2.response.body.datos.id}}
+
+### 2.9 Listar proveedores
+GET http://localhost:3001/api/v1/proveedores
+Authorization: Bearer {{tokenAdmin}}
+
+### 2.10 Obtener almacén principal existente
+# @name listarAlmacenes
+GET http://localhost:3001/api/v1/almacenes
+Authorization: Bearer {{tokenAdmin}}
+
+###
+@almacenPrincipalId = {{listarAlmacenes.response.body.datos[0].id}}
+
+### 2.11 Crear almacén secundario (sucursal)
+# @name crearAlmacen
+POST http://localhost:3001/api/v1/almacenes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Sucursal Norte",
+  "direccion": "Blvd. Norte #321, Col. Industrial",
+  "esPrincipal": false
+}
+
+###
+@almacenSecundarioId = {{crearAlmacen.response.body.datos.id}}
+
+
+### ========================================================
+### FASE 3: CATÁLOGO DE PRODUCTOS (ADMIN)
+### Problema: ¿Cómo gestionar miles de productos con precio/stock?
+### Solución: Catálogo con multi-precio, barras, SKU, control stock
+### ========================================================
+
+### 3.1 Crear producto: Arroz 1kg
+# @name crearProducto1
+POST http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "sku": "ABR-001",
+  "codigoBarras": "7501234567890",
+  "nombre": "Arroz Grano Largo 1kg",
+  "descripcion": "Arroz de grano largo para cocina, bolsa de 1 kilogramo",
+  "marca": "La Perla",
+  "categoriaId": "{{categoriaAbarrotesId}}",
+  "proveedorId": "{{proveedor1Id}}",
+  "tipoUnidad": "PIEZA",
+  "etiquetaUnidad": "pza",
+  "precioCosto": 18.50,
+  "precioVenta1": 28.00,
+  "precioVenta2": 25.00,
+  "precioVenta3": 23.00,
+  "impuestoIncluido": true,
+  "tasaImpuesto": 0.16,
+  "rastrearInventario": true,
+  "stockMinimo": 10,
+  "stockMaximo": 200,
+  "destacado": true
+}
+
+###
+@producto1Id = {{crearProducto1.response.body.datos.id}}
+
+### 3.2 Crear producto: Frijol Negro 1kg
+# @name crearProducto2
+POST http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "sku": "ABR-002",
+  "codigoBarras": "7501234567891",
+  "nombre": "Frijol Negro 1kg",
+  "descripcion": "Frijol negro de primera calidad",
+  "marca": "San Juan",
+  "categoriaId": "{{categoriaAbarrotesId}}",
+  "proveedorId": "{{proveedor1Id}}",
+  "tipoUnidad": "PIEZA",
+  "etiquetaUnidad": "pza",
+  "precioCosto": 22.00,
+  "precioVenta1": 35.00,
+  "precioVenta2": 32.00,
+  "impuestoIncluido": true,
+  "rastrearInventario": true,
+  "stockMinimo": 8,
+  "stockMaximo": 150
+}
+
+###
+@producto2Id = {{crearProducto2.response.body.datos.id}}
+
+### 3.3 Crear producto: Coca-Cola 600ml
+# @name crearProducto3
+POST http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "sku": "BEB-001",
+  "codigoBarras": "7501234567892",
+  "nombre": "Coca-Cola 600ml",
+  "descripcion": "Refresco de cola 600ml botella PET",
+  "marca": "Coca-Cola",
+  "categoriaId": "{{categoriaRefrescosId}}",
+  "proveedorId": "{{proveedor2Id}}",
+  "tipoUnidad": "PIEZA",
+  "etiquetaUnidad": "pza",
+  "precioCosto": 8.00,
+  "precioVenta1": 18.00,
+  "precioVenta2": 16.00,
+  "impuestoIncluido": true,
+  "rastrearInventario": true,
+  "stockMinimo": 24,
+  "stockMaximo": 500,
+  "destacado": true
+}
+
+###
+@producto3Id = {{crearProducto3.response.body.datos.id}}
+
+### 3.4 Crear producto: Cloro 1L
+# @name crearProducto4
+POST http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "sku": "LIM-001",
+  "codigoBarras": "7501234567893",
+  "nombre": "Cloro Concentrado 1L",
+  "descripcion": "Cloro concentrado para limpieza",
+  "marca": "Cloralex",
+  "categoriaId": "{{categoriaLimpiezaId}}",
+  "proveedorId": "{{proveedor1Id}}",
+  "tipoUnidad": "PIEZA",
+  "etiquetaUnidad": "pza",
+  "precioCosto": 12.00,
+  "precioVenta1": 22.00,
+  "impuestoIncluido": true,
+  "rastrearInventario": true,
+  "stockMinimo": 6,
+  "stockMaximo": 100
+}
+
+###
+@producto4Id = {{crearProducto4.response.body.datos.id}}
+
+### 3.5 Crear producto: Aceite Vegetal 1L
+# @name crearProducto5
+POST http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "sku": "ABR-003",
+  "codigoBarras": "7501234567894",
+  "nombre": "Aceite Vegetal 1L",
+  "descripcion": "Aceite vegetal comestible 1 litro",
+  "marca": "1-2-3",
+  "categoriaId": "{{categoriaAbarrotesId}}",
+  "proveedorId": "{{proveedor1Id}}",
+  "tipoUnidad": "LITRO",
+  "etiquetaUnidad": "lt",
+  "precioCosto": 28.00,
+  "precioVenta1": 42.00,
+  "precioVenta2": 39.00,
+  "impuestoIncluido": true,
+  "rastrearInventario": true,
+  "stockMinimo": 5,
+  "stockMaximo": 100
+}
+
+###
+@producto5Id = {{crearProducto5.response.body.datos.id}}
+
+### 3.6 Listar productos (ADMIN ve precioCosto)
+GET http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.7 Buscar producto por código de barras (scanner POS)
+GET http://localhost:3001/api/v1/productos/codigo/7501234567890
+Authorization: Bearer {{tokenCajero}}
+
+### 3.8 Buscar productos por nombre
+GET http://localhost:3001/api/v1/productos?buscar=coca
+Authorization: Bearer {{tokenCajero}}
+
+### 3.9 Listar productos como CAJERO (NO ve precioCosto)
+GET http://localhost:3001/api/v1/productos
+Authorization: Bearer {{tokenCajero}}
+
+
+### ========================================================
+### FASE 4: COMPRAS A PROVEEDOR (Surtir mercancía)
+### Problema: ¿Cómo registrar y recibir mercancía del proveedor?
+### Solución: Orden de compra + recepción = entrada automática inventario
+### ========================================================
+
+### 4.1 Crear orden de compra a Distribuidora Nacional
+# @name crearCompra1
+POST http://localhost:3001/api/v1/compras
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "proveedorId": "{{proveedor1Id}}",
+  "numeroFactura": "FACT-2026-0042",
+  "notas": "Pedido semanal regular",
+  "detalles": [
+    { "productoId": "{{producto1Id}}", "cantidad": 50, "costoUnitario": 18.50 },
+    { "productoId": "{{producto2Id}}", "cantidad": 40, "costoUnitario": 22.00 },
+    { "productoId": "{{producto4Id}}", "cantidad": 30, "costoUnitario": 12.00 },
+    { "productoId": "{{producto5Id}}", "cantidad": 25, "costoUnitario": 28.00 }
+  ]
+}
+
+###
+@compra1Id = {{crearCompra1.response.body.datos.id}}
+
+### 4.2 Crear orden de compra a Bebidas del Centro
+# @name crearCompra2
+POST http://localhost:3001/api/v1/compras
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "proveedorId": "{{proveedor2Id}}",
+  "numeroFactura": "BC-2026-1580",
+  "detalles": [
+    { "productoId": "{{producto3Id}}", "cantidad": 120, "costoUnitario": 8.00 }
+  ]
+}
+
+###
+@compra2Id = {{crearCompra2.response.body.datos.id}}
+
+### 4.3 Recibir mercancía de compra 1 en almacén principal
+# (Esto INGRESA automáticamente al inventario y actualiza precioCosto)
+POST http://localhost:3001/api/v1/compras/{{compra1Id}}/recibir
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "almacenId": "{{almacenPrincipalId}}"
+}
+
+### 4.4 Recibir mercancía de compra 2
+POST http://localhost:3001/api/v1/compras/{{compra2Id}}/recibir
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "almacenId": "{{almacenPrincipalId}}"
+}
+
+### 4.5 Verificar inventario (debe tener stock ahora)
+GET http://localhost:3001/api/v1/inventario/existencias
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.6 Listar compras (historial)
+GET http://localhost:3001/api/v1/compras
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 5: CLIENTES (ADMIN/CAJERO)
+### Problema: ¿Cómo gestionar clientes frecuentes y crédito?
+### Solución: Registro de clientes con control de crédito/fiado
+### ========================================================
+
+### 5.1 Crear cliente: Tienda Don Pedro (con crédito)
+# @name crearCliente1
+POST http://localhost:3001/api/v1/clientes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Tienda Don Pedro",
+  "telefono": "5550011223",
+  "correo": "donpedro@correo.com",
+  "direccion": "Calle Hidalgo #45, Col. Centro",
+  "rfc": "TDP880115ABC",
+  "limiteCredito": 5000,
+  "diasCredito": 15,
+  "notas": "Cliente recurrente desde 2020, buen historial de pago"
+}
+
+###
+@cliente1Id = {{crearCliente1.response.body.datos.id}}
+
+### 5.2 Crear cliente: María García (sin crédito)
+# @name crearCliente2
+POST http://localhost:3001/api/v1/clientes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombre": "Maria Garcia",
+  "telefono": "5550099887",
+  "direccion": "Av. Juarez #123, Col. Moderna"
+}
+
+###
+@cliente2Id = {{crearCliente2.response.body.datos.id}}
+
+### 5.3 Listar clientes
+GET http://localhost:3001/api/v1/clientes
+Authorization: Bearer {{tokenCajero}}
+
+### 5.4 Buscar cliente por teléfono (POS rápido)
+GET http://localhost:3001/api/v1/clientes?buscar=5550011223
+Authorization: Bearer {{tokenCajero}}
+
+
+### ========================================================
+### FASE 6: APERTURA DE TURNO DE CAJA (CAJERO)
+### Problema: ¿Cómo controlar el dinero por turno/empleado?
+### Solución: Turnos de caja con monto apertura/cierre/diferencia
+### ========================================================
+
+### 6.1 Obtener cajas registradoras disponibles
+# @name listarCajas
+GET http://localhost:3001/api/v1/almacenes
+Authorization: Bearer {{tokenCajero}}
+
+### 6.2 Abrir turno de caja (cajero inicia su jornada)
+# @name abrirTurno
+POST http://localhost:3001/api/v1/turnos-caja/abrir
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "cajaRegistradoraId": "cmm2y9to2000811ghcmu87qk5",
+  "montoApertura": 500.00,
+  "notas": "Turno matutino, fondo de caja completo"
+}
+
+###
+@turnoId = {{abrirTurno.response.body.datos.id}}
+
+### 6.3 Verificar turno activo del cajero
+GET http://localhost:3001/api/v1/turnos-caja/activo
+Authorization: Bearer {{tokenCajero}}
+
+
+### ========================================================
+### FASE 7: VENTAS / ORDENES POS (El núcleo del negocio)
+### Problema: ¿Cómo procesar ventas rápidas con control total?
+### Solución: Órdenes atómicas con descuento de inventario, 
+###           pagos mixtos, crédito, y trazabilidad completa
+### ========================================================
+
+### 7.1 VENTA 1: Venta rápida en efectivo (mostrador)
+# Arroz + Coca-Cola = $28 + $18 = $46 → paga $50 = cambio $4
+# @name crearOrden1
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "detalles": [
+    { "productoId": "{{producto1Id}}", "cantidad": 1, "precioUnitario": 28.00, "descuento": 0 },
+    { "productoId": "{{producto3Id}}", "cantidad": 1, "precioUnitario": 18.00, "descuento": 0 }
+  ],
+  "pagos": [
+    { "metodo": "EFECTIVO", "monto": 50.00 }
+  ],
+  "notas": "Venta mostrador #1"
+}
+
+###
+@orden1Id = {{crearOrden1.response.body.datos.id}}
+
+### 7.2 VENTA 2: Venta con tarjeta de débito
+# 3 Coca-Colas + 2 Aceite = $54 + $84 = $138
+# @name crearOrden2
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "detalles": [
+    { "productoId": "{{producto3Id}}", "cantidad": 3, "precioUnitario": 18.00, "descuento": 0 },
+    { "productoId": "{{producto5Id}}", "cantidad": 2, "precioUnitario": 42.00, "descuento": 0 }
+  ],
+  "pagos": [
+    { "metodo": "TARJETA_DEBITO", "monto": 138.00, "referencia": "AUTH-7829384" }
+  ]
+}
+
+###
+@orden2Id = {{crearOrden2.response.body.datos.id}}
+
+### 7.3 VENTA 3: Venta mayoreo con pago mixto (efectivo + transferencia)
+# 10 Arroz (mayoreo $25) + 5 Frijol (mayoreo $32) = $250 + $160 = $410
+# @name crearOrden3
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{cliente2Id}}",
+  "detalles": [
+    { "productoId": "{{producto1Id}}", "cantidad": 10, "precioUnitario": 25.00, "descuento": 0 },
+    { "productoId": "{{producto2Id}}", "cantidad": 5, "precioUnitario": 32.00, "descuento": 0 }
+  ],
+  "pagos": [
+    { "metodo": "EFECTIVO", "monto": 200.00 },
+    { "metodo": "TRANSFERENCIA", "monto": 210.00, "referencia": "SPEI-2026022600001" }
+  ],
+  "notas": "Pedido mayoreo Maria Garcia"
+}
+
+###
+@orden3Id = {{crearOrden3.response.body.datos.id}}
+
+### 7.4 VENTA 4: Venta a crédito (fiado) para Don Pedro
+# 5 Cloro + 20 Coca-Cola + 3 Aceite = $110 + $360 + $126 = $596
+# @name crearOrden4
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{cliente1Id}}",
+  "detalles": [
+    { "productoId": "{{producto4Id}}", "cantidad": 5, "precioUnitario": 22.00, "descuento": 0 },
+    { "productoId": "{{producto3Id}}", "cantidad": 20, "precioUnitario": 18.00, "descuento": 0 },
+    { "productoId": "{{producto5Id}}", "cantidad": 3, "precioUnitario": 42.00, "descuento": 0 }
+  ],
+  "pagos": [
+    { "metodo": "CREDITO_CLIENTE", "monto": 596.00 }
+  ],
+  "notas": "Pedido semanal Don Pedro - a credito"
+}
+
+###
+@orden4Id = {{crearOrden4.response.body.datos.id}}
+
+### 7.5 VENTA 5: Venta con descuento por item
+# 2 Arroz con descuento de $3 c/u = (28-3)*2 = $50
+# @name crearOrden5
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "detalles": [
+    { "productoId": "{{producto1Id}}", "cantidad": 2, "precioUnitario": 28.00, "descuento": 3.00 }
+  ],
+  "pagos": [
+    { "metodo": "EFECTIVO", "monto": 50.00 }
+  ],
+  "notas": "Descuento por producto proximo a vencer"
+}
+
+###
+@orden5Id = {{crearOrden5.response.body.datos.id}}
+
+### 7.6 Ver detalle de la orden 4 (crédito)
+GET http://localhost:3001/api/v1/ordenes/{{orden4Id}}
+Authorization: Bearer {{tokenCajero}}
+
+### 7.7 Listar órdenes del día
+GET http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenCajero}}
+
+### 7.8 Verificar crédito utilizado del cliente Don Pedro
+GET http://localhost:3001/api/v1/clientes/{{cliente1Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 8: CANCELACION DE ORDEN (ADMIN)
+### Problema: ¿Qué pasa si hay un error o devolución?
+### Solución: Solo ADMIN cancela, retorna stock, revierte crédito
+### ========================================================
+
+### 8.1 Cancelar la orden 5 (ejemplo: cliente se arrepintió)
+POST http://localhost:3001/api/v1/ordenes/{{orden5Id}}/cancelar
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "motivoCancelacion": "Cliente se arrepintio de la compra inmediatamente"
+}
+
+### 8.2 Verificar que el stock regresó tras la cancelación
+GET http://localhost:3001/api/v1/inventario/existencias?buscar=arroz
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 9: ENTREGAS A DOMICILIO (DELIVERY)
+### Problema: ¿Cómo gestionar repartidores y entregas?
+### Solución: Asignar entrega, trackear estado, evidencia
+### ========================================================
+
+### 9.1 Crear entrega para orden 4 (pedido Don Pedro)
+# @name crearEntrega
+POST http://localhost:3001/api/v1/entregas
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "ordenId": "{{orden4Id}}",
+  "asignadoAId": "{{registrarRepartidor.response.body.datos.id}}",
+  "direccionEntrega": "Calle Hidalgo #45, Col. Centro - Tienda Don Pedro",
+  "programadaEn": "2026-02-26T14:00:00.000Z",
+  "notas": "Tocar timbre azul. Preguntar por Don Pedro"
+}
+
+###
+@entregaId = {{crearEntrega.response.body.datos.id}}
+
+### 9.2 Repartidor ve sus entregas pendientes
+GET http://localhost:3001/api/v1/entregas/mis-entregas
+Authorization: Bearer {{tokenRepartidor}}
+
+### 9.3 Repartidor sale: cambia estado a EN_RUTA
+PATCH http://localhost:3001/api/v1/entregas/{{entregaId}}/estado
+Authorization: Bearer {{tokenRepartidor}}
+Content-Type: application/json
+
+{
+  "estado": "EN_RUTA",
+  "notas": "Saliendo hacia Calle Hidalgo"
+}
+
+### 9.4 Repartidor entrega: cambia estado a ENTREGADO
+PATCH http://localhost:3001/api/v1/entregas/{{entregaId}}/estado
+Authorization: Bearer {{tokenRepartidor}}
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO",
+  "notas": "Entregado a Don Pedro en persona"
+}
+
+### 9.5 Ver detalle de la entrega finalizada
+GET http://localhost:3001/api/v1/entregas/{{entregaId}}
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 10: INVENTARIO - MOVIMIENTOS MANUALES
+### Problema: ¿Cómo registrar mermas, ajustes, traslados?
+### Solución: Movimientos inmutables con trazabilidad completa
+### ========================================================
+
+### 10.1 Registrar MERMA: 2 Coca-Cola dañadas
+POST http://localhost:3001/api/v1/inventario/movimientos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "productoId": "{{producto3Id}}",
+  "almacenId": "{{almacenPrincipalId}}",
+  "tipoMovimiento": "SALIDA",
+  "cantidad": 2,
+  "motivo": "Botellas dañadas en transporte, no aptas para venta",
+  "referenciaTipo": "MERMA"
+}
+
+### 10.2 Registrar TRASLADO: 10 Coca-Cola a Sucursal Norte
+POST http://localhost:3001/api/v1/inventario/movimientos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "productoId": "{{producto3Id}}",
+  "almacenId": "{{almacenPrincipalId}}",
+  "almacenDestinoId": "{{almacenSecundarioId}}",
+  "tipoMovimiento": "TRASLADO",
+  "cantidad": 10,
+  "motivo": "Surtir sucursal norte",
+  "referenciaTipo": "TRASLADO"
+}
+
+### 10.3 Verificar existencias tras movimientos
+GET http://localhost:3001/api/v1/inventario/existencias
+Authorization: Bearer {{tokenAdmin}}
+
+### 10.4 Historial de movimientos del día
+GET http://localhost:3001/api/v1/inventario/movimientos
+Authorization: Bearer {{tokenAdmin}}
+
+### 10.5 Productos con stock bajo (alerta)
+GET http://localhost:3001/api/v1/inventario/existencias?stockBajo=true
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 11: GESTIÓN DE USUARIOS (ADMIN)
+### Problema: ¿Cómo administrar empleados y accesos?
+### Solución: CRUD usuarios con horarios, roles, estados
+### ========================================================
+
+### 11.1 Listar usuarios de la empresa
+GET http://localhost:3001/api/v1/usuarios
+Authorization: Bearer {{tokenAdmin}}
+
+### 11.2 Asignar horario laboral al cajero
+PUT http://localhost:3001/api/v1/usuarios/{{loginCajero.response.body.datos.usuario.id}}/horario
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "horarioInicio": "07:00",
+  "horarioFin": "23:00",
+  "diasLaborales": [1, 2, 3, 4, 5, 6]
+}
+
+### 11.3 Cambiar PIN de autorización del cajero
+POST http://localhost:3001/api/v1/auth/cambiar-pin
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "usuarioId": "{{loginCajero.response.body.datos.usuario.id}}",
+  "nuevoPin": "4567"
+}
+
+
+### ========================================================
+### FASE 12: CIERRE DE TURNO DE CAJA
+### Problema: ¿Cómo saber si cuadra el dinero al final del turno?
+### Solución: Sistema calcula monto esperado vs contado → diferencia
+### ========================================================
+
+### 12.1 Cerrar turno de caja (cajero conta el dinero)
+# El sistema calcula: apertura($500) + ventas_efectivo → esperado
+# El cajero reporta lo que contó → se calcula la diferencia
+POST http://localhost:3001/api/v1/turnos-caja/{{turnoId}}/cerrar
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "montoCierre": 748.00,
+  "notas": "Cierre normal, sin novedades"
+}
+
+### 12.2 Ver detalle del turno cerrado (auditoría)
+GET http://localhost:3001/api/v1/turnos-caja/{{turnoId}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 12.3 Listar historial de turnos
+GET http://localhost:3001/api/v1/turnos-caja
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 13: REPORTES Y DASHBOARD (ADMIN)
+### Problema: ¿Cómo tomar decisiones basadas en datos?
+### Solución: Dashboard en tiempo real + 7 reportes analíticos
+### ========================================================
+
+### 13.1 DASHBOARD - KPIs en tiempo real
+# Ventas hoy, ventas del mes, ticket promedio, stock bajo,
+# sesiones activas, turnos abiertos
+GET http://localhost:3001/api/v1/reportes/dashboard
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.2 REPORTE DE VENTAS - Resumen del período
+GET http://localhost:3001/api/v1/reportes/ventas?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.3 TOP PRODUCTOS - Más vendidos por cantidad e ingresos
+GET http://localhost:3001/api/v1/reportes/top-productos?fechaDesde=2026-02-01&fechaHasta=2026-02-28&limite=10
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.4 MÉTODOS DE PAGO - Desglose por tipo
+GET http://localhost:3001/api/v1/reportes/metodos-pago?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.5 INVENTARIO VALORIZADO - Stock actual × costo unitario
+GET http://localhost:3001/api/v1/reportes/inventario
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.6 RENDIMIENTO CAJEROS - Ventas por empleado
+GET http://localhost:3001/api/v1/reportes/cajeros?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{tokenAdmin}}
+
+### 13.7 REPORTE ENTREGAS - Estadísticas delivery
+GET http://localhost:3001/api/v1/reportes/entregas?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 14: SEGURIDAD - Pruebas de protección
+### ========================================================
+
+### 14.1 Intento sin token (debe rechazar 401)
+GET http://localhost:3001/api/v1/productos
+
+### 14.2 Cajero intenta crear categoría (debe rechazar 403)
+POST http://localhost:3001/api/v1/categorias
+Authorization: Bearer {{tokenCajero}}
+Content-Type: application/json
+
+{
+  "nombre": "Intento no autorizado"
+}
+
+### 14.3 Repartidor intenta crear orden (debe rechazar 403)
+POST http://localhost:3001/api/v1/ordenes
+Authorization: Bearer {{tokenRepartidor}}
+Content-Type: application/json
+
+{
+  "detalles": [{ "productoId": "{{producto1Id}}", "cantidad": 1, "precioUnitario": 28, "descuento": 0 }],
+  "pagos": [{ "metodo": "EFECTIVO", "monto": 28 }]
+}
+
+### 14.4 Ruta inexistente (404)
+GET http://localhost:3001/api/v1/ruta-inexistente
+Authorization: Bearer {{tokenAdmin}}
+
+
+### ========================================================
+### FASE 15: LOGOUT
+### ========================================================
+
+### 15.1 Logout cajero
+POST http://localhost:3001/api/v1/auth/logout
+Authorization: Bearer {{tokenCajero}}
+
+### 15.2 Logout repartidor
+POST http://localhost:3001/api/v1/auth/logout
+Authorization: Bearer {{tokenRepartidor}}
+
+### 15.3 Logout admin
+POST http://localhost:3001/api/v1/auth/logout
+Authorization: Bearer {{tokenAdmin}}
