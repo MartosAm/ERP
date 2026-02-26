@@ -1,0 +1,21 @@
+{
+  "servers": {
+    "postgres-erp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:MAVF2002@localhost:5432/ERP_db"
+      ]
+    },
+    "sistema-archivos": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/adrian/Documentos/proyectos/ERP/Back_ERP",
+        "/home/adrian/Documentos/proyectos/ERP/Front_ERP-1"
+      ]
+    }
+  }
+}
