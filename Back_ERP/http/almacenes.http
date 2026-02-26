@@ -1,0 +1,67 @@
+### ============================================================
+### ALMACENES - CRUD
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. CREAR almacen
+### ============================================================
+# @name crearAlmacen
+POST {{baseUrl}}/almacenes
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Bodega Norte",
+  "direccion": "Av. Norte #123, Col. Industrial",
+  "esPrincipal": false
+}
+
+###
+@almacenId = {{crearAlmacen.response.body.datos.id}}
+
+### ============================================================
+### 2. LISTAR almacenes
+### ============================================================
+GET {{baseUrl}}/almacenes?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 3. OBTENER almacen por ID
+### ============================================================
+GET {{baseUrl}}/almacenes/{{almacenId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. ACTUALIZAR almacen
+### ============================================================
+PATCH {{baseUrl}}/almacenes/{{almacenId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Bodega Norte - Ampliada",
+  "direccion": "Av. Norte #125, Col. Industrial"
+}
+
+### ============================================================
+### 5. ELIMINAR almacen
+### ============================================================
+DELETE {{baseUrl}}/almacenes/{{almacenId}}
+Authorization: Bearer {{token}}

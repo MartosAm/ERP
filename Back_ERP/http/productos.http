@@ -1,0 +1,112 @@
+### ============================================================
+### PRODUCTOS - CRUD con multi-precio y codigos de barras
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. CREAR producto
+### ============================================================
+# @name crearProducto
+POST {{baseUrl}}/productos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "sku": "BEB-001",
+  "codigoBarras": "7501055301234",
+  "nombre": "Pepsi 600ml",
+  "descripcion": "Refresco Pepsi botella 600ml",
+  "marca": "PepsiCo",
+  "tipoUnidad": "PIEZA",
+  "etiquetaUnidad": "pza",
+  "precioCosto": 8.50,
+  "precioVenta1": 18.00,
+  "precioVenta2": 15.00,
+  "precioVenta3": 13.50,
+  "impuestoIncluido": true,
+  "tasaImpuesto": 0.16,
+  "rastrearInventario": true,
+  "stockMinimo": 24,
+  "stockMaximo": 120,
+  "destacado": true
+}
+
+###
+@productoId = {{crearProducto.response.body.datos.id}}
+
+### ============================================================
+### 2. LISTAR productos con paginacion
+### ============================================================
+GET {{baseUrl}}/productos?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 3. BUSCAR productos por nombre
+### ============================================================
+GET {{baseUrl}}/productos?buscar=pepsi
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. FILTRAR productos con stock bajo
+### ============================================================
+GET {{baseUrl}}/productos?stockBajo=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 5. FILTRAR productos destacados
+### ============================================================
+GET {{baseUrl}}/productos?destacado=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 6. BUSCAR por codigo de barras (POS scanner)
+### ============================================================
+GET {{baseUrl}}/productos/codigo/7501055301234
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 7. BUSCAR por SKU
+### ============================================================
+GET {{baseUrl}}/productos/codigo/BEB-001
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 8. OBTENER producto por ID
+### ============================================================
+GET {{baseUrl}}/productos/{{productoId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 9. ACTUALIZAR producto
+### ============================================================
+PATCH {{baseUrl}}/productos/{{productoId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "precioVenta1": 19.00,
+  "stockMinimo": 30,
+  "notas": "Precio actualizado febrero 2026"
+}
+
+### ============================================================
+### 10. ELIMINAR producto
+### ============================================================
+DELETE {{baseUrl}}/productos/{{productoId}}
+Authorization: Bearer {{token}}

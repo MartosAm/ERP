@@ -6,14 +6,15 @@
  * de cada modulo bajo el prefijo /api/v1/.
  *
  * Orden de middlewares:
- * 1. Seguridad (helmet, cors)
- * 2. Parsing (json, urlencoded)
- * 3. Compresion
- * 4. Logging HTTP
- * 5. Rate limiting general
- * 6. Rutas de modulos
- * 7. Ruta de documentacion Swagger
- * 8. Manejo de errores (siempre al final)
+ * 1. Trazabilidad (X-Request-ID, X-Response-Time)
+ * 2. Seguridad (helmet, cors, hpp, headers adicionales)
+ * 3. Parsing (json, urlencoded) + validacion Content-Type
+ * 4. Compresion
+ * 5. Logging HTTP
+ * 6. Rate limiting general
+ * 7. Rutas de modulos
+ * 8. Documentacion Swagger (deshabilitada en produccion)
+ * 9. Manejo de errores (siempre al final)
  *
  * Este archivo NO hace listen(). Eso lo hace server.ts.
  * ------------------------------------------------------------------
@@ -25,12 +26,35 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
 
 import { env } from './config/env';
+import { swaggerSpec, swaggerUiOptions, swaggerHabilitado } from './config/swagger';
 import { limitarGeneral } from './middlewares/limitarRates';
 import { manejarErrores } from './middlewares/manejarErrores';
 import { ApiResponse } from './compartido/respuesta';
+import {
+  asignarRequestId,
+  medirTiempoRespuesta,
+  protegerParametros,
+  headersSeguridad,
+  validarContentType,
+  ocultarTecnologia,
+} from './middlewares/seguridad';
+
+// -- Rutas de modulos --
+import authRoutes from './modulos/auth/auth.routes';
+import categoriasRoutes from './modulos/categorias/categorias.routes';
+import almacenesRoutes from './modulos/almacenes/almacenes.routes';
+import proveedoresRoutes from './modulos/proveedores/proveedores.routes';
+import productosRoutes from './modulos/productos/productos.routes';
+import clientesRoutes from './modulos/clientes/clientes.routes';
+import inventarioRoutes from './modulos/inventario/inventario.routes';
+import turnosCajaRoutes from './modulos/turnos-caja/turnos-caja.routes';
+import ordenesRoutes from './modulos/ordenes/ordenes.routes';
+import comprasRoutes from './modulos/compras/compras.routes';
+import entregasRoutes from './modulos/entregas/entregas.routes';
+import usuariosRoutes from './modulos/usuarios/usuarios.routes';
+import reportesRoutes from './modulos/reportes/reportes.routes';
 
 // ------------------------------------------------------------------
 // Crear instancia de Express
@@ -38,50 +62,109 @@ import { ApiResponse } from './compartido/respuesta';
 const app = express();
 
 // ------------------------------------------------------------------
-// 1. Seguridad HTTP
+// 1. Trazabilidad (primero, para que todos los logs tengan request ID)
+// ------------------------------------------------------------------
+
+// UUID unico por peticion para correlacion de logs
+app.use(asignarRequestId);
+
+// Medir tiempo de respuesta (header X-Response-Time)
+app.use(medirTiempoRespuesta);
+
+// ------------------------------------------------------------------
+// 2. Seguridad HTTP
 // ------------------------------------------------------------------
 
 // Confiar en el primer proxy (Nginx en produccion)
 app.set('trust proxy', 1);
 
-// Helmet: headers de seguridad (XSS, clickjacking, MIME sniffing)
-app.use(helmet());
+// Ocultar headers que revelan tecnologia del servidor
+app.use(ocultarTecnologia);
+
+// Helmet: headers de seguridad (XSS, clickjacking, MIME sniffing, HSTS)
+app.use(
+  helmet({
+    // Content Security Policy restrictiva para una API REST
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        // Permitir Swagger UI (inline scripts/styles necesarios)
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https://validator.swagger.io'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    // Strict-Transport-Security: forzar HTTPS tras la primera visita (1 anio)
+    strictTransportSecurity: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    // Impedir que la API se cargue en un iframe
+    frameguard: { action: 'deny' },
+    // No permitir sniffing de MIME type
+    noSniff: true,
+    // Deshabilitar DNS prefetching
+    dnsPrefetchControl: { allow: false },
+    // Referrer-Policy (complementado en headersSeguridad)
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  }),
+);
 
 // CORS: permitir requests desde el frontend Angular
 app.use(
   cors({
     origin: env.CORS_ORIGIN,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    exposedHeaders: ['X-Request-Id', 'X-Response-Time'],
+    maxAge: 86400, // Cache preflight 24h (reduce OPTIONS requests)
   }),
 );
 
-// ------------------------------------------------------------------
-// 2. Parsing del body
-// ------------------------------------------------------------------
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// HTTP Parameter Pollution: toma ultimo valor en params duplicados
+app.use(protegerParametros);
+
+// Headers de seguridad adicionales (Permissions-Policy, X-Robots-Tag, etc.)
+app.use(headersSeguridad);
 
 // ------------------------------------------------------------------
-// 3. Compresion gzip/brotli en respuestas
+// 3. Parsing del body + validacion Content-Type
+// ------------------------------------------------------------------
+
+// Validar Content-Type antes de parsear
+app.use(validarContentType);
+
+// JSON body (limite 10MB para importaciones masivas de productos)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// ------------------------------------------------------------------
+// 4. Compresion gzip/brotli en respuestas
 // ------------------------------------------------------------------
 app.use(compression());
 
 // ------------------------------------------------------------------
-// 4. Logger de peticiones HTTP
+// 5. Logger de peticiones HTTP
 // ------------------------------------------------------------------
 if (env.NODE_ENV !== 'test') {
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
 // ------------------------------------------------------------------
-// 5. Rate limiting general (100 req/min por IP)
+// 6. Rate limiting general (100 req/min por IP)
 // ------------------------------------------------------------------
 app.use('/api/', limitarGeneral);
 
 // ------------------------------------------------------------------
-// 6. Health check (no requiere autenticacion)
+// 7. Health check (no requiere autenticacion)
 // ------------------------------------------------------------------
 app.get('/api/health', (_req, res) => {
   res.json(
@@ -94,63 +177,48 @@ app.get('/api/health', (_req, res) => {
 });
 
 // ------------------------------------------------------------------
-// 7. Rutas de modulos (se registraran conforme se desarrollen)
+// 8. Rutas de modulos
 // ------------------------------------------------------------------
-// TODO Fase 2: app.use('/api/v1/auth', authRoutes);
-// TODO Fase 3: app.use('/api/v1/categorias', categoriasRoutes);
-// TODO Fase 3: app.use('/api/v1/almacenes', almacenesRoutes);
-// TODO Fase 3: app.use('/api/v1/proveedores', proveedoresRoutes);
-// TODO Fase 3: app.use('/api/v1/productos', productosRoutes);
-// TODO Fase 4: app.use('/api/v1/clientes', clientesRoutes);
-// TODO Fase 4: app.use('/api/v1/inventario', inventarioRoutes);
-// TODO Fase 4: app.use('/api/v1/compras', comprasRoutes);
-// TODO Fase 4: app.use('/api/v1/turnos-caja', turnosCajaRoutes);
-// TODO Fase 4: app.use('/api/v1/ordenes', ordenesRoutes);
-// TODO Fase 4: app.use('/api/v1/entregas', entregasRoutes);
-// TODO Fase 5: app.use('/api/v1/reportes', reportesRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/categorias', categoriasRoutes);
+app.use('/api/v1/almacenes', almacenesRoutes);
+app.use('/api/v1/proveedores', proveedoresRoutes);
+app.use('/api/v1/productos', productosRoutes);
+app.use('/api/v1/clientes', clientesRoutes);
+app.use('/api/v1/inventario', inventarioRoutes);
+app.use('/api/v1/turnos-caja', turnosCajaRoutes);
+app.use('/api/v1/ordenes', ordenesRoutes);
+app.use('/api/v1/compras', comprasRoutes);
+app.use('/api/v1/entregas', entregasRoutes);
+app.use('/api/v1/usuarios', usuariosRoutes);
+app.use('/api/v1/reportes', reportesRoutes);
 
 // ------------------------------------------------------------------
-// 8. Documentacion Swagger (OpenAPI)
+// 9. Documentacion Swagger (OpenAPI) - deshabilitada en produccion
 // ------------------------------------------------------------------
-const swaggerSpec = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'ERP/POS API',
-      version: '1.0.0',
-      description: 'API REST del sistema ERP/POS para PyMEs',
-    },
-    servers: [
-      {
-        url: `http://localhost:${env.PORT}/api/v1`,
-        description: 'Servidor de desarrollo',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
-  },
-  // Escanear archivos de rutas para extraer @openapi JSDoc
-  apis: ['./src/modulos/**/*.routes.ts'],
-});
+if (swaggerHabilitado) {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, swaggerUiOptions),
+  );
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // Endpoint para obtener la especificacion JSON (util para clientes)
+  app.get('/api-docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // ------------------------------------------------------------------
-// 9. Ruta 404 para endpoints no encontrados
+// 10. Ruta 404 para endpoints no encontrados
 // ------------------------------------------------------------------
 app.use((_req, res) => {
   res.status(404).json(ApiResponse.fail('Ruta no encontrada', 'NOT_FOUND'));
 });
 
 // ------------------------------------------------------------------
-// 10. Manejo global de errores (SIEMPRE al final)
+// 11. Manejo global de errores (SIEMPRE al final)
 // ------------------------------------------------------------------
 app.use(manejarErrores);
 

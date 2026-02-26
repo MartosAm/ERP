@@ -1,0 +1,88 @@
+### ================================================================
+### REPORTES - REST Client (VS Code)
+### Solo ADMIN. Todos los endpoints son GET.
+### ================================================================
+
+@baseUrl = http://localhost:3001/api/v1/reportes
+
+### ---------------------------------------------------------------
+### 1. Login Admin
+### ---------------------------------------------------------------
+
+# @name login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### ---------------------------------------------------------------
+### Variables
+### ---------------------------------------------------------------
+
+@token = {{login.response.body.datos.token}}
+
+### ---------------------------------------------------------------
+### 2. Dashboard - KPIs en tiempo real
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 3. Resumen de ventas del mes actual
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/ventas?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 4. Resumen de ventas del anio
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/ventas?fechaDesde=2026-01-01&fechaHasta=2026-12-31
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 5. Top 10 productos mas vendidos
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/top-productos?fechaDesde=2026-01-01&fechaHasta=2026-12-31&limite=10
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 6. Top 5 productos del mes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/top-productos?fechaDesde=2026-02-01&fechaHasta=2026-02-28&limite=5
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 7. Desglose por metodo de pago
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/metodos-pago?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 8. Inventario valorizado
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/inventario
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 9. Rendimiento de cajeros del mes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/cajeros?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 10. Estadisticas de entregas del mes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/entregas?fechaDesde=2026-02-01&fechaHasta=2026-02-28
+Authorization: Bearer {{token}}

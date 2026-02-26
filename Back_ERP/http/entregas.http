@@ -1,0 +1,143 @@
+### ================================================================
+### ENTREGAS / DELIVERY - REST Client (VS Code)
+### ================================================================
+
+@baseUrl = http://localhost:3001/api/v1/entregas
+
+### ---------------------------------------------------------------
+### 1. Login Admin
+### ---------------------------------------------------------------
+
+# @name login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### ---------------------------------------------------------------
+### Variables
+### ---------------------------------------------------------------
+
+@token = {{login.response.body.datos.token}}
+
+### ---------------------------------------------------------------
+### 2. Crear entrega para una orden (ADMIN)
+### ---------------------------------------------------------------
+
+# @name crearEntrega
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "ordenId": "REEMPLAZAR_CON_ID_ORDEN",
+  "asignadoAId": "REEMPLAZAR_CON_ID_REPARTIDOR",
+  "direccionEntrega": "Av. Reforma 123, Col. Centro, CDMX",
+  "programadaEn": "2026-01-20T14:00:00Z",
+  "notas": "Tocar timbre dos veces"
+}
+
+### ---------------------------------------------------------------
+### 3. Crear entrega sin repartidor asignado
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "ordenId": "REEMPLAZAR_CON_ID_ORDEN_2",
+  "direccionEntrega": "Calle 5 de Mayo 456, Col. Juarez, CDMX"
+}
+
+### ---------------------------------------------------------------
+### 4. Mis entregas (para repartidor logueado)
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/mis-entregas
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 5. Listar entregas
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?pagina=1&limite=10
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 6. Filtrar entregas pendientes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?pendientes=true
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 7. Filtrar por estado
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?estado=EN_RUTA
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 8. Detalle de entrega
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/{{crearEntrega.response.body.datos.id}}
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 9. Marcar EN_RUTA
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/{{crearEntrega.response.body.datos.id}}/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "estado": "EN_RUTA",
+  "notas": "Saliendo del almacen"
+}
+
+### ---------------------------------------------------------------
+### 10. Marcar ENTREGADO
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/{{crearEntrega.response.body.datos.id}}/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "estado": "ENTREGADO",
+  "notas": "Entregado al cliente en persona"
+}
+
+### ---------------------------------------------------------------
+### 11. Marcar NO_ENTREGADO (requiere motivo)
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/{{crearEntrega.response.body.datos.id}}/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "estado": "NO_ENTREGADO",
+  "motivoFallo": "No se encontro al cliente en la direccion indicada",
+  "notas": "Se intento entregar 2 veces"
+}
+
+### ---------------------------------------------------------------
+### 12. Reprogramar entrega
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/{{crearEntrega.response.body.datos.id}}/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "estado": "REPROGRAMADO",
+  "programadaEn": "2026-01-25T10:00:00Z",
+  "notas": "Cliente solicito cambio de fecha"
+}

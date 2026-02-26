@@ -13,16 +13,17 @@
 /**
  * Payload contenido en el JWT.
  * Estos campos se establecen al hacer login y se verifican en cada request.
+ * Los nombres estan en espanol para consistencia con el schema Prisma.
  */
 export interface JwtPayload {
-  /** ID del usuario en la tabla User */
-  userId: string;
+  /** ID del usuario en la tabla usuarios */
+  usuarioId: string;
   /** ID de la empresa/tenant del usuario */
-  companyId: string;
+  empresaId: string;
   /** Rol del usuario: ADMIN, CAJERO o REPARTIDOR */
-  role: string;
-  /** ID de la sesion activa en la tabla Session */
-  sessionId: string;
+  rol: string;
+  /** ID de la sesion activa en la tabla sesiones */
+  sesionId: string;
 }
 
 // Extender la interfaz Request de Express para incluir el payload JWT

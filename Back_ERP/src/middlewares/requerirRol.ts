@@ -28,7 +28,7 @@ type Rol = 'ADMIN' | 'CAJERO' | 'REPARTIDOR';
 export const requerirRol =
   (...roles: Rol[]) =>
   (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role as Rol)) {
+    if (!req.user || !roles.includes(req.user.rol as Rol)) {
       return next(new ErrorAcceso('No tiene permisos para esta operacion'));
     }
     next();

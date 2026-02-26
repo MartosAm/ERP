@@ -1,0 +1,130 @@
+### ============================================================
+### INVENTARIO - Movimientos y existencias
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. VER existencias actuales
+### ============================================================
+GET {{baseUrl}}/inventario/existencias?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 2. FILTRAR existencias por almacen
+###    Reemplazar {almacenId} con ID real
+### ============================================================
+GET {{baseUrl}}/inventario/existencias?almacenId=REEMPLAZAR_CON_ID
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 3. FILTRAR existencias con stock bajo
+### ============================================================
+GET {{baseUrl}}/inventario/existencias?stockBajo=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. REGISTRAR entrada de mercancia
+###    Reemplazar productoId y almacenId con IDs reales
+### ============================================================
+# @name entradaMercancia
+POST {{baseUrl}}/inventario/movimientos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+  "almacenId": "REEMPLAZAR_CON_ID_ALMACEN",
+  "tipoMovimiento": "ENTRADA",
+  "cantidad": 48,
+  "costoUnitario": 8.50,
+  "motivo": "Compra a proveedor - Factura #1234"
+}
+
+### ============================================================
+### 5. REGISTRAR salida manual
+### ============================================================
+POST {{baseUrl}}/inventario/movimientos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+  "almacenId": "REEMPLAZAR_CON_ID_ALMACEN",
+  "tipoMovimiento": "SALIDA_VENTA",
+  "cantidad": 5,
+  "motivo": "Salida por venta directa"
+}
+
+### ============================================================
+### 6. REGISTRAR ajuste de inventario
+### ============================================================
+POST {{baseUrl}}/inventario/movimientos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+  "almacenId": "REEMPLAZAR_CON_ID_ALMACEN",
+  "tipoMovimiento": "AJUSTE_MANUAL",
+  "cantidad": 2,
+  "motivo": "Ajuste por conteo fisico - sobrante"
+}
+
+### ============================================================
+### 7. REGISTRAR merma
+### ============================================================
+POST {{baseUrl}}/inventario/movimientos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+  "almacenId": "REEMPLAZAR_CON_ID_ALMACEN",
+  "tipoMovimiento": "MERMA",
+  "cantidad": 3,
+  "motivo": "Producto danado en almacen"
+}
+
+### ============================================================
+### 8. REGISTRAR traslado entre almacenes
+### ============================================================
+POST {{baseUrl}}/inventario/movimientos
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+  "almacenId": "REEMPLAZAR_CON_ID_ALMACEN_ORIGEN",
+  "almacenDestinoId": "REEMPLAZAR_CON_ID_ALMACEN_DESTINO",
+  "tipoMovimiento": "TRASLADO",
+  "cantidad": 12,
+  "motivo": "Traslado a sucursal norte"
+}
+
+### ============================================================
+### 9. HISTORIAL de movimientos
+### ============================================================
+GET {{baseUrl}}/inventario/movimientos?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 10. HISTORIAL filtrado por tipo
+### ============================================================
+GET {{baseUrl}}/inventario/movimientos?tipoMovimiento=ENTRADA
+Authorization: Bearer {{token}}

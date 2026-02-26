@@ -1,0 +1,101 @@
+### ============================================================
+### CATEGORIAS - CRUD Jerarquico
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login para obtener token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. CREAR categoria raiz
+### ============================================================
+# @name crearCategoria
+POST {{baseUrl}}/categorias
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Abarrotes",
+  "descripcion": "Productos de abarrotes y despensa",
+  "colorHex": "#FF5733",
+  "nombreIcono": "shopping_basket"
+}
+
+###
+@categoriaId = {{crearCategoria.response.body.datos.id}}
+
+### ============================================================
+### 2. CREAR subcategoria
+### ============================================================
+# @name crearSubcategoria
+POST {{baseUrl}}/categorias
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Bebidas",
+  "descripcion": "Refrescos, aguas y jugos",
+  "padreId": "{{categoriaId}}",
+  "colorHex": "#3498DB"
+}
+
+### ============================================================
+### 3. LISTAR categorias con paginacion
+### ============================================================
+GET {{baseUrl}}/categorias?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. LISTAR solo categorias raiz
+### ============================================================
+GET {{baseUrl}}/categorias?soloRaiz=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 5. BUSCAR categorias
+### ============================================================
+GET {{baseUrl}}/categorias?buscar=abarrotes
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 6. OBTENER arbol jerarquico (para selectors UI)
+### ============================================================
+GET {{baseUrl}}/categorias/arbol
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 7. OBTENER categoria por ID
+### ============================================================
+GET {{baseUrl}}/categorias/{{categoriaId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 8. ACTUALIZAR categoria
+### ============================================================
+PATCH {{baseUrl}}/categorias/{{categoriaId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Abarrotes y Despensa",
+  "colorHex": "#E74C3C"
+}
+
+### ============================================================
+### 9. DESACTIVAR categoria (soft delete)
+### ============================================================
+DELETE {{baseUrl}}/categorias/{{categoriaId}}
+Authorization: Bearer {{token}}

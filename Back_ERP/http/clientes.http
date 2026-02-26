@@ -1,0 +1,96 @@
+### ============================================================
+### CLIENTES - CRUD con credito
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. CREAR cliente con credito
+### ============================================================
+# @name crearCliente
+POST {{baseUrl}}/clientes
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Laura Hernandez",
+  "telefono": "5543218765",
+  "correo": "laura@gmail.com",
+  "direccion": "Calle Reforma #78, Col. Centro",
+  "rfc": "HERL900101ABC",
+  "limiteCredito": 3000,
+  "diasCredito": 30,
+  "notas": "Cliente frecuente, paga puntual"
+}
+
+###
+@clienteId = {{crearCliente.response.body.datos.id}}
+
+### ============================================================
+### 2. CREAR cliente sin credito
+### ============================================================
+POST {{baseUrl}}/clientes
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Roberto Diaz",
+  "telefono": "5567891234"
+}
+
+### ============================================================
+### 3. LISTAR clientes
+### ============================================================
+GET {{baseUrl}}/clientes?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. BUSCAR clientes
+### ============================================================
+GET {{baseUrl}}/clientes?buscar=laura
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 5. FILTRAR clientes con credito
+### ============================================================
+GET {{baseUrl}}/clientes?conCredito=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 6. OBTENER cliente por ID
+### ============================================================
+GET {{baseUrl}}/clientes/{{clienteId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 7. ACTUALIZAR cliente
+### ============================================================
+PATCH {{baseUrl}}/clientes/{{clienteId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "limiteCredito": 5000,
+  "notas": "Cliente VIP, limite aumentado"
+}
+
+### ============================================================
+### 8. ELIMINAR cliente
+### ============================================================
+DELETE {{baseUrl}}/clientes/{{clienteId}}
+Authorization: Bearer {{token}}

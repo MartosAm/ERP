@@ -1,0 +1,505 @@
+/**
+ * src/modulos/ordenes/ordenes.service.ts
+ * ------------------------------------------------------------------
+ * Logica de negocio del modulo de ordenes / ventas POS.
+ * Modulo mas critico del sistema. Todo usa transacciones atomicas.
+ *
+ * Reglas de negocio:
+ * - Toda venta descuenta inventario automaticamente
+ * - El numero de orden se genera secuencialmente (VTA-2026-00001)
+ * - Pagos mixtos soportados (efectivo + tarjeta, etc.)
+ * - Credito de cliente se valida contra limite disponible
+ * - Solo ADMIN puede cancelar ordenes (retorna stock)
+ * - Se requiere turno de caja abierto para crear ordenes
+ * ------------------------------------------------------------------
+ */
+
+import { Prisma } from '@prisma/client';
+import dayjs from 'dayjs';
+import { prisma } from '../../config/database';
+import { cache, CacheTTL, invalidarCacheModulo } from '../../config/cache';
+import { paginar, construirMeta } from '../../compartido/paginacion';
+import {
+  ErrorNoEncontrado,
+  ErrorNegocio,
+  ErrorPeticion,
+} from '../../compartido/errores';
+import { logger } from '../../compartido/logger';
+import type { CrearOrdenDto, CancelarOrdenDto, FiltroOrdenesDto } from './ordenes.schema';
+
+const MODULO = 'ORDENES';
+
+export const OrdenesService = {
+
+  /**
+   * Crea una orden de venta completa en una transaccion atomica.
+   *
+   * Flujo:
+   * 1. Verificar turno de caja abierto
+   * 2. Validar productos y stock disponible
+   * 3. Validar credito del cliente (si aplica)
+   * 4. Generar numero de orden secuencial
+   * 5. Crear orden + detalles + pagos
+   * 6. Descontar inventario (MovimientoInventario)
+   * 7. Actualizar credito del cliente (si aplica)
+   */
+  async crear(dto: CrearOrdenDto, usuarioId: string, empresaId: string) {
+    // 1. Verificar turno de caja abierto
+    const turnoActivo = await prisma.turnoCaja.findFirst({
+      where: { usuarioId, cerradaEn: null },
+      include: { cajaRegistradora: true },
+    });
+
+    if (!turnoActivo) {
+      throw new ErrorNegocio('Debes abrir un turno de caja antes de crear ordenes');
+    }
+
+    // 2. Validar productos y calcular totales
+    const productosIds = dto.detalles.map((d) => d.productoId);
+    const productos = await prisma.producto.findMany({
+      where: { id: { in: productosIds }, empresaId, activo: true },
+      include: {
+        existencias: {
+          where: {
+            almacen: { esPrincipal: true, empresaId },
+          },
+        },
+      },
+    });
+
+    if (productos.length !== productosIds.length) {
+      throw new ErrorPeticion('Uno o mas productos no existen o estan inactivos');
+    }
+
+    // Mapear productos para acceso rapido
+    const productoMap = new Map(productos.map((p) => [p.id, p]));
+
+    // Calcular totales y verificar stock
+    let subtotal = 0;
+    let montoImpuesto = 0;
+    let montoDescuento = 0;
+
+    const detallesCalculados = dto.detalles.map((item) => {
+      const producto = productoMap.get(item.productoId)!;
+
+      // Verificar stock si el producto rastrea inventario
+      if (producto.rastrearInventario) {
+        const existencia = producto.existencias[0];
+        const stockDisponible = existencia ? Number(existencia.cantidad) : 0;
+
+        if (stockDisponible < item.cantidad) {
+          throw new ErrorNegocio(
+            `Stock insuficiente para "${producto.nombre}". Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`,
+          );
+        }
+      }
+
+      const itemSubtotal = item.precioUnitario * item.cantidad;
+      const itemDescuento = item.descuento * item.cantidad;
+      const baseImponible = itemSubtotal - itemDescuento;
+      const impuesto = producto.impuestoIncluido
+        ? baseImponible - baseImponible / (1 + Number(producto.tasaImpuesto))
+        : baseImponible * Number(producto.tasaImpuesto);
+
+      subtotal += itemSubtotal;
+      montoDescuento += itemDescuento;
+      montoImpuesto += impuesto;
+
+      return {
+        productoId: item.productoId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        precioCosto: Number(producto.precioCosto),
+        descuento: item.descuento,
+        tasaImpuesto: Number(producto.tasaImpuesto),
+        subtotal: itemSubtotal - itemDescuento,
+      };
+    });
+
+    const total = subtotal - montoDescuento + (productos[0]?.impuestoIncluido ? 0 : montoImpuesto);
+
+    // 3. Validar pagos
+    const totalPagos = dto.pagos.reduce((sum, p) => sum + p.monto, 0);
+    const usaCredito = dto.pagos.some((p) => p.metodo === 'CREDITO_CLIENTE');
+
+    if (!usaCredito && totalPagos < total) {
+      throw new ErrorNegocio(
+        `Monto pagado ($${totalPagos.toFixed(2)}) es menor al total ($${total.toFixed(2)})`,
+      );
+    }
+
+    // 4. Validar credito del cliente si se usa
+    let cliente = null;
+    if (usaCredito) {
+      if (!dto.clienteId) {
+        throw new ErrorPeticion('Se requiere un cliente para pago a credito');
+      }
+
+      cliente = await prisma.cliente.findFirst({
+        where: { id: dto.clienteId, empresaId, activo: true },
+      });
+
+      if (!cliente) {
+        throw new ErrorNoEncontrado('Cliente no encontrado');
+      }
+
+      const montoCredito = dto.pagos
+        .filter((p) => p.metodo === 'CREDITO_CLIENTE')
+        .reduce((sum, p) => sum + p.monto, 0);
+
+      const creditoDisponible =
+        Number(cliente.limiteCredito) - Number(cliente.creditoUtilizado);
+
+      if (montoCredito > creditoDisponible) {
+        throw new ErrorNegocio(
+          `Credito insuficiente. Disponible: $${creditoDisponible.toFixed(2)}, Solicitado: $${montoCredito.toFixed(2)}`,
+        );
+      }
+    }
+
+    // 5. Generar numero de orden secuencial
+    const anio = dayjs().format('YYYY');
+    const ultimaOrden = await prisma.orden.findFirst({
+      where: {
+        empresaId,
+        numeroOrden: { startsWith: `VTA-${anio}-` },
+      },
+      orderBy: { creadoEn: 'desc' },
+      select: { numeroOrden: true },
+    });
+
+    let secuencial = 1;
+    if (ultimaOrden) {
+      const partes = ultimaOrden.numeroOrden.split('-');
+      secuencial = parseInt(partes[2], 10) + 1;
+    }
+
+    const numeroOrden = `VTA-${anio}-${String(secuencial).padStart(5, '0')}`;
+
+    // Determinar metodo de pago principal
+    const metodoPago = dto.pagos.length === 1
+      ? dto.pagos[0].metodo
+      : 'MIXTO';
+
+    // Calcular cambio (solo aplica a efectivo)
+    const cambio = totalPagos > total ? totalPagos - total : 0;
+
+    // 6. Transaccion atomica: crear orden + detalles + pagos + descontar stock + credito
+    const orden = await prisma.$transaction(async (tx) => {
+      // Crear la orden
+      const nuevaOrden = await tx.orden.create({
+        data: {
+          empresaId,
+          numeroOrden,
+          estado: 'COMPLETADA',
+          clienteId: dto.clienteId ?? null,
+          cajaRegistradoraId: turnoActivo.cajaRegistradoraId,
+          turnoCajaId: turnoActivo.id,
+          creadoPorId: usuarioId,
+          subtotal,
+          montoImpuesto,
+          montoDescuento,
+          total,
+          metodoPago: metodoPago as any,
+          montoPagado: totalPagos,
+          cambio,
+          pagado: true,
+          notas: dto.notas ?? null,
+        },
+      });
+
+      // Crear detalles de la orden
+      await tx.detalleOrden.createMany({
+        data: detallesCalculados.map((d) => ({
+          ordenId: nuevaOrden.id,
+          ...d,
+        })),
+      });
+
+      // Registrar pagos
+      await tx.pago.createMany({
+        data: dto.pagos.map((p) => ({
+          ordenId: nuevaOrden.id,
+          metodo: p.metodo as any,
+          monto: p.monto,
+          referencia: p.referencia ?? null,
+        })),
+      });
+
+      // Descontar inventario por cada producto
+      for (const detalle of detallesCalculados) {
+        const producto = productoMap.get(detalle.productoId)!;
+
+        if (!producto.rastrearInventario) continue;
+
+        const existencia = producto.existencias[0];
+        if (!existencia) continue;
+
+        const cantidadAnterior = Number(existencia.cantidad);
+        const cantidadPosterior = cantidadAnterior - detalle.cantidad;
+
+        // Actualizar existencia
+        await tx.existencia.update({
+          where: { id: existencia.id },
+          data: { cantidad: cantidadPosterior },
+        });
+
+        // Registrar movimiento de inventario
+        await tx.movimientoInventario.create({
+          data: {
+            productoId: detalle.productoId,
+            almacenId: existencia.almacenId,
+            tipoMovimiento: 'SALIDA_VENTA',
+            cantidad: detalle.cantidad,
+            cantidadAnterior,
+            cantidadPosterior,
+            costoUnitario: detalle.precioCosto,
+            referenciaId: nuevaOrden.id,
+            referenciaTipo: 'ORDEN',
+            usuarioId,
+          },
+        });
+      }
+
+      // Actualizar credito del cliente si aplica
+      if (usaCredito && dto.clienteId) {
+        const montoCredito = dto.pagos
+          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
+          .reduce((sum, p) => sum + p.monto, 0);
+
+        await tx.cliente.update({
+          where: { id: dto.clienteId },
+          data: {
+            creditoUtilizado: {
+              increment: montoCredito,
+            },
+          },
+        });
+      }
+
+      // Retornar orden con relaciones
+      return tx.orden.findUnique({
+        where: { id: nuevaOrden.id },
+        include: {
+          detalles: {
+            include: {
+              producto: { select: { id: true, nombre: true, sku: true } },
+            },
+          },
+          pagos: true,
+          cliente: { select: { id: true, nombre: true } },
+          creadoPor: { select: { id: true, nombre: true } },
+        },
+      });
+    });
+
+    invalidarCacheModulo(MODULO);
+    invalidarCacheModulo('INVENTARIO');
+
+    logger.info({
+      mensaje: 'Orden creada',
+      ordenId: orden?.id,
+      numeroOrden,
+      total,
+      items: dto.detalles.length,
+      usuarioId,
+    });
+
+    return orden;
+  },
+
+  /**
+   * Cancela una orden existente. Solo ADMIN.
+   * Devuelve el stock al inventario y libera credito del cliente.
+   */
+  async cancelar(ordenId: string, dto: CancelarOrdenDto, usuarioId: string, empresaId: string) {
+    const orden = await prisma.orden.findFirst({
+      where: { id: ordenId, empresaId },
+      include: {
+        detalles: {
+          include: {
+            producto: {
+              include: {
+                existencias: {
+                  where: { almacen: { esPrincipal: true } },
+                },
+              },
+            },
+          },
+        },
+        pagos: true,
+      },
+    });
+
+    if (!orden) {
+      throw new ErrorNoEncontrado('Orden no encontrada');
+    }
+
+    if (orden.estado === 'CANCELADA') {
+      throw new ErrorNegocio('La orden ya esta cancelada');
+    }
+
+    if (orden.estado === 'DEVUELTA') {
+      throw new ErrorNegocio('No se puede cancelar una orden devuelta');
+    }
+
+    // Transaccion: cancelar orden + devolver stock + liberar credito
+    const ordenCancelada = await prisma.$transaction(async (tx) => {
+      // Actualizar estado de la orden
+      const actualizada = await tx.orden.update({
+        where: { id: ordenId },
+        data: {
+          estado: 'CANCELADA',
+          motivoCancelacion: dto.motivoCancelacion,
+          aprobadoPorId: usuarioId,
+        },
+      });
+
+      // Devolver stock por cada detalle
+      for (const detalle of orden.detalles) {
+        if (!detalle.producto.rastrearInventario) continue;
+
+        const existencia = detalle.producto.existencias[0];
+        if (!existencia) continue;
+
+        const cantidadAnterior = Number(existencia.cantidad);
+        const cantidadPosterior = cantidadAnterior + Number(detalle.cantidad);
+
+        await tx.existencia.update({
+          where: { id: existencia.id },
+          data: { cantidad: cantidadPosterior },
+        });
+
+        await tx.movimientoInventario.create({
+          data: {
+            productoId: detalle.productoId,
+            almacenId: existencia.almacenId,
+            tipoMovimiento: 'DEVOLUCION',
+            cantidad: Number(detalle.cantidad),
+            cantidadAnterior,
+            cantidadPosterior,
+            costoUnitario: Number(detalle.precioCosto),
+            referenciaId: ordenId,
+            referenciaTipo: 'CANCELACION_ORDEN',
+            usuarioId,
+          },
+        });
+      }
+
+      // Liberar credito del cliente si se uso
+      if (orden.clienteId) {
+        const montoCredito = orden.pagos
+          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
+          .reduce((sum, p) => sum + Number(p.monto), 0);
+
+        if (montoCredito > 0) {
+          await tx.cliente.update({
+            where: { id: orden.clienteId },
+            data: {
+              creditoUtilizado: { decrement: montoCredito },
+            },
+          });
+        }
+      }
+
+      return actualizada;
+    });
+
+    invalidarCacheModulo(MODULO);
+    invalidarCacheModulo('INVENTARIO');
+
+    logger.info({
+      mensaje: 'Orden cancelada',
+      ordenId,
+      motivo: dto.motivoCancelacion,
+      usuarioId,
+    });
+
+    return ordenCancelada;
+  },
+
+  /**
+   * Obtiene una orden por ID con todos sus detalles.
+   */
+  async obtenerPorId(ordenId: string, empresaId: string) {
+    const orden = await prisma.orden.findFirst({
+      where: { id: ordenId, empresaId },
+      include: {
+        detalles: {
+          include: {
+            producto: { select: { id: true, nombre: true, sku: true, imagenUrl: true } },
+          },
+        },
+        pagos: true,
+        cliente: { select: { id: true, nombre: true, telefono: true } },
+        creadoPor: { select: { id: true, nombre: true } },
+        cajaRegistradora: { select: { id: true, nombre: true } },
+        entrega: true,
+      },
+    });
+
+    if (!orden) {
+      throw new ErrorNoEncontrado('Orden no encontrada');
+    }
+
+    return orden;
+  },
+
+  /**
+   * Lista ordenes con filtros y paginacion.
+   */
+  async listar(filtros: FiltroOrdenesDto, empresaId: string) {
+    const cacheKey = `${MODULO}:listar:${empresaId}:${JSON.stringify(filtros)}`;
+    const cached = cache.get<{ datos: unknown; meta: unknown }>(cacheKey);
+    if (cached) return cached;
+
+    const parametros = { pagina: filtros.pagina, limite: filtros.limite };
+
+    const where: Prisma.OrdenWhereInput = { empresaId };
+
+    if (filtros.estado) {
+      where.estado = filtros.estado;
+    }
+
+    if (filtros.clienteId) {
+      where.clienteId = filtros.clienteId;
+    }
+
+    if (filtros.fechaDesde || filtros.fechaHasta) {
+      where.creadoEn = {};
+      if (filtros.fechaDesde) {
+        (where.creadoEn as any).gte = new Date(filtros.fechaDesde);
+      }
+      if (filtros.fechaHasta) {
+        (where.creadoEn as any).lte = new Date(filtros.fechaHasta);
+      }
+    }
+
+    if (filtros.buscar) {
+      where.OR = [
+        { numeroOrden: { contains: filtros.buscar, mode: 'insensitive' } },
+        { cliente: { nombre: { contains: filtros.buscar, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [datos, total] = await Promise.all([
+      prisma.orden.findMany({
+        where,
+        ...paginar(parametros),
+        orderBy: { creadoEn: 'desc' },
+        include: {
+          cliente: { select: { id: true, nombre: true } },
+          creadoPor: { select: { id: true, nombre: true } },
+          _count: { select: { detalles: true } },
+        },
+      }),
+      prisma.orden.count({ where }),
+    ]);
+
+    const meta = construirMeta(total, parametros);
+    const resultado = { datos, meta };
+
+    cache.set(cacheKey, resultado, CacheTTL.PRODUCTOS); // 120s
+    return resultado;
+  },
+};

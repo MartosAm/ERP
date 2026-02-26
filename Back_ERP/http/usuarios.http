@@ -1,0 +1,162 @@
+### ================================================================
+### GESTION DE USUARIOS - REST Client (VS Code)
+### Solo ADMIN. Horarios, estados, sesiones.
+### ================================================================
+
+@baseUrl = http://localhost:3001/api/v1/usuarios
+
+### ---------------------------------------------------------------
+### 1. Login Admin
+### ---------------------------------------------------------------
+
+# @name login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### ---------------------------------------------------------------
+### Variables
+### ---------------------------------------------------------------
+
+@token = {{login.response.body.datos.token}}
+
+### ---------------------------------------------------------------
+### 2. Listar todos los usuarios
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 3. Filtrar solo cajeros
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?rol=CAJERO
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 4. Filtrar solo repartidores
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?rol=REPARTIDOR
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 5. Filtrar usuarios activos
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?activo=true
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 6. Filtrar usuarios inactivos
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?activo=false
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 7. Buscar usuario por nombre o correo
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?buscar=cajero
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 8. Detalle de un usuario
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 9. Actualizar datos basicos
+### ---------------------------------------------------------------
+
+PUT {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Cajero Principal",
+  "telefono": "5559876543"
+}
+
+### ---------------------------------------------------------------
+### 10. Asignar horario laboral (Lun-Vie 08:00-18:00)
+### ---------------------------------------------------------------
+
+PUT {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/horario
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "horarioInicio": "08:00",
+  "horarioFin": "18:00",
+  "diasLaborales": [1, 2, 3, 4, 5]
+}
+
+### ---------------------------------------------------------------
+### 11. Asignar horario laboral (Lun-Sab 06:00-22:00)
+### ---------------------------------------------------------------
+
+PUT {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/horario
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "horarioInicio": "06:00",
+  "horarioFin": "22:00",
+  "diasLaborales": [1, 2, 3, 4, 5, 6]
+}
+
+### ---------------------------------------------------------------
+### 12. Quitar restriccion de horario (acceso 24/7)
+### ---------------------------------------------------------------
+
+PUT {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/horario
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "horarioInicio": null,
+  "horarioFin": null,
+  "diasLaborales": []
+}
+
+### ---------------------------------------------------------------
+### 13. Desactivar usuario (inhabilitar acceso)
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "activo": false,
+  "motivo": "Suspension temporal por auditoria interna"
+}
+
+### ---------------------------------------------------------------
+### 14. Reactivar usuario
+### ---------------------------------------------------------------
+
+PATCH {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/estado
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "activo": true,
+  "motivo": "Reingreso autorizado"
+}
+
+### ---------------------------------------------------------------
+### 15. Cerrar todas las sesiones de un usuario
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/REEMPLAZAR_CON_ID_USUARIO/cerrar-sesiones
+Authorization: Bearer {{token}}

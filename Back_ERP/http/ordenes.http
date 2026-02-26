@@ -1,0 +1,160 @@
+### ================================================================
+### ORDENES / VENTAS POS - REST Client (VS Code)
+### ================================================================
+
+@baseUrl = http://localhost:3001/api/v1/ordenes
+
+### ---------------------------------------------------------------
+### 1. Login Admin
+### ---------------------------------------------------------------
+
+# @name login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### ---------------------------------------------------------------
+### Variables
+### ---------------------------------------------------------------
+
+@token = {{login.response.body.datos.token}}
+
+### ---------------------------------------------------------------
+### 2. Crear orden de venta (pago efectivo)
+### ---------------------------------------------------------------
+
+# @name crearOrden
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "detalles": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 2,
+      "precioUnitario": 25.00,
+      "descuento": 0
+    }
+  ],
+  "pagos": [
+    {
+      "metodo": "EFECTIVO",
+      "monto": 50.00
+    }
+  ],
+  "notas": "Venta desde test"
+}
+
+### ---------------------------------------------------------------
+### 3. Crear orden con pago mixto (efectivo + tarjeta)
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "detalles": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 1,
+      "precioUnitario": 199.99,
+      "descuento": 0
+    },
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO_2",
+      "cantidad": 3,
+      "precioUnitario": 15.50,
+      "descuento": 2.00
+    }
+  ],
+  "pagos": [
+    {
+      "metodo": "EFECTIVO",
+      "monto": 150.00
+    },
+    {
+      "metodo": "TARJETA_DEBITO",
+      "monto": 100.00,
+      "referencia": "REF-001234"
+    }
+  ]
+}
+
+### ---------------------------------------------------------------
+### 4. Crear orden con credito de cliente
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": "REEMPLAZAR_CON_ID_CLIENTE",
+  "detalles": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 5,
+      "precioUnitario": 100.00,
+      "descuento": 10
+    }
+  ],
+  "pagos": [
+    {
+      "metodo": "CREDITO_CLIENTE",
+      "monto": 450.00
+    }
+  ]
+}
+
+### ---------------------------------------------------------------
+### 5. Listar ordenes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?pagina=1&limite=10
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 6. Listar ordenes completadas
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?estado=COMPLETADA
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 7. Buscar orden por numero
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?buscar=VTA-2026
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 8. Filtrar por rango de fechas
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?fechaDesde=2026-01-01&fechaHasta=2026-12-31
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 9. Detalle de orden
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/{{crearOrden.response.body.datos.id}}
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 10. Cancelar orden (solo ADMIN)
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/{{crearOrden.response.body.datos.id}}/cancelar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivoCancelacion": "El cliente solicito la cancelacion de la compra"
+}

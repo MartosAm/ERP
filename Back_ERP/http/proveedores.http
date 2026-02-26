@@ -1,0 +1,77 @@
+### ============================================================
+### PROVEEDORES - CRUD
+### Archivo para probar con REST Client de VS Code
+### ============================================================
+
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+###
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 1. CREAR proveedor
+### ============================================================
+# @name crearProveedor
+POST {{baseUrl}}/proveedores
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Distribuidora del Norte",
+  "nombreContacto": "Roberto Sanchez",
+  "telefono": "8112345678",
+  "correo": "ventas@distnorte.com",
+  "direccion": "Av. Industrial #456, Monterrey",
+  "rfc": "DNO010101ABC",
+  "notas": "Entregas los martes y jueves"
+}
+
+###
+@proveedorId = {{crearProveedor.response.body.datos.id}}
+
+### ============================================================
+### 2. LISTAR proveedores
+### ============================================================
+GET {{baseUrl}}/proveedores?pagina=1&limite=20
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 3. BUSCAR proveedores
+### ============================================================
+GET {{baseUrl}}/proveedores?buscar=distribuidora
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. OBTENER proveedor por ID
+### ============================================================
+GET {{baseUrl}}/proveedores/{{proveedorId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 5. ACTUALIZAR proveedor
+### ============================================================
+PATCH {{baseUrl}}/proveedores/{{proveedorId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "telefono": "8198765432",
+  "notas": "Entregas los lunes, miercoles y viernes"
+}
+
+### ============================================================
+### 6. ELIMINAR proveedor
+### ============================================================
+DELETE {{baseUrl}}/proveedores/{{proveedorId}}
+Authorization: Bearer {{token}}

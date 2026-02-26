@@ -1,0 +1,139 @@
+### ============================================================
+### AUTH - Modulo de Autenticacion
+### Archivo para probar con la extension REST Client de VS Code
+### ============================================================
+
+### Variables globales
+@baseUrl = http://localhost:3001/api/v1
+@contentType = application/json
+
+### ============================================================
+### 1. LOGIN - Obtener token JWT (admin)
+### ============================================================
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### Guardar el token de la respuesta anterior
+@token = {{login.response.body.datos.token}}
+
+### ============================================================
+### 2. LOGIN - Cajero
+### ============================================================
+# @name loginCajero
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "cajero@minegocio.com",
+  "contrasena": "Cajero12345"
+}
+
+@tokenCajero = {{loginCajero.response.body.datos.token}}
+
+### ============================================================
+### 3. REGISTRO - Crear nuevo usuario (solo ADMIN)
+###    Contrasena se hashea con bcrypt automaticamente
+### ============================================================
+# @name registro
+POST {{baseUrl}}/auth/registro
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Pedro Martinez",
+  "correo": "pedro@minegocio.com",
+  "contrasena": "Pedro12345",
+  "rol": "CAJERO",
+  "telefono": "5512345678",
+  "horarioInicio": "08:00",
+  "horarioFin": "18:00",
+  "diasLaborales": [1, 2, 3, 4, 5]
+}
+
+### ============================================================
+### 4. REGISTRO - Crear repartidor
+### ============================================================
+POST {{baseUrl}}/auth/registro
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Carlos Repartidor",
+  "correo": "carlos@minegocio.com",
+  "contrasena": "Carlos12345",
+  "rol": "REPARTIDOR",
+  "telefono": "5598765432",
+  "horarioInicio": "09:00",
+  "horarioFin": "20:00",
+  "diasLaborales": [1, 2, 3, 4, 5, 6]
+}
+
+### ============================================================
+### 5. REGISTRO - Error: correo duplicado (409)
+### ============================================================
+POST {{baseUrl}}/auth/registro
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Admin Duplicado",
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345",
+  "rol": "ADMIN"
+}
+
+### ============================================================
+### 6. REGISTRO - Error: contrasena debil (400)
+### ============================================================
+POST {{baseUrl}}/auth/registro
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Usuario Debil",
+  "correo": "debil@minegocio.com",
+  "contrasena": "1234",
+  "rol": "CAJERO"
+}
+
+### ============================================================
+### 7. PERFIL - Obtener datos del usuario autenticado
+### ============================================================
+GET {{baseUrl}}/auth/perfil
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 8. CAMBIAR PIN - Cambiar PIN de autorizacion (solo ADMIN)
+###    Reemplazar {usuarioId} con un ID real
+### ============================================================
+POST {{baseUrl}}/auth/cambiar-pin
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "usuarioId": "REEMPLAZAR_CON_ID_REAL",
+  "nuevoPin": "1234"
+}
+
+### ============================================================
+### 9. LOGIN - Credenciales invalidas (401)
+### ============================================================
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "contrasenaIncorrecta"
+}
+
+### ============================================================
+### 10. LOGOUT - Cerrar sesion
+### ============================================================
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}

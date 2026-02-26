@@ -1,0 +1,73 @@
+### ================================================================
+### TURNOS DE CAJA - REST Client (VS Code)
+### ================================================================
+
+@baseUrl = http://localhost:3001/api/v1/turnos-caja
+
+### ---------------------------------------------------------------
+### 1. Login Admin (para obtener token)
+### ---------------------------------------------------------------
+
+# @name login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@minegocio.com",
+  "contrasena": "Admin12345"
+}
+
+### ---------------------------------------------------------------
+### Variables del token
+### ---------------------------------------------------------------
+
+@token = {{login.response.body.datos.token}}
+
+### ---------------------------------------------------------------
+### 2. Abrir turno de caja
+### ---------------------------------------------------------------
+
+# @name abrirTurno
+POST {{baseUrl}}/abrir
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "cajaRegistradoraId": "REEMPLAZAR_CON_ID_CAJA",
+  "montoApertura": 500.00,
+  "notas": "Apertura matutina"
+}
+
+### ---------------------------------------------------------------
+### 3. Ver turno activo
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/activo
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 4. Listar turnos
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?pagina=1&limite=10
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 5. Obtener turno por ID
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}/{{abrirTurno.response.body.datos.id}}
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 6. Cerrar turno de caja
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/{{abrirTurno.response.body.datos.id}}/cerrar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "montoCierre": 1250.50,
+  "notas": "Turno sin novedades"
+}
