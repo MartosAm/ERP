@@ -1,0 +1,669 @@
+// ============================================================
+// PRISMA SCHEMA - Sistema ERP/POS para PyMEs
+// Stack: Node.js 20 + PostgreSQL 16 + Angular 17
+// Roles: ADMIN, CAJERO, REPARTIDOR
+//
+// Convencion de nombres:
+// - Modelos: PascalCase en espanol (Empresa, Usuario, Producto)
+// - Campos: camelCase en espanol (nombre, correo, creadoEn)
+// - Tablas BD: snake_case via @@map (empresas, usuarios, productos)
+// - Enums: UPPER_SNAKE_CASE en espanol (EFECTIVO, PENDIENTE)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+/// Roles del sistema. Define los permisos de cada usuario.
+enum Rol {
+  ADMIN // Dueno o gerente. Acceso total.
+  CAJERO // Empleado de caja. Ventas y consultas.
+  REPARTIDOR // Entregas a domicilio. Solo sus asignaciones.
+}
+
+/// Tipo de unidad de medida del producto.
+enum TipoUnidad {
+  PIEZA // Unidades individuales (pza)
+  METRO // Longitud (m, cm)
+  KILO // Peso (kg, g)
+  LITRO // Volumen (lt, ml)
+  AREA // Superficie (m2)
+  CAJA // Cajas / bultos
+  SERVICIO // Servicios sin stock fisico
+}
+
+/// Tipo de movimiento de inventario. Define si suma o resta stock.
+enum TipoMovimiento {
+  ENTRADA // Compra / ingreso de mercancia
+  SALIDA_VENTA // Descuento automatico por venta
+  AJUSTE_MANUAL // Auditoria manual (positivo o negativo)
+  DEVOLUCION // Devolucion de cliente
+  MERMA // Producto danado / vencido
+  TRASLADO // Movimiento entre almacenes
+}
+
+/// Estado del ciclo de vida de una orden/venta.
+enum EstadoOrden {
+  COTIZACION // Solo presupuesto, sin comprometer stock
+  PENDIENTE // Confirmada, esperando pago o proceso
+  EN_PROCESO // Siendo preparada o entregada
+  COMPLETADA // Finalizada y cobrada
+  CANCELADA // Anulada (registrada en auditoria)
+  DEVUELTA // Devolucion total
+}
+
+/// Metodo de pago aceptado por el POS.
+enum MetodoPago {
+  EFECTIVO
+  TARJETA_DEBITO
+  TARJETA_CREDITO
+  TRANSFERENCIA
+  CREDITO_CLIENTE // Fiado / credito interno
+  MIXTO // Combinacion de metodos
+}
+
+/// Estado del ciclo de vida de una entrega a domicilio.
+enum EstadoEntrega {
+  ASIGNADO
+  EN_RUTA
+  ENTREGADO
+  NO_ENTREGADO
+  REPROGRAMADO
+}
+
+// ============================================================
+// EMPRESA / TENANT
+// Soporte multi-empresa. Cada registro de negocio pertenece a una empresa.
+// ============================================================
+
+model Empresa {
+  id            String   @id @default(cuid())
+  nombre        String // Razon social o nombre comercial
+  rfc           String?  @unique
+  direccion     String?
+  telefono      String?
+  correo        String?
+  logoUrl       String?
+  tasaImpuesto  Decimal  @default(0.16) // IVA por defecto 16%
+  moneda        String   @default("MXN")
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  // -- Relaciones --
+  usuarios           Usuario[]
+  almacenes          Almacen[]
+  categorias         Categoria[]
+  productos          Producto[]
+  clientes           Cliente[]
+  proveedores        Proveedor[]
+  ordenes            Orden[]
+  cajasRegistradoras CajaRegistradora[]
+  turnosTrabajo      TurnoTrabajo[]
+  compras            Compra[]
+  registrosAuditoria RegistroAuditoria[]
+
+  @@map("empresas")
+}
+
+// ============================================================
+// USUARIOS Y SEGURIDAD
+// ============================================================
+
+/// Usuario del sistema. Puede ser ADMIN, CAJERO o REPARTIDOR.
+model Usuario {
+  id             String  @id @default(cuid())
+  empresaId      String
+  empresa        Empresa @relation(fields: [empresaId], references: [id])
+  nombre         String
+  correo         String  @unique
+  hashContrasena String // Hash bcrypt de la contrasena
+  rol            Rol     @default(CAJERO)
+  activo         Boolean @default(true)
+  telefono       String?
+  avatarUrl      String?
+
+  // Control de horario laboral
+  horarioInicio String? // "08:00" formato HH:MM
+  horarioFin    String? // "20:00"
+  diasLaborales Int[] // [1,2,3,4,5] = Lun-Vie (0=Dom, 6=Sab)
+
+  // Seguridad
+  ultimoLoginEn    DateTime?
+  intentosFallidos Int       @default(0)
+  bloqueadoHasta   DateTime?
+  hashPin          String? // PIN para autorizaciones especiales en caja
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  creadoPorId   String?
+
+  // -- Relaciones --
+  sesiones              Sesion[]
+  ordenesCreadas        Orden[]                @relation("OrdenCreadaPor")
+  ordenesAprobadas      Orden[]                @relation("OrdenAprobadaPor")
+  movimientosInventario MovimientoInventario[]
+  turnosCaja            TurnoCaja[]
+  entregas              Entrega[]
+  registrosAuditoria    RegistroAuditoria[]
+  notificaciones        Notificacion[]
+
+  @@index([empresaId])
+  @@index([correo])
+  @@map("usuarios")
+}
+
+/// Sesion activa de un usuario. Se valida en cada request autenticado.
+model Sesion {
+  id            String   @id @default(cuid())
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+  token         String   @unique // Hash del JWT
+  direccionIp   String?
+  agenteUsuario String?
+  activo        Boolean  @default(true)
+  expiraEn      DateTime
+  creadoEn      DateTime @default(now())
+
+  @@index([usuarioId])
+  @@index([token])
+  @@map("sesiones")
+}
+
+// ============================================================
+// ALMACENES
+// ============================================================
+
+/// Almacen o punto de almacenamiento fisico de productos.
+model Almacen {
+  id          String   @id @default(cuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  nombre      String // "Almacen Principal", "Tienda Centro", etc.
+  direccion   String?
+  esPrincipal Boolean  @default(false)
+  activo      Boolean  @default(true)
+  creadoEn    DateTime @default(now())
+
+  // -- Relaciones --
+  existencias        Existencia[]
+  movimientos        MovimientoInventario[]
+  movimientosDestino MovimientoInventario[] @relation("MovimientoDestino")
+
+  @@index([empresaId])
+  @@map("almacenes")
+}
+
+// ============================================================
+// CATALOGO DE PRODUCTOS
+// ============================================================
+
+/// Categoria para organizar productos. Soporta subcategorias (arbol).
+model Categoria {
+  id          String      @id @default(cuid())
+  empresaId   String
+  empresa     Empresa     @relation(fields: [empresaId], references: [id])
+  nombre      String // "Abarrotes", "Ferreteria", "Bebidas"
+  descripcion String?
+  padreId     String? // Para subcategorias
+  padre       Categoria?  @relation("ArbolCategorias", fields: [padreId], references: [id])
+  hijos       Categoria[] @relation("ArbolCategorias")
+  colorHex    String? // Color para UI (#FF5733)
+  nombreIcono String? // Nombre de icono para Angular Material
+  activo      Boolean     @default(true)
+  orden       Int         @default(0) // Orden de visualizacion
+  creadoEn    DateTime    @default(now())
+
+  // -- Relaciones --
+  productos Producto[]
+
+  @@index([empresaId])
+  @@map("categorias")
+}
+
+/// Producto del catalogo. Soporta multi-precio, multi-unidad y codigo de barras.
+model Producto {
+  id          String     @id @default(cuid())
+  empresaId   String
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
+  proveedorId String?
+  proveedor   Proveedor? @relation(fields: [proveedorId], references: [id])
+
+  // Identificacion
+  sku          String  @unique // Codigo interno unico
+  codigoBarras String? @unique // Codigo de barras EAN/UPC para scanner POS
+  nombre       String
+  descripcion  String?
+  marca        String?
+  modelo       String? // Para productos tecnicos
+
+  // Unidad de medida
+  tipoUnidad          TipoUnidad @default(PIEZA)
+  etiquetaUnidad      String     @default("pza") // "kg", "m", "lt", "m2"
+  conversionUnidad    Decimal? // Ej: 1 caja = 12 piezas
+  cantidadMinimaVenta Decimal    @default(1) // Cantidad minima de venta
+  incrementoVenta     Decimal    @default(1) // Incremento (0.5 para medio kg)
+
+  // Precios (soporte multi-precio)
+  precioCosto      Decimal  @default(0) // Precio de costo/compra (solo visible ADMIN)
+  precioVenta1     Decimal  @default(0) // Precio publico (lista)
+  precioVenta2     Decimal? // Precio mayoreo
+  precioVenta3     Decimal? // Precio especial/VIP
+  impuestoIncluido Boolean  @default(true) // Si el precio ya incluye IVA
+  tasaImpuesto     Decimal  @default(0.16)
+
+  // Control de inventario
+  rastrearInventario Boolean  @default(true)
+  stockMinimo        Decimal  @default(0) // Punto de reorden
+  stockMaximo        Decimal? // Stock maximo deseable
+  activo             Boolean  @default(true)
+  destacado          Boolean  @default(false)
+  imagenUrl          String?
+  notas              String?
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  // -- Relaciones --
+  existencias    Existencia[]
+  detallesOrden  DetalleOrden[]
+  movimientos    MovimientoInventario[]
+  detallesCompra DetalleCompra[]
+
+  @@index([empresaId])
+  @@index([codigoBarras])
+  @@index([sku])
+  @@index([categoriaId])
+  @@map("productos")
+}
+
+// ============================================================
+// INVENTARIO (Existencias por almacen)
+// ============================================================
+
+/// Stock actual de un producto en un almacen especifico.
+model Existencia {
+  id            String   @id @default(cuid())
+  productoId    String
+  producto      Producto @relation(fields: [productoId], references: [id])
+  almacenId     String
+  almacen       Almacen  @relation(fields: [almacenId], references: [id])
+  cantidad      Decimal  @default(0)
+  actualizadoEn DateTime @updatedAt
+
+  @@unique([productoId, almacenId])
+  @@index([productoId])
+  @@index([almacenId])
+  @@map("existencias")
+}
+
+/// Registro inmutable de cada movimiento de inventario. Append-only.
+/// Nunca hacer UPDATE ni DELETE en esta tabla.
+model MovimientoInventario {
+  id               String   @id @default(cuid())
+  productoId       String
+  producto         Producto @relation(fields: [productoId], references: [id])
+  almacenId        String
+  almacen          Almacen  @relation(fields: [almacenId], references: [id])
+  almacenDestinoId String? // Solo para traslados entre almacenes
+  almacenDestino   Almacen? @relation("MovimientoDestino", fields: [almacenDestinoId], references: [id])
+
+  tipoMovimiento    TipoMovimiento
+  cantidad          Decimal // Positivo siempre; el tipo define si suma o resta
+  cantidadAnterior  Decimal // Stock antes del movimiento (auditoria)
+  cantidadPosterior Decimal // Stock despues del movimiento
+  costoUnitario     Decimal? // Costo unitario en el momento del movimiento
+  motivo            String? // Motivo del ajuste manual / merma
+  referenciaId      String? // ID de orden, compra, etc.
+  referenciaTipo    String? // "ORDEN", "COMPRA", "MANUAL", etc.
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  creadoEn  DateTime @default(now())
+
+  @@index([productoId])
+  @@index([almacenId])
+  @@index([creadoEn])
+  @@map("movimientos_inventario")
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+
+/// Cliente del negocio. Soporta credito interno (fiado).
+model Cliente {
+  id        String  @id @default(cuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nombre    String
+  telefono  String?
+  correo    String?
+  direccion String?
+  rfc       String?
+  notas     String?
+  activo    Boolean @default(true)
+
+  // Control de credito
+  limiteCredito    Decimal @default(0) // Limite de credito en pesos
+  creditoUtilizado Decimal @default(0) // Credito actualmente utilizado
+  diasCredito      Int     @default(0) // Dias de credito otorgados
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  // -- Relaciones --
+  ordenes  Orden[]
+  entregas Entrega[]
+
+  @@index([empresaId])
+  @@index([telefono])
+  @@map("clientes")
+}
+
+// ============================================================
+// PROVEEDORES
+// ============================================================
+
+/// Proveedor de mercancia. Asociado a productos y compras.
+model Proveedor {
+  id             String   @id @default(cuid())
+  empresaId      String
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  nombre         String
+  nombreContacto String?
+  telefono       String?
+  correo         String?
+  direccion      String?
+  rfc            String?
+  notas          String?
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+
+  // -- Relaciones --
+  productos Producto[]
+  compras   Compra[]
+
+  @@index([empresaId])
+  @@map("proveedores")
+}
+
+// ============================================================
+// CAJAS REGISTRADORAS Y TURNOS
+// ============================================================
+
+/// Caja registradora fisica o logica del punto de venta.
+model CajaRegistradora {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  nombre    String // "Caja 1", "Caja Principal"
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+
+  // -- Relaciones --
+  turnosCaja TurnoCaja[]
+  ordenes    Orden[]
+
+  @@map("cajas_registradoras")
+}
+
+/// Turno de caja. Registra apertura, cierre, fondo y diferencias.
+model TurnoCaja {
+  id                 String           @id @default(cuid())
+  cajaRegistradoraId String
+  cajaRegistradora   CajaRegistradora @relation(fields: [cajaRegistradoraId], references: [id])
+  usuarioId          String
+  usuario            Usuario          @relation(fields: [usuarioId], references: [id])
+  montoApertura      Decimal // Fondo de caja al abrir
+  montoCierre        Decimal? // Monto contado al cerrar
+  montoEsperado      Decimal? // Calculado por el sistema
+  diferencia         Decimal? // Diferencia (faltante/sobrante)
+  abiertaEn          DateTime         @default(now())
+  cerradaEn          DateTime?
+  notas              String?
+
+  // -- Relaciones --
+  ordenes Orden[]
+
+  @@index([usuarioId])
+  @@index([cajaRegistradoraId])
+  @@map("turnos_caja")
+}
+
+// ============================================================
+// HORARIOS DE TRABAJO (restriccion de login por horario)
+// ============================================================
+
+/// Turno de trabajo definido por la empresa. Restringe login por horario.
+model TurnoTrabajo {
+  id            String   @id @default(cuid())
+  empresaId     String
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+  nombre        String // "Turno Manana", "Turno Tarde"
+  horaInicio    String // "07:00"
+  horaFin       String // "15:00"
+  diasLaborales Int[] // [1,2,3,4,5]
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+
+  @@map("turnos_trabajo")
+}
+
+// ============================================================
+// ORDENES / VENTAS / COTIZACIONES
+// Modulo mas critico del POS. Toda creacion usa transaccion atomica.
+// ============================================================
+
+/// Orden de venta, cotizacion o devolucion. Nucleo del POS.
+model Orden {
+  id                 String            @id @default(cuid())
+  empresaId          String
+  empresa            Empresa           @relation(fields: [empresaId], references: [id])
+  numeroOrden        String            @unique // "VTA-2026-00001"
+  estado             EstadoOrden       @default(PENDIENTE)
+  clienteId          String?
+  cliente            Cliente?          @relation(fields: [clienteId], references: [id])
+  cajaRegistradoraId String?
+  cajaRegistradora   CajaRegistradora? @relation(fields: [cajaRegistradoraId], references: [id])
+  turnoCajaId        String?
+  turnoCaja          TurnoCaja?        @relation(fields: [turnoCajaId], references: [id])
+  creadoPorId        String
+  creadoPor          Usuario           @relation("OrdenCreadaPor", fields: [creadoPorId], references: [id])
+  aprobadoPorId      String? // Para descuentos que requieren PIN de supervisor
+  aprobadoPor        Usuario?          @relation("OrdenAprobadaPor", fields: [aprobadoPorId], references: [id])
+
+  // Totales
+  subtotal       Decimal @default(0)
+  montoImpuesto  Decimal @default(0)
+  montoDescuento Decimal @default(0)
+  total          Decimal @default(0)
+
+  // Pago
+  metodoPago  MetodoPago @default(EFECTIVO)
+  montoPagado Decimal    @default(0)
+  cambio      Decimal    @default(0) // Cambio dado al cliente
+  pagado      Boolean    @default(false)
+
+  notas             String?
+  motivoCancelacion String? // Obligatorio al cancelar (auditoria)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+
+  // -- Relaciones --
+  detalles DetalleOrden[]
+  pagos    Pago[] // Para pagos mixtos o parciales
+  entrega  Entrega?
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@index([creadoEn])
+  @@index([estado])
+  @@map("ordenes")
+}
+
+/// Linea de detalle de una orden. Snapshot del precio al momento de la venta.
+model DetalleOrden {
+  id             String   @id @default(cuid())
+  ordenId        String
+  orden          Orden    @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  productoId     String
+  producto       Producto @relation(fields: [productoId], references: [id])
+  cantidad       Decimal
+  precioUnitario Decimal // Precio al momento de la venta (snapshot)
+  precioCosto    Decimal // Costo al momento (para calcular utilidad)
+  descuento      Decimal  @default(0) // Descuento por item
+  tasaImpuesto   Decimal  @default(0.16)
+  subtotal       Decimal
+
+  @@index([ordenId])
+  @@index([productoId])
+  @@map("detalles_orden")
+}
+
+/// Registro individual de pago. Permite pagos mixtos y parciales.
+model Pago {
+  id         String     @id @default(cuid())
+  ordenId    String
+  orden      Orden      @relation(fields: [ordenId], references: [id])
+  metodo     MetodoPago
+  monto      Decimal
+  referencia String? // Numero de autorizacion tarjeta / referencia transferencia
+  pagadoEn   DateTime   @default(now())
+
+  @@index([ordenId])
+  @@map("pagos")
+}
+
+// ============================================================
+// ENTREGAS / REPARTIDOR
+// ============================================================
+
+/// Entrega a domicilio asociada a una orden.
+/// Estado avanza en una sola direccion: ASIGNADO -> EN_RUTA -> ENTREGADO o NO_ENTREGADO.
+model Entrega {
+  id               String        @id @default(cuid())
+  ordenId          String        @unique
+  orden            Orden         @relation(fields: [ordenId], references: [id])
+  clienteId        String?
+  cliente          Cliente?      @relation(fields: [clienteId], references: [id])
+  asignadoAId      String? // ID del repartidor asignado
+  asignadoA        Usuario?      @relation(fields: [asignadoAId], references: [id])
+  estado           EstadoEntrega @default(ASIGNADO)
+  direccionEntrega String
+  programadaEn     DateTime?
+  entregadaEn      DateTime?
+  notas            String?
+  firmaUrl         String? // Firma digital del receptor
+  fotoUrl          String? // Foto de evidencia de entrega
+  motivoFallo      String? // Motivo de no entrega
+  creadoEn         DateTime      @default(now())
+  actualizadoEn    DateTime      @updatedAt
+
+  @@index([asignadoAId])
+  @@index([estado])
+  @@map("entregas")
+}
+
+// ============================================================
+// COMPRAS A PROVEEDOR
+// ============================================================
+
+/// Orden de compra a proveedor. Al recibir mercancia, actualiza inventario.
+model Compra {
+  id            String    @id @default(cuid())
+  empresaId     String
+  empresa       Empresa   @relation(fields: [empresaId], references: [id])
+  proveedorId   String
+  proveedor     Proveedor @relation(fields: [proveedorId], references: [id])
+  numeroCompra  String    @unique // "COMP-2026-00001"
+  numeroFactura String? // Folio de factura del proveedor
+  subtotal      Decimal   @default(0)
+  montoImpuesto Decimal   @default(0)
+  total         Decimal   @default(0)
+  notas         String?
+  recibidaEn    DateTime?
+  creadoEn      DateTime  @default(now())
+
+  // -- Relaciones --
+  detalles DetalleCompra[]
+
+  @@index([empresaId])
+  @@index([proveedorId])
+  @@map("compras")
+}
+
+/// Linea de detalle de una compra a proveedor.
+model DetalleCompra {
+  id            String   @id @default(cuid())
+  compraId      String
+  compra        Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  productoId    String
+  producto      Producto @relation(fields: [productoId], references: [id])
+  cantidad      Decimal
+  costoUnitario Decimal
+  subtotal      Decimal
+
+  @@index([compraId])
+  @@map("detalles_compra")
+}
+
+// ============================================================
+// NOTIFICACIONES
+// ============================================================
+
+/// Notificacion interna para el usuario (stock bajo, nueva orden, etc.)
+model Notificacion {
+  id           String   @id @default(cuid())
+  usuarioId    String
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+  tipo         String // "STOCK_BAJO", "NUEVA_ORDEN", "DIFERENCIA_CAJA", etc.
+  titulo       String
+  mensaje      String
+  leido        Boolean  @default(false)
+  referenciaId String? // ID del recurso relacionado
+  creadoEn     DateTime @default(now())
+
+  @@index([usuarioId])
+  @@index([leido])
+  @@map("notificaciones")
+}
+
+// ============================================================
+// AUDITORIA (Registro inmutable de toda accion critica)
+// Nunca hacer UPDATE ni DELETE en esta tabla.
+// ============================================================
+
+/// Registro de auditoria. Cada accion critica queda registrada aqui.
+model RegistroAuditoria {
+  id                String   @id @default(cuid())
+  empresaId         String
+  empresa           Empresa  @relation(fields: [empresaId], references: [id])
+  usuarioId         String
+  usuario           Usuario  @relation(fields: [usuarioId], references: [id])
+  accion            String // "CREAR_ORDEN", "CANCELAR_ORDEN", "EDITAR_PRECIO", "AJUSTE_STOCK"
+  entidad           String // Nombre de la tabla/entidad afectada
+  entidadId         String // ID del registro afectado
+  valoresAnteriores Json? // Snapshot antes del cambio
+  valoresNuevos     Json? // Snapshot despues del cambio
+  direccionIp       String?
+  creadoEn          DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([usuarioId])
+  @@index([entidad, entidadId])
+  @@index([creadoEn])
+  @@map("registros_auditoria")
+}

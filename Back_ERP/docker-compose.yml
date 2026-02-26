@@ -1,0 +1,28 @@
+# ============================================================
+# Docker Compose - Desarrollo Local
+# Levanta PostgreSQL 16 como servicio de base de datos
+# Uso: docker compose up -d
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: MAVF2002
+      POSTGRES_DB: ERP_db
+    volumes:
+      - erp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ERP_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  erp_pgdata:
+    driver: local
