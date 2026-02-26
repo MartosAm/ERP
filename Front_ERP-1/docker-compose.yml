@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./src:/usr/share/nginx/html
+    networks:
+      - frontend-network
+
+networks:
+  frontend-network:
+    driver: bridge
