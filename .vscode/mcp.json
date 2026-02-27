@@ -8,13 +8,20 @@
         "postgresql://postgres:MAVF2002@localhost:5432/ERP_db"
       ]
     },
-    "sistema-archivos": {
+    "sistema-archi": {
       "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "/home/adrian/Documentos/proyectos/ERP/Back_ERP",
         "/home/adrian/Documentos/proyectos/ERP/Front_ERP-1"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
       ]
     }
   }
