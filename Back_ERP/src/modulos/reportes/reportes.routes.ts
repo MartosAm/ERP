@@ -41,6 +41,11 @@ router.use(autenticar, requerirRol('ADMIN'));
  *     description: |
  *       Indicadores clave en tiempo real:
  *       - Ventas de hoy y del mes (total, cantidad, ticket promedio)
+ *       - Variacion de ventas vs mes anterior (%)
+ *       - Cotizaciones pendientes (cantidad y valor)
+ *       - Devoluciones del dia y del mes
+ *       - Utilidad bruta y margen de ganancia (%)
+ *       - Compras del mes (costo de reposicion)
  *       - Ordenes pendientes de entrega
  *       - Productos con stock bajo
  *       - Sesiones activas y turnos abiertos

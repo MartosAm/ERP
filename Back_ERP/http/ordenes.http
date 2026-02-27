@@ -1,5 +1,6 @@
 ### ================================================================
-### ORDENES / VENTAS POS - REST Client (VS Code)
+### ORDENES / VENTAS / COTIZACIONES / DEVOLUCIONES POS
+### REST Client (VS Code)
 ### ================================================================
 
 @baseUrl = http://localhost:3001/api/v1/ordenes
@@ -158,3 +159,102 @@ Authorization: Bearer {{token}}
 {
   "motivoCancelacion": "El cliente solicito la cancelacion de la compra"
 }
+
+### ---------------------------------------------------------------
+### 11. Crear cotizacion (presupuesto sin comprometer stock)
+### ---------------------------------------------------------------
+
+# @name crearCotizacion
+POST {{baseUrl}}/cotizacion
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clienteId": "REEMPLAZAR_CON_ID_CLIENTE",
+  "detalles": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 10,
+      "precioUnitario": 50.00,
+      "descuento": 5
+    },
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO_2",
+      "cantidad": 5,
+      "precioUnitario": 120.00,
+      "descuento": 0
+    }
+  ],
+  "notas": "Cotizacion para revision del cliente",
+  "validaHasta": "2026-02-28T23:59:59.000Z"
+}
+
+### ---------------------------------------------------------------
+### 12. Listar cotizaciones pendientes
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?estado=COTIZACION
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------------------
+### 13. Confirmar cotizacion como venta
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/{{crearCotizacion.response.body.datos.id}}/confirmar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "pagos": [
+    {
+      "metodo": "TARJETA_CREDITO",
+      "monto": 1050.00,
+      "referencia": "AUTH-789456"
+    }
+  ]
+}
+
+### ---------------------------------------------------------------
+### 14. Devolucion total (solo ADMIN)
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/{{crearOrden.response.body.datos.id}}/devolver
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "Producto defectuoso reportado por el cliente",
+  "items": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 2,
+      "motivo": "Producto danado"
+    }
+  ]
+}
+
+### ---------------------------------------------------------------
+### 15. Devolucion parcial (solo ADMIN)
+### ---------------------------------------------------------------
+
+POST {{baseUrl}}/{{crearOrden.response.body.datos.id}}/devolver
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo": "Cliente devuelve una unidad por cambio de opinion",
+  "items": [
+    {
+      "productoId": "REEMPLAZAR_CON_ID_PRODUCTO",
+      "cantidad": 1,
+      "motivo": "Cambio de opinion"
+    }
+  ]
+}
+
+### ---------------------------------------------------------------
+### 16. Listar ordenes devueltas
+### ---------------------------------------------------------------
+
+GET {{baseUrl}}?estado=DEVUELTA
+Authorization: Bearer {{token}}

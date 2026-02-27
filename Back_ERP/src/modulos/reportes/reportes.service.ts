@@ -5,7 +5,8 @@
  * Consultas de solo lectura optimizadas con aggregation de Prisma.
  *
  * Reportes implementados:
- * 1. Dashboard  - KPIs principales en tiempo real
+ * 1. Dashboard  - KPIs principales en tiempo real (ventas, cotizaciones,
+ *                 devoluciones, utilidad, compras, inventario, entregas)
  * 2. Ventas     - Resumen por rango de fechas (totales, promedios, por dia)
  * 3. Top productos - Mas vendidos en cantidad y en ingresos
  * 4. Metodos de pago - Desglose por tipo de pago
@@ -31,10 +32,14 @@ export const ReportesService = {
   /**
    * Retorna los indicadores clave del negocio:
    * - Ventas de hoy (total, cantidad, ticket promedio)
-   * - Ventas del mes
+   * - Ventas del mes (con variacion vs mes anterior)
+   * - Cotizaciones pendientes (cantidad y valor)
+   * - Devoluciones de hoy y del mes
+   * - Utilidad bruta (ingresos - costo, margen %)
+   * - Compras del mes
    * - Ordenes pendientes de entrega
    * - Productos con stock bajo
-   * - Sesiones activas
+   * - Sesiones activas y turnos abiertos
    */
   async dashboard(empresaId: string) {
     const cacheKey = `${MODULO}:dashboard:${empresaId}`;
@@ -45,14 +50,22 @@ export const ReportesService = {
     const hoyFin = dayjs().endOf('day').toDate();
     const mesInicio = dayjs().startOf('month').toDate();
     const mesFin = dayjs().endOf('month').toDate();
+    const mesAnteriorInicio = dayjs().subtract(1, 'month').startOf('month').toDate();
+    const mesAnteriorFin = dayjs().subtract(1, 'month').endOf('month').toDate();
 
     const [
       ventasHoy,
       ventasMes,
+      ventasMesAnterior,
       ordenesPendientesEntrega,
       productosStockBajo,
       sesionesActivas,
       turnosAbiertos,
+      cotizacionesPendientes,
+      devolucionesHoy,
+      devolucionesMes,
+      utilidadMes,
+      comprasMes,
     ] = await Promise.all([
       // Ventas de hoy
       prisma.orden.aggregate({
@@ -72,6 +85,17 @@ export const ReportesService = {
           empresaId,
           estado: 'COMPLETADA',
           creadoEn: { gte: mesInicio, lte: mesFin },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+
+      // Ventas del mes anterior (para comparativa)
+      prisma.orden.aggregate({
+        where: {
+          empresaId,
+          estado: 'COMPLETADA',
+          creadoEn: { gte: mesAnteriorInicio, lte: mesAnteriorFin },
         },
         _sum: { total: true },
         _count: { id: true },
@@ -112,7 +136,75 @@ export const ReportesService = {
           cerradaEn: null,
         },
       }),
+
+      // Cotizaciones pendientes de confirmar
+      prisma.orden.aggregate({
+        where: {
+          empresaId,
+          estado: 'COTIZACION',
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+
+      // Devoluciones de hoy
+      prisma.orden.aggregate({
+        where: {
+          empresaId,
+          estado: 'DEVUELTA',
+          actualizadoEn: { gte: hoyInicio, lte: hoyFin },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+
+      // Devoluciones del mes
+      prisma.orden.aggregate({
+        where: {
+          empresaId,
+          estado: 'DEVUELTA',
+          actualizadoEn: { gte: mesInicio, lte: mesFin },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+
+      // Utilidad bruta del mes (ventas - costo)
+      prisma.$queryRaw<[{ ingresos: number; costo: number; utilidad: number }]>`
+        SELECT
+          COALESCE(SUM(d.subtotal), 0)::float           AS ingresos,
+          COALESCE(SUM(d."precioCosto" * d.cantidad), 0)::float AS costo,
+          COALESCE(SUM(d.subtotal - d."precioCosto" * d.cantidad), 0)::float AS utilidad
+        FROM detalles_orden d
+        JOIN ordenes o ON o.id = d."ordenId"
+        WHERE o."empresaId" = ${empresaId}
+          AND o.estado = 'COMPLETADA'
+          AND o."creadoEn" >= ${mesInicio}
+          AND o."creadoEn" <= ${mesFin}
+      `,
+
+      // Compras del mes
+      prisma.compra.aggregate({
+        where: {
+          empresaId,
+          creadoEn: { gte: mesInicio, lte: mesFin },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
     ]);
+
+    // Comparativa mensual
+    const ventasMesActual = Number(ventasMes._sum.total ?? 0);
+    const ventasMesPrevio = Number(ventasMesAnterior._sum.total ?? 0);
+    const variacionMensual = ventasMesPrevio > 0
+      ? Math.round(((ventasMesActual - ventasMesPrevio) / ventasMesPrevio) * 10000) / 100
+      : 0;
+
+    const util = utilidadMes[0] ?? { ingresos: 0, costo: 0, utilidad: 0 };
+    const margenPorcentaje = util.ingresos > 0
+      ? Math.round((util.utilidad / util.ingresos) * 10000) / 100
+      : 0;
 
     const resultado = {
       ventasHoy: {
@@ -121,8 +213,33 @@ export const ReportesService = {
         ticketPromedio: Number(ventasHoy._avg.total ?? 0),
       },
       ventasMes: {
-        total: Number(ventasMes._sum.total ?? 0),
+        total: ventasMesActual,
         cantidad: ventasMes._count.id,
+        variacionVsMesAnterior: variacionMensual,
+      },
+      cotizaciones: {
+        pendientes: cotizacionesPendientes._count.id,
+        valorPendiente: Number(cotizacionesPendientes._sum.total ?? 0),
+      },
+      devoluciones: {
+        hoy: {
+          total: Number(devolucionesHoy._sum.total ?? 0),
+          cantidad: devolucionesHoy._count.id,
+        },
+        mes: {
+          total: Number(devolucionesMes._sum.total ?? 0),
+          cantidad: devolucionesMes._count.id,
+        },
+      },
+      utilidad: {
+        ingresos: util.ingresos,
+        costo: util.costo,
+        utilidadBruta: util.utilidad,
+        margenPorcentaje,
+      },
+      comprasMes: {
+        total: Number(comprasMes._sum.total ?? 0),
+        cantidad: comprasMes._count.id,
       },
       ordenesPendientesEntrega,
       productosStockBajo: Number(productosStockBajo[0]?.count ?? 0),
@@ -141,7 +258,8 @@ export const ReportesService = {
 
   /**
    * Resumen de ventas en un rango de fechas.
-   * Incluye total, promedio, desglose por dia y comparativa.
+   * Incluye total, promedio, desglose por dia, comparativa,
+   * devoluciones, cotizaciones y utilidad bruta.
    */
   async ventasResumen(filtros: FiltroFechasDto, empresaId: string) {
     const cacheKey = `${MODULO}:ventas:${empresaId}:${filtros.fechaDesde}:${filtros.fechaHasta}`;
@@ -151,47 +269,91 @@ export const ReportesService = {
     const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
     const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
 
-    // Totales generales
-    const totales = await prisma.orden.aggregate({
-      where: {
-        empresaId,
-        estado: 'COMPLETADA',
-        creadoEn: { gte: desde, lte: hasta },
-      },
-      _sum: { total: true, montoDescuento: true, montoImpuesto: true },
-      _count: { id: true },
-      _avg: { total: true },
-      _max: { total: true },
-      _min: { total: true },
-    });
+    const [totales, cancelaciones, devoluciones, cotizaciones, utilidad, ventasPorDia] =
+      await Promise.all([
+        // Totales generales
+        prisma.orden.aggregate({
+          where: {
+            empresaId,
+            estado: 'COMPLETADA',
+            creadoEn: { gte: desde, lte: hasta },
+          },
+          _sum: { total: true, montoDescuento: true, montoImpuesto: true },
+          _count: { id: true },
+          _avg: { total: true },
+          _max: { total: true },
+          _min: { total: true },
+        }),
 
-    // Cancelaciones en el periodo
-    const cancelaciones = await prisma.orden.aggregate({
-      where: {
-        empresaId,
-        estado: 'CANCELADA',
-        creadoEn: { gte: desde, lte: hasta },
-      },
-      _sum: { total: true },
-      _count: { id: true },
-    });
+        // Cancelaciones en el periodo
+        prisma.orden.aggregate({
+          where: {
+            empresaId,
+            estado: 'CANCELADA',
+            creadoEn: { gte: desde, lte: hasta },
+          },
+          _sum: { total: true },
+          _count: { id: true },
+        }),
 
-    // Ventas agrupadas por dia
-    const ventasPorDia = await prisma.$queryRaw<
-      Array<{ fecha: string; total: number; cantidad: number }>
-    >`
-      SELECT
-        DATE("creadoEn")::text as fecha,
-        SUM(total)::float as total,
-        COUNT(*)::int as cantidad
-      FROM ordenes
-      WHERE "empresaId" = ${empresaId}
-        AND estado = 'COMPLETADA'
-        AND "creadoEn" >= ${desde}
-        AND "creadoEn" <= ${hasta}
-      GROUP BY DATE("creadoEn")
-      ORDER BY fecha ASC
-    `;
+        // Devoluciones en el periodo
+        prisma.orden.aggregate({
+          where: {
+            empresaId,
+            estado: 'DEVUELTA',
+            actualizadoEn: { gte: desde, lte: hasta },
+          },
+          _sum: { total: true },
+          _count: { id: true },
+        }),
+
+        // Cotizaciones creadas en el periodo
+        prisma.orden.aggregate({
+          where: {
+            empresaId,
+            estado: 'COTIZACION',
+            creadoEn: { gte: desde, lte: hasta },
+          },
+          _sum: { total: true },
+          _count: { id: true },
+        }),
+
+        // Utilidad bruta del periodo
+        prisma.$queryRaw<[{ ingresos: number; costo: number; utilidad: number }]>`
+          SELECT
+            COALESCE(SUM(d.subtotal), 0)::float           AS ingresos,
+            COALESCE(SUM(d."precioCosto" * d.cantidad), 0)::float AS costo,
+            COALESCE(SUM(d.subtotal - d."precioCosto" * d.cantidad), 0)::float AS utilidad
+          FROM detalles_orden d
+          JOIN ordenes o ON o.id = d."ordenId"
+          WHERE o."empresaId" = ${empresaId}
+            AND o.estado = 'COMPLETADA'
+            AND o."creadoEn" >= ${desde}
+            AND o."creadoEn" <= ${hasta}
+        `,
+
+        // Ventas agrupadas por dia
+        prisma.$queryRaw<
+          Array<{ fecha: string; total: number; cantidad: number }>
+        >`
+          SELECT
+            DATE("creadoEn")::text as fecha,
+            SUM(total)::float as total,
+            COUNT(*)::int as cantidad
+          FROM ordenes
+          WHERE "empresaId" = ${empresaId}
+            AND estado = 'COMPLETADA'
+            AND "creadoEn" >= ${desde}
+            AND "creadoEn" <= ${hasta}
+          GROUP BY DATE("creadoEn")
+          ORDER BY fecha ASC
+        `,
+      ]);
+
+    const util = utilidad[0] ?? { ingresos: 0, costo: 0, utilidad: 0 };
+    const margen = util.ingresos > 0
+      ? Math.round((util.utilidad / util.ingresos) * 10000) / 100
+      : 0;
 
     const resultado = {
       periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
@@ -204,9 +366,23 @@ export const ReportesService = {
         ventaMaxima: Number(totales._max.total ?? 0),
         ventaMinima: Number(totales._min.total ?? 0),
       },
+      utilidad: {
+        ingresos: util.ingresos,
+        costo: util.costo,
+        utilidadBruta: util.utilidad,
+        margenPorcentaje: margen,
+      },
       cancelaciones: {
         total: Number(cancelaciones._sum.total ?? 0),
         cantidad: cancelaciones._count.id,
+      },
+      devoluciones: {
+        total: Number(devoluciones._sum.total ?? 0),
+        cantidad: devoluciones._count.id,
+      },
+      cotizaciones: {
+        total: Number(cotizaciones._sum.total ?? 0),
+        cantidad: cotizaciones._count.id,
       },
       ventasPorDia,
     };

@@ -1,13 +1,16 @@
 /**
  * src/modulos/ordenes/ordenes.routes.ts
  * ------------------------------------------------------------------
- * Rutas REST del modulo de ordenes / ventas POS.
+ * Rutas REST del modulo de ordenes / ventas / cotizaciones POS.
  *
  * Endpoints:
- *   POST /ordenes             -> Crear orden de venta
- *   POST /ordenes/:id/cancelar -> Cancelar orden (solo ADMIN)
- *   GET  /ordenes/:id         -> Detalle de orden
- *   GET  /ordenes             -> Listar ordenes
+ *   POST /ordenes                -> Crear orden de venta (POS)
+ *   POST /ordenes/cotizacion     -> Crear cotizacion / presupuesto
+ *   POST /ordenes/:id/confirmar  -> Confirmar cotizacion como venta
+ *   POST /ordenes/:id/cancelar   -> Cancelar orden (solo ADMIN)
+ *   POST /ordenes/:id/devolver   -> Devolucion total o parcial (ADMIN)
+ *   GET  /ordenes/:id            -> Detalle de orden
+ *   GET  /ordenes                -> Listar ordenes
  * ------------------------------------------------------------------
  */
 
@@ -17,7 +20,14 @@ import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
 import { asyncHandler } from '../../compartido/asyncHandler';
 import { OrdenesController } from './ordenes.controller';
-import { CrearOrdenSchema, CancelarOrdenSchema, FiltroOrdenesSchema } from './ordenes.schema';
+import {
+  CrearOrdenSchema,
+  CrearCotizacionSchema,
+  ConfirmarCotizacionSchema,
+  CancelarOrdenSchema,
+  DevolucionSchema,
+  FiltroOrdenesSchema,
+} from './ordenes.schema';
 
 const router = Router();
 
@@ -133,6 +143,105 @@ router.get(
  */
 router.get('/:id', asyncHandler(OrdenesController.obtenerPorId));
 
+/* ---------------------------------------------------------- */
+/*  COTIZACION                                                */
+/* ---------------------------------------------------------- */
+
+/**
+ * @openapi
+ * /ordenes/cotizacion:
+ *   post:
+ *     tags: [Ordenes]
+ *     summary: Crear cotizacion / presupuesto
+ *     description: |
+ *       Crea una orden con estado COTIZACION. No descuenta stock
+ *       ni requiere turno de caja abierto. Ideal para presupuestos
+ *       que el cliente aprobara mas tarde.
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [detalles]
+ *             properties:
+ *               clienteId: { type: string }
+ *               detalles:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [productoId, cantidad, precioUnitario]
+ *                   properties:
+ *                     productoId: { type: string }
+ *                     cantidad: { type: number, minimum: 0.01 }
+ *                     precioUnitario: { type: number }
+ *                     descuento: { type: number, default: 0 }
+ *               notas: { type: string }
+ *               validaHasta: { type: string, format: date-time, description: Fecha de vigencia de la cotizacion }
+ *     responses:
+ *       201:
+ *         description: Cotizacion creada (estado COTIZACION).
+ *       400:
+ *         description: Datos invalidos.
+ */
+router.post(
+  '/cotizacion',
+  validar(CrearCotizacionSchema),
+  asyncHandler(OrdenesController.crearCotizacion),
+);
+
+/**
+ * @openapi
+ * /ordenes/{id}/confirmar:
+ *   post:
+ *     tags: [Ordenes]
+ *     summary: Confirmar cotizacion como venta
+ *     description: |
+ *       Convierte una cotizacion (estado COTIZACION) en venta completada.
+ *       Requiere turno de caja abierto. Valida stock disponible,
+ *       descuenta inventario y registra pagos.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [pagos]
+ *             properties:
+ *               pagos:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [metodo, monto]
+ *                   properties:
+ *                     metodo: { type: string, enum: [EFECTIVO, TARJETA_DEBITO, TARJETA_CREDITO, TRANSFERENCIA, CREDITO_CLIENTE] }
+ *                     monto: { type: number }
+ *                     referencia: { type: string }
+ *     responses:
+ *       200:
+ *         description: Cotizacion confirmada, stock descontado.
+ *       404:
+ *         description: Cotizacion no encontrada.
+ *       422:
+ *         description: Stock insuficiente, sin turno abierto o credito excedido.
+ */
+router.post(
+  '/:id/confirmar',
+  validar(ConfirmarCotizacionSchema),
+  asyncHandler(OrdenesController.confirmarCotizacion),
+);
+
+/* ---------------------------------------------------------- */
+/*  CANCELAR / DEVOLVER                                       */
+/* ---------------------------------------------------------- */
+
 /**
  * @openapi
  * /ordenes/{id}/cancelar:
@@ -169,6 +278,56 @@ router.post(
   requerirRol('ADMIN'),
   validar(CancelarOrdenSchema),
   asyncHandler(OrdenesController.cancelar),
+);
+
+/**
+ * @openapi
+ * /ordenes/{id}/devolver:
+ *   post:
+ *     tags: [Ordenes]
+ *     summary: Devolucion total o parcial (solo ADMIN)
+ *     description: |
+ *       Procesa una devolucion sobre una orden COMPLETADA.
+ *       Reingresa los productos al inventario y libera credito proporcionalmente.
+ *       Si se devuelven todos los items la orden cambia a DEVUELTA;
+ *       si es parcial se mantiene como COMPLETADA con notas del detalle.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [items, motivo]
+ *             properties:
+ *               motivo: { type: string, minLength: 5 }
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [productoId, cantidad, motivo]
+ *                   properties:
+ *                     productoId: { type: string }
+ *                     cantidad: { type: number, minimum: 0.01 }
+ *                     motivo: { type: string }
+ *     responses:
+ *       200:
+ *         description: Devolucion procesada (tipo total o parcial).
+ *       404:
+ *         description: Orden no encontrada.
+ *       422:
+ *         description: Cantidad excede lo vendido o estado invalido.
+ */
+router.post(
+  '/:id/devolver',
+  requerirRol('ADMIN'),
+  validar(DevolucionSchema),
+  asyncHandler(OrdenesController.devolver),
 );
 
 export default router;
