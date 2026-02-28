@@ -1,0 +1,16 @@
+<div class="flex flex-col items-center justify-center py-12 text-center">
+  <mat-icon class="text-gray-300 mb-4 !text-6xl !w-16 !h-16">{{ icono }}</mat-icon>
+  <p class="text-gray-500 font-medium text-base">{{ mensaje }}</p>
+  @if (submensaje) {
+    <p class="text-gray-400 text-sm mt-1">{{ submensaje }}</p>
+  }
+  @if (textoAccion) {
+    <button
+      mat-raised-button
+      color="primary"
+      class="mt-4"
+      (click)="accion.emit()">
+      {{ textoAccion }}
+    </button>
+  }
+</div>

@@ -1,0 +1,20 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  @if (icono) {
+    <mat-icon class="text-primary">{{ icono }}</mat-icon>
+  }
+  {{ titulo }}
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  @if (cargando) {
+    <div class="flex items-center justify-center py-8">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <ng-content />
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="gap-2 pt-2">
+  <ng-content select="[acciones]" />
+</mat-dialog-actions>

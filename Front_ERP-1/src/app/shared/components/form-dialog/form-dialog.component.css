@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+.dialog-body {
+  min-width: 400px;
+  max-height: 70vh;
+}
+
+@media (max-width: 640px) {
+  .dialog-body {
+    min-width: unset;
+  }
+}
