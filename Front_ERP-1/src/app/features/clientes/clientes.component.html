@@ -1,64 +1,106 @@
-<!-- clientes.component.html — Listado de clientes con tabla -->
+<app-page-header
+  titulo="Clientes"
+  subtitulo="Gestión de clientes y créditos"
+  icono="people">
+  <button mat-flat-button color="primary" (click)="crear()">
+    <mat-icon>add</mat-icon> Nuevo cliente
+  </button>
+</app-page-header>
+
 <div class="page-container">
-  <div class="card-header">
-    <h1 class="card-title text-2xl">Clientes</h1>
-  </div>
-
-  <div class="card mb-4">
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Buscar cliente</mat-label>
-      <input matInput [(ngModel)]="buscar" (keyup.enter)="onBuscar()" placeholder="Nombre, teléfono..." />
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
-  </div>
-
-  @if (cargando()) {
-    <div class="flex justify-center py-10">
-      <mat-spinner diameter="40" />
+  <div class="card">
+    <div class="card-header">
+      <app-search-input placeholder="Buscar por nombre, teléfono..." (buscar)="buscar($event)"></app-search-input>
     </div>
-  } @else {
-    <div class="card overflow-x-auto">
-      <table mat-table [dataSource]="clientes()" class="w-full">
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let c">{{ c.nombre }}</td>
-        </ng-container>
 
-        <ng-container matColumnDef="telefono">
-          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
-          <td mat-cell *matCellDef="let c">{{ c.telefono || '—' }}</td>
-        </ng-container>
+    @if (cargando()) {
+      <div class="flex justify-center py-10">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+    } @else if (clientes().length === 0) {
+      <app-empty-state
+        icono="people_outline"
+        mensaje="No se encontraron clientes"
+        submensaje="Crea tu primer cliente para comenzar"
+        textoAccion="Nuevo cliente"
+        (accion)="crear()">
+      </app-empty-state>
+    } @else {
+      <div class="overflow-x-auto">
+        <table mat-table [dataSource]="clientes()" class="w-full">
+          <!-- Nombre -->
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let c" class="font-medium">{{ c.nombre }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="correo">
-          <th mat-header-cell *matHeaderCellDef>Correo</th>
-          <td mat-cell *matCellDef="let c">{{ c.correo || '—' }}</td>
-        </ng-container>
+          <!-- Teléfono -->
+          <ng-container matColumnDef="telefono">
+            <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+            <td mat-cell *matCellDef="let c">{{ c.telefono || '—' }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="credito">
-          <th mat-header-cell *matHeaderCellDef>Crédito disponible</th>
-          <td mat-cell *matCellDef="let c">{{ c.limiteCredito - c.creditoUtilizado | currency:'$' }}</td>
-        </ng-container>
+          <!-- Correo -->
+          <ng-container matColumnDef="correo">
+            <th mat-header-cell *matHeaderCellDef>Correo</th>
+            <td mat-cell *matCellDef="let c">{{ c.correo || '—' }}</td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"></tr>
-      </table>
+          <!-- Crédito disponible -->
+          <ng-container matColumnDef="credito">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Crédito disponible</th>
+            <td mat-cell *matCellDef="let c" class="text-right">{{ creditoDisponible(c) | moneda }}</td>
+          </ng-container>
 
-      @if (clientes().length === 0) {
-        <div class="text-center py-10 text-gray-500">
-          <mat-icon class="text-5xl mb-2">people_outline</mat-icon>
-          <p>No se encontraron clientes</p>
-        </div>
-      }
+          <!-- Órdenes -->
+          <ng-container matColumnDef="ordenes">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Órdenes</th>
+            <td mat-cell *matCellDef="let c" class="text-right">{{ c._count?.ordenes ?? 0 }}</td>
+          </ng-container>
 
-      @if (meta()) {
-        <mat-paginator
-          [length]="meta()!.total"
-          [pageSize]="meta()!.limite"
-          [pageIndex]="meta()!.pagina - 1"
-          [pageSizeOptions]="[10, 20, 50]"
-          (page)="onPage($event)"
-          showFirstLastButtons />
-      }
-    </div>
-  }
+          <!-- Activo -->
+          <ng-container matColumnDef="activo">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let c">
+              <app-estado-badge [estado]="c.activo ? 'activo' : 'inactivo'" tipo="activo"></app-estado-badge>
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+            <td mat-cell *matCellDef="let c">
+              <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="editar(c)">
+                  <mat-icon>edit</mat-icon> Editar
+                </button>
+                <button mat-menu-item (click)="toggleActivo(c)">
+                  <mat-icon>{{ c.activo ? 'block' : 'check_circle' }}</mat-icon>
+                  {{ c.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button mat-menu-item (click)="eliminar(c)" class="text-red-600">
+                  <mat-icon color="warn">delete</mat-icon> Eliminar
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="pagina()"
+        [pageSize]="porPagina()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="cambiarPagina($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    }
+  </div>
 </div>

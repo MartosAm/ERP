@@ -59,7 +59,27 @@ export const routes: Routes = [
           import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
       },
 
+      {
+        path: 'categorias',
+        loadComponent: () =>
+          import('./features/categorias/categorias.component').then((m) => m.CategoriasComponent),
+      },
+
       // --- Solo ADMIN ---
+      {
+        path: 'proveedores',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/proveedores/proveedores.component').then((m) => m.ProveedoresComponent),
+      },
+
+      {
+        path: 'almacenes',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/almacenes/almacenes.component').then((m) => m.AlmacenesComponent),
+      },
+
       {
         path: 'reportes',
         canActivate: [roleGuard('ADMIN')],

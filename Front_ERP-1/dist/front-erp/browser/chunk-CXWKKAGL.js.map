@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/configuracion/configuracion.component.ts", "src/app/features/configuracion/configuracion.component.html"],
-  "sourcesContent": ["import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-configuracion',\n  standalone: true,\n  templateUrl: './configuracion.component.html',\n  styleUrl: './configuracion.component.css',\n})\nexport class ConfiguracionComponent {}\n", "<div class=\"page-container\">\n  <h1 class=\"text-2xl font-bold mb-4\">Configuración</h1>\n  <p class=\"text-gray-500\">Módulo de configuración en desarrollo...</p>\n</div>\n"],
-  "mappings": ";;;;;;;;;;AAQM,IAAO,yBAAP,MAAO,wBAAsB;;;uBAAtB,yBAAsB;IAAA;EAAA;;yEAAtB,yBAAsB,WAAA,CAAA,CAAA,mBAAA,CAAA,GAAA,YAAA,MAAA,UAAA,CAAA,6BAAA,GAAA,OAAA,GAAA,MAAA,GAAA,QAAA,CAAA,CAAA,GAAA,gBAAA,GAAA,CAAA,GAAA,YAAA,aAAA,MAAA,GAAA,CAAA,GAAA,eAAA,CAAA,GAAA,UAAA,SAAA,gCAAA,IAAA,KAAA;AAAA,UAAA,KAAA,GAAA;ACRnC,QAAA,yBAAA,GAAA,OAAA,CAAA,EAA4B,GAAA,MAAA,CAAA;AACU,QAAA,iBAAA,GAAA,kBAAA;AAAa,QAAA,uBAAA;AACjD,QAAA,yBAAA,GAAA,KAAA,CAAA;AAAyB,QAAA,iBAAA,GAAA,gDAAA;AAAwC,QAAA,uBAAA,EAAI;;;;;;6EDM1D,wBAAsB,EAAA,WAAA,0BAAA,UAAA,6DAAA,YAAA,EAAA,CAAA;AAAA,GAAA;",
-  "names": []
-}

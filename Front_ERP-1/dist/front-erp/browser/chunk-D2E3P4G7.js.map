@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/reportes/reportes.component.ts", "src/app/features/reportes/reportes.component.html"],
-  "sourcesContent": ["import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-reportes',\n  standalone: true,\n  templateUrl: './reportes.component.html',\n  styleUrl: './reportes.component.css',\n})\nexport class ReportesComponent {}\n", "<div class=\"page-container\">\n  <h1 class=\"text-2xl font-bold mb-4\">Reportes</h1>\n  <p class=\"text-gray-500\">Módulo de reportes en desarrollo...</p>\n</div>\n"],
-  "mappings": ";;;;;;;;;;AAQM,IAAO,oBAAP,MAAO,mBAAiB;;;uBAAjB,oBAAiB;IAAA;EAAA;;yEAAjB,oBAAiB,WAAA,CAAA,CAAA,cAAA,CAAA,GAAA,YAAA,MAAA,UAAA,CAAA,6BAAA,GAAA,OAAA,GAAA,MAAA,GAAA,QAAA,CAAA,CAAA,GAAA,gBAAA,GAAA,CAAA,GAAA,YAAA,aAAA,MAAA,GAAA,CAAA,GAAA,eAAA,CAAA,GAAA,UAAA,SAAA,2BAAA,IAAA,KAAA;AAAA,UAAA,KAAA,GAAA;ACR9B,QAAA,yBAAA,GAAA,OAAA,CAAA,EAA4B,GAAA,MAAA,CAAA;AACU,QAAA,iBAAA,GAAA,UAAA;AAAQ,QAAA,uBAAA;AAC5C,QAAA,yBAAA,GAAA,KAAA,CAAA;AAAyB,QAAA,iBAAA,GAAA,wCAAA;AAAmC,QAAA,uBAAA,EAAI;;;;;;6EDMrD,mBAAiB,EAAA,WAAA,qBAAA,UAAA,mDAAA,YAAA,EAAA,CAAA;AAAA,GAAA;",
-  "names": []
-}

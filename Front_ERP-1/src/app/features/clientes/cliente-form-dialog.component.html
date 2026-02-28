@@ -1,0 +1,81 @@
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar' : 'Nuevo' }} cliente</h2>
+
+<mat-dialog-content class="flex flex-col gap-4">
+  <form [formGroup]="form" id="clienteForm" (ngSubmit)="guardar()" class="flex flex-col gap-4 pt-2">
+    <!-- Nombre -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" placeholder="Nombre del cliente" />
+      @if (form.controls.nombre.hasError('required')) {
+        <mat-error>El nombre es obligatorio</mat-error>
+      }
+      @if (form.controls.nombre.hasError('minlength')) {
+        <mat-error>Mínimo 2 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Teléfono -->
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="telefono" placeholder="(555) 123-4567" />
+      </mat-form-field>
+
+      <!-- Correo -->
+      <mat-form-field appearance="outline">
+        <mat-label>Correo</mat-label>
+        <input matInput formControlName="correo" placeholder="correo@ejemplo.com" type="email" />
+        @if (form.controls.correo.hasError('email')) {
+          <mat-error>Correo inválido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Dirección -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Dirección</mat-label>
+      <textarea matInput formControlName="direccion" placeholder="Dirección del cliente" rows="2"></textarea>
+    </mat-form-field>
+
+    <!-- RFC -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>RFC</mat-label>
+      <input matInput formControlName="rfc" placeholder="XAXX010101000" maxlength="13" />
+      @if (form.controls.rfc.hasError('maxlength')) {
+        <mat-error>Máximo 13 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Límite de crédito -->
+      <mat-form-field appearance="outline">
+        <mat-label>Límite de crédito</mat-label>
+        <span matPrefix>$&nbsp;</span>
+        <input matInput type="number" formControlName="limiteCredito" min="0" step="100" />
+      </mat-form-field>
+
+      <!-- Días de crédito -->
+      <mat-form-field appearance="outline">
+        <mat-label>Días de crédito</mat-label>
+        <input matInput type="number" formControlName="diasCredito" min="0" />
+        <mat-hint>0 = sin crédito</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Notas -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Notas</mat-label>
+      <textarea matInput formControlName="notas" placeholder="Notas adicionales" rows="3"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
+  <button mat-flat-button color="primary" type="submit" form="clienteForm" [disabled]="guardando()">
+    @if (guardando()) {
+      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+    }
+    {{ esEdicion ? 'Actualizar' : 'Crear' }}
+  </button>
+</mat-dialog-actions>

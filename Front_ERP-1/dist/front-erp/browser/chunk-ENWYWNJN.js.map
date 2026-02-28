@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/inventario/inventario.component.ts", "src/app/features/inventario/inventario.component.html"],
-  "sourcesContent": ["import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-inventario',\n  standalone: true,\n  templateUrl: './inventario.component.html',\n  styleUrl: './inventario.component.css',\n})\nexport class InventarioComponent {}\n", "<div class=\"page-container\">\n  <h1 class=\"text-2xl font-bold mb-4\">Inventario</h1>\n  <p class=\"text-gray-500\">Módulo de inventario en desarrollo...</p>\n</div>\n"],
-  "mappings": ";;;;;;;;;;AAQM,IAAO,sBAAP,MAAO,qBAAmB;;;uBAAnB,sBAAmB;IAAA;EAAA;;yEAAnB,sBAAmB,WAAA,CAAA,CAAA,gBAAA,CAAA,GAAA,YAAA,MAAA,UAAA,CAAA,6BAAA,GAAA,OAAA,GAAA,MAAA,GAAA,QAAA,CAAA,CAAA,GAAA,gBAAA,GAAA,CAAA,GAAA,YAAA,aAAA,MAAA,GAAA,CAAA,GAAA,eAAA,CAAA,GAAA,UAAA,SAAA,6BAAA,IAAA,KAAA;AAAA,UAAA,KAAA,GAAA;ACRhC,QAAA,yBAAA,GAAA,OAAA,CAAA,EAA4B,GAAA,MAAA,CAAA;AACU,QAAA,iBAAA,GAAA,YAAA;AAAU,QAAA,uBAAA;AAC9C,QAAA,yBAAA,GAAA,KAAA,CAAA;AAAyB,QAAA,iBAAA,GAAA,0CAAA;AAAqC,QAAA,uBAAA,EAAI;;;;;;6EDMvD,qBAAmB,EAAA,WAAA,uBAAA,UAAA,uDAAA,YAAA,EAAA,CAAA;AAAA,GAAA;",
-  "names": []
-}

@@ -1,0 +1,97 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Proveedores"
+    subtitulo="Gestión de proveedores"
+    icono="local_shipping">
+    <button mat-raised-button color="primary" (click)="crear()">
+      <mat-icon>add</mat-icon> Nuevo proveedor
+    </button>
+  </app-page-header>
+
+  <div class="card mb-4">
+    <app-search-input
+      placeholder="Buscar proveedor..."
+      (buscar)="onBuscar($event)" />
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let p" class="font-medium">{{ p.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="contacto">
+          <th mat-header-cell *matHeaderCellDef>Contacto</th>
+          <td mat-cell *matCellDef="let p">{{ p.nombreContacto || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="telefono">
+          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+          <td mat-cell *matCellDef="let p">{{ p.telefono || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="correo">
+          <th mat-header-cell *matHeaderCellDef>Correo</th>
+          <td mat-cell *matCellDef="let p">{{ p.correo || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="productos">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Productos</th>
+          <td mat-cell *matCellDef="let p" class="text-center">{{ p._count.productos }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="activo">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let p">
+            <app-estado-badge [estado]="p.activo" tipo="activo" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let p">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="editar(p)">
+                <mat-icon>edit</mat-icon> Editar
+              </button>
+              <button mat-menu-item (click)="eliminar(p)" class="!text-red-600">
+                <mat-icon class="!text-red-600">delete</mat-icon> Eliminar
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50"></tr>
+      </table>
+
+      @if (items().length === 0) {
+        <app-empty-state
+          icono="local_shipping"
+          mensaje="No se encontraron proveedores"
+          textoAccion="Crear proveedor"
+          (accion)="crear()" />
+      }
+
+      @if (meta()) {
+        <mat-paginator
+          [length]="meta()!.total"
+          [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          showFirstLastButtons />
+      }
+    </div>
+  }
+</div>

@@ -28,8 +28,11 @@ export class SidebarComponent {
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     { label: 'Punto de Venta', icon: 'point_of_sale', route: '/pos', roles: ['ADMIN', 'CAJERO'] },
     { label: 'Productos', icon: 'inventory_2', route: '/productos' },
+    { label: 'Categorías', icon: 'category', route: '/categorias' },
     { label: 'Inventario', icon: 'warehouse', route: '/inventario' },
     { label: 'Clientes', icon: 'people', route: '/clientes' },
+    { label: 'Proveedores', icon: 'local_shipping', route: '/proveedores', roles: ['ADMIN'] },
+    { label: 'Almacenes', icon: 'store', route: '/almacenes', roles: ['ADMIN'] },
     { label: 'Reportes', icon: 'bar_chart', route: '/reportes', roles: ['ADMIN'] },
     { label: 'Configuración', icon: 'settings', route: '/configuracion', roles: ['ADMIN'] },
   ];

@@ -1,0 +1,182 @@
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar' : 'Nuevo' }} producto</h2>
+
+<mat-dialog-content class="producto-dialog-content">
+  <form [formGroup]="form" id="productoForm" (ngSubmit)="guardar()">
+    <mat-tab-group>
+      <!-- Tab: General -->
+      <mat-tab label="General">
+        <div class="flex flex-col gap-4 pt-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" placeholder="Nombre del producto" />
+            @if (form.controls.nombre.hasError('required')) {
+              <mat-error>El nombre es obligatorio</mat-error>
+            }
+            @if (form.controls.nombre.hasError('minlength')) {
+              <mat-error>Mínimo 2 caracteres</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>SKU</mat-label>
+              <input matInput formControlName="sku" placeholder="Generado automáticamente" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Código de barras</mat-label>
+              <input matInput formControlName="codigoBarras" />
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Categoría</mat-label>
+              <mat-select formControlName="categoriaId">
+                <mat-option value="">Sin categoría</mat-option>
+                @for (cat of categorias(); track cat.id) {
+                  <mat-option [value]="cat.id">{{ cat.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Proveedor</mat-label>
+              <mat-select formControlName="proveedorId">
+                <mat-option value="">Sin proveedor</mat-option>
+                @for (prov of proveedores(); track prov.id) {
+                  <mat-option [value]="prov.id">{{ prov.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Marca</mat-label>
+              <input matInput formControlName="marca" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Modelo</mat-label>
+              <input matInput formControlName="modelo" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Descripción</mat-label>
+            <textarea matInput formControlName="descripcion" rows="2"></textarea>
+          </mat-form-field>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Precios -->
+      <mat-tab label="Precios">
+        <div class="flex flex-col gap-4 pt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Precio costo</mat-label>
+              <span matPrefix>$&nbsp;</span>
+              <input matInput type="number" formControlName="precioCosto" min="0" step="0.01" />
+              @if (form.controls.precioCosto.hasError('required')) {
+                <mat-error>El precio de costo es obligatorio</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Precio venta 1 (principal)</mat-label>
+              <span matPrefix>$&nbsp;</span>
+              <input matInput type="number" formControlName="precioVenta1" min="0" step="0.01" />
+              @if (form.controls.precioVenta1.hasError('required')) {
+                <mat-error>El precio de venta es obligatorio</mat-error>
+              }
+              @if (form.controls.precioVenta1.hasError('min')) {
+                <mat-error>Debe ser mayor a 0</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Precio venta 2</mat-label>
+              <span matPrefix>$&nbsp;</span>
+              <input matInput type="number" formControlName="precioVenta2" min="0" step="0.01" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Precio venta 3</mat-label>
+              <span matPrefix>$&nbsp;</span>
+              <input matInput type="number" formControlName="precioVenta3" min="0" step="0.01" />
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Tasa de impuesto</mat-label>
+              <input matInput type="number" formControlName="tasaImpuesto" min="0" max="1" step="0.01" />
+              <mat-hint>Ejemplo: 0.16 = 16%</mat-hint>
+            </mat-form-field>
+
+            <div class="flex items-center">
+              <mat-slide-toggle formControlName="impuestoIncluido" color="primary">
+                Impuesto incluido en precio
+              </mat-slide-toggle>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Unidades e inventario -->
+      <mat-tab label="Inventario">
+        <div class="flex flex-col gap-4 pt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de unidad</mat-label>
+              <mat-select formControlName="tipoUnidad">
+                @for (tipo of tiposUnidad; track tipo.valor) {
+                  <mat-option [value]="tipo.valor">{{ tipo.etiqueta }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Etiqueta de unidad</mat-label>
+              <input matInput formControlName="etiquetaUnidad" placeholder="pz, kg, m, L..." />
+            </mat-form-field>
+          </div>
+
+          <mat-slide-toggle formControlName="rastrearInventario" color="primary" class="mb-2">
+            Rastrear inventario
+          </mat-slide-toggle>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Stock mínimo</mat-label>
+              <input matInput type="number" formControlName="stockMinimo" min="0" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Stock máximo</mat-label>
+              <input matInput type="number" formControlName="stockMaximo" min="0" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Notas</mat-label>
+            <textarea matInput formControlName="notas" rows="3"></textarea>
+          </mat-form-field>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
+  <button mat-flat-button color="primary" type="submit" form="productoForm" [disabled]="guardando()">
+    @if (guardando()) {
+      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+    }
+    {{ esEdicion ? 'Actualizar' : 'Crear' }}
+  </button>
+</mat-dialog-actions>

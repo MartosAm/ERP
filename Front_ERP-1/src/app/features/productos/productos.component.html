@@ -1,73 +1,106 @@
-<!-- productos.component.html — Listado de productos con tabla -->
+<app-page-header
+  titulo="Productos"
+  subtitulo="Catálogo de productos y precios"
+  icono="inventory_2">
+  <button mat-flat-button color="primary" (click)="crear()">
+    <mat-icon>add</mat-icon> Nuevo producto
+  </button>
+</app-page-header>
+
 <div class="page-container">
-  <div class="card-header">
-    <h1 class="card-title text-2xl">Productos</h1>
-  </div>
-
-  <div class="card mb-4">
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Buscar producto</mat-label>
-      <input matInput [(ngModel)]="buscar" (keyup.enter)="onBuscar()" placeholder="Nombre, SKU..." />
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
-  </div>
-
-  @if (cargando()) {
-    <div class="flex justify-center py-10">
-      <mat-spinner diameter="40" />
+  <div class="card">
+    <div class="card-header">
+      <app-search-input placeholder="Buscar por nombre, SKU..." (buscar)="buscar($event)"></app-search-input>
     </div>
-  } @else {
-    <div class="card overflow-x-auto">
-      <table mat-table [dataSource]="productos()" class="w-full">
-        <ng-container matColumnDef="sku">
-          <th mat-header-cell *matHeaderCellDef>SKU</th>
-          <td mat-cell *matCellDef="let p">{{ p.sku }}</td>
-        </ng-container>
 
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let p">{{ p.nombre }}</td>
-        </ng-container>
+    @if (cargando()) {
+      <div class="flex justify-center py-10">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+    } @else if (productos().length === 0) {
+      <app-empty-state
+        icono="inventory_2"
+        mensaje="No se encontraron productos"
+        submensaje="Crea tu primer producto para comenzar"
+        textoAccion="Nuevo producto"
+        (accion)="crear()">
+      </app-empty-state>
+    } @else {
+      <div class="overflow-x-auto">
+        <table mat-table [dataSource]="productos()" class="w-full">
+          <!-- SKU -->
+          <ng-container matColumnDef="sku">
+            <th mat-header-cell *matHeaderCellDef>SKU</th>
+            <td mat-cell *matCellDef="let p" class="font-mono text-sm">{{ p.sku }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="categoria">
-          <th mat-header-cell *matHeaderCellDef>Categoría</th>
-          <td mat-cell *matCellDef="let p">{{ p.categoria?.nombre || '—' }}</td>
-        </ng-container>
+          <!-- Nombre -->
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let p" class="font-medium">{{ p.nombre }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="precio">
-          <th mat-header-cell *matHeaderCellDef>Precio</th>
-          <td mat-cell *matCellDef="let p">{{ p.precioVenta1 | currency:'$' }}</td>
-        </ng-container>
+          <!-- Categoría -->
+          <ng-container matColumnDef="categoria">
+            <th mat-header-cell *matHeaderCellDef>Categoría</th>
+            <td mat-cell *matCellDef="let p">{{ p.categoria?.nombre || '—' }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="activo">
-          <th mat-header-cell *matHeaderCellDef>Estado</th>
-          <td mat-cell *matCellDef="let p">
-            <mat-chip [highlighted]="p.activo" [class.bg-green-100]="p.activo" [class.bg-gray-100]="!p.activo">
-              {{ p.activo ? 'Activo' : 'Inactivo' }}
-            </mat-chip>
-          </td>
-        </ng-container>
+          <!-- Precio -->
+          <ng-container matColumnDef="precio">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Precio</th>
+            <td mat-cell *matCellDef="let p" class="text-right">{{ p.precioVenta1 | moneda }}</td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"></tr>
-      </table>
+          <!-- Stock -->
+          <ng-container matColumnDef="stock">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Stock</th>
+            <td mat-cell *matCellDef="let p" class="text-right">{{ p._count?.existencias ?? 0 }}</td>
+          </ng-container>
 
-      @if (productos().length === 0) {
-        <div class="text-center py-10 text-gray-500">
-          <mat-icon class="text-5xl mb-2">inventory_2</mat-icon>
-          <p>No se encontraron productos</p>
-        </div>
-      }
+          <!-- Activo -->
+          <ng-container matColumnDef="activo">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let p">
+              <app-estado-badge [estado]="p.activo ? 'activo' : 'inactivo'" tipo="activo"></app-estado-badge>
+            </td>
+          </ng-container>
 
-      @if (meta()) {
-        <mat-paginator
-          [length]="meta()!.total"
-          [pageSize]="meta()!.limite"
-          [pageIndex]="meta()!.pagina - 1"
-          [pageSizeOptions]="[10, 20, 50]"
-          (page)="onPage($event)"
-          showFirstLastButtons />
-      }
-    </div>
-  }
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+            <td mat-cell *matCellDef="let p">
+              <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="editar(p)">
+                  <mat-icon>edit</mat-icon> Editar
+                </button>
+                <button mat-menu-item (click)="toggleActivo(p)">
+                  <mat-icon>{{ p.activo ? 'block' : 'check_circle' }}</mat-icon>
+                  {{ p.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button mat-menu-item (click)="eliminar(p)" class="text-red-600">
+                  <mat-icon color="warn">delete</mat-icon> Eliminar
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="pagina()"
+        [pageSize]="porPagina()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="cambiarPagina($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    }
+  </div>
 </div>
