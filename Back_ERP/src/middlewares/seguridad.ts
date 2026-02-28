@@ -19,6 +19,7 @@
 import { Request, Response, NextFunction } from 'express';
 import hpp from 'hpp';
 import { v4 as uuidv4 } from 'uuid';
+import { ApiResponse } from '../compartido/respuesta';
 
 // ------------------------------------------------------------------
 // 1. HTTP Parameter Pollution
@@ -177,11 +178,9 @@ export function validarContentType(
 
   const contentType = req.headers['content-type'];
   if (!contentType || !contentType.includes('application/json')) {
-    res.status(415).json({
-      ok: false,
-      mensaje: 'Content-Type debe ser application/json',
-      codigo: 'CONTENT_TYPE_INVALIDO',
-    });
+    res.status(415).json(
+      ApiResponse.fail('Content-Type debe ser application/json', 'CONTENT_TYPE_INVALIDO'),
+    );
     return;
   }
 

@@ -1,0 +1,35 @@
+<!-- sidebar.component.html — Navegación lateral con Material -->
+<div class="sidebar-brand">
+  <mat-icon class="text-indigo-500">store</mat-icon>
+  @if (!collapsed) {
+    <span class="font-bold text-lg ml-2">ERP POS</span>
+  }
+</div>
+
+<mat-divider />
+
+<mat-nav-list>
+  @for (item of navItems; track item.route) {
+    @if (!item.roles || tieneRol(item.roles)) {
+      <a mat-list-item
+         [routerLink]="item.route"
+         routerLinkActive="active-link"
+         [title]="item.label">
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        @if (!collapsed) {
+          <span matListItemTitle>{{ item.label }}</span>
+        }
+      </a>
+    }
+  }
+</mat-nav-list>
+
+<div class="sidebar-footer">
+  <mat-divider />
+  <a mat-list-item (click)="auth.logout()" class="cursor-pointer">
+    <mat-icon matListItemIcon class="text-red-400">logout</mat-icon>
+    @if (!collapsed) {
+      <span class="text-red-400">Cerrar sesión</span>
+    }
+  </a>
+</div>

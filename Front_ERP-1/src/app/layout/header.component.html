@@ -1,0 +1,31 @@
+<!-- header.component.html — Barra superior con toggle, turno y menú usuario -->
+<mat-toolbar class="header-bar">
+  <button mat-icon-button (click)="toggleSidebar.emit()" aria-label="Abrir o cerrar menú lateral">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <span class="flex-1"></span>
+
+  <!-- Indicador de turno -->
+  @if (turnos.turnoActivo()) {
+    <span class="turno-badge">
+      <mat-icon class="text-green-500 text-sm">circle</mat-icon>
+      <span class="text-sm ml-1">Turno abierto</span>
+    </span>
+  }
+
+  <!-- Menu de usuario -->
+  <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
+    <mat-icon>account_circle</mat-icon>
+  </button>
+  <mat-menu #userMenu="matMenu">
+    <div class="px-4 py-2 border-b">
+      <p class="font-medium">{{ auth.usuario()?.nombre }}</p>
+      <p class="text-xs text-gray-500">{{ auth.usuario()?.rol }}</p>
+    </div>
+    <button mat-menu-item (click)="auth.logout()">
+      <mat-icon>logout</mat-icon>
+      Cerrar sesión
+    </button>
+  </mat-menu>
+</mat-toolbar>

@@ -215,10 +215,7 @@ export const AuthService = {
     });
 
     // 7. Crear sesion en BD
-    const expiracion = dayjs().add(
-      parseInt(env.JWT_EXPIRES_IN) || 8,
-      'hour',
-    ).toDate();
+    const expiracion = this.calcularExpiracionJWT(env.JWT_EXPIRES_IN);
 
     const sesion = await prisma.sesion.create({
       data: {
@@ -243,10 +240,13 @@ export const AuthService = {
       expiresIn: env.JWT_EXPIRES_IN as string & { __brand: 'StringValue' },
     } as jwt.SignOptions);
 
-    // Actualizar la sesion con el hash del token
+    // Actualizar la sesion con el hash del token (nunca almacenar JWT en claro)
+    const { createHash } = await import('crypto');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
     await prisma.sesion.update({
       where: { id: sesion.id },
-      data: { token },
+      data: { token: tokenHash },
     });
 
     logger.info({
@@ -418,5 +418,29 @@ export const AuthService = {
         `Acceso permitido de ${usuario.horarioInicio} a ${usuario.horarioFin}`,
       );
     }
+  },
+
+  /**
+   * Parsea JWT_EXPIRES_IN (e.g., "8h", "30m", "1d", "3600s") y retorna la fecha
+   * de expiracion como Date. Soporta sufijos: h (horas), m (minutos), d (dias), s (segundos).
+   * Si no tiene sufijo valido, asume horas.
+   */
+  calcularExpiracionJWT(expiresIn: string): Date {
+    const match = expiresIn.match(/^(\d+)([hmds]?)$/i);
+    if (!match) {
+      return dayjs().add(8, 'hour').toDate(); // fallback seguro
+    }
+
+    const valor = parseInt(match[1], 10);
+    const unidad = (match[2] || 'h').toLowerCase();
+
+    const unidadMap: Record<string, dayjs.ManipulateType> = {
+      h: 'hour',
+      m: 'minute',
+      d: 'day',
+      s: 'second',
+    };
+
+    return dayjs().add(valor, unidadMap[unidad] || 'hour').toDate();
   },
 };

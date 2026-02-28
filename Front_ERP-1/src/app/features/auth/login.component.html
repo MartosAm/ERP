@@ -1,0 +1,58 @@
+<!-- login.component.html — Pantalla de inicio de sesión -->
+<div class="login-wrapper">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="text-indigo-500 text-4xl">store</mat-icon>
+      <mat-card-title>ERP POS</mat-card-title>
+      <mat-card-subtitle>Inicia sesión para continuar</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onLogin()" class="flex flex-col gap-4 mt-6">
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput formControlName="correo" type="email" autocomplete="email" />
+          <mat-icon matSuffix>mail</mat-icon>
+          @if (form.get('correo')?.hasError('required') && form.get('correo')?.touched) {
+            <mat-error>El correo es obligatorio</mat-error>
+          }
+          @if (form.get('correo')?.hasError('email') && form.get('correo')?.touched) {
+            <mat-error>Correo inválido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input matInput formControlName="contrasena"
+                 [type]="ocultarPass() ? 'password' : 'text'"
+                 autocomplete="current-password" />
+          <button mat-icon-button matSuffix type="button"
+                  aria-label="Mostrar u ocultar contraseña"
+                  (click)="ocultarPass.set(!ocultarPass())">
+            <mat-icon>{{ ocultarPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.get('contrasena')?.hasError('required') && form.get('contrasena')?.touched) {
+            <mat-error>La contraseña es obligatoria</mat-error>
+          }
+          @if (form.get('contrasena')?.hasError('minlength') && form.get('contrasena')?.touched) {
+            <mat-error>Mínimo 6 caracteres</mat-error>
+          }
+        </mat-form-field>
+
+        @if (errorLogin()) {
+          <p class="text-red-600 text-sm text-center" role="alert">{{ errorLogin() }}</p>
+        }
+
+        <button mat-raised-button color="primary" type="submit"
+                [disabled]="form.invalid || cargando()"
+                class="h-12">
+          @if (cargando()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Iniciar sesión
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

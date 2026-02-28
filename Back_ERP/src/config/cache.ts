@@ -18,12 +18,12 @@ import NodeCache from 'node-cache';
  * Instancia unica de NodeCache.
  * - stdTTL: 0 = sin expiracion automatica (se controla por modulo).
  * - checkperiod: cada 120s revisa claves expiradas.
- * - useClones: false = retorna referencia directa (mejor rendimiento).
+ * - useClones: true = retorna copia profunda (previene corrupcion por mutacion).
  */
 export const cache = new NodeCache({
   stdTTL: 0,
   checkperiod: 120,
-  useClones: false,
+  useClones: true,
 });
 
 /**

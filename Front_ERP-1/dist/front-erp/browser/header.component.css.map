@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/layout/header.component.css"],
+  "sourcesContent": [".header-bar {\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  z-index: 1000;\n  background: white;\n  border-bottom: 1px solid #e5e7eb;\n  height: var(--header-height);\n  box-shadow: var(--shadow-sm);\n}\n\n.turno-badge {\n  display: flex;\n  align-items: center;\n  margin-right: 16px;\n  padding: 4px 12px;\n  background: #ecfdf5;\n  border-radius: 12px;\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,YAAA;AACA,OAAA;AACA,QAAA;AACA,SAAA;AACA,WAAA;AACA,cAAA;AACA,iBAAA,IAAA,MAAA;AACA,UAAA,IAAA;AACA,cAAA,IAAA;AACF;AAEA,CAAA;AACE,WAAA;AACA,eAAA;AACA,gBAAA;AACA,WAAA,IAAA;AACA,cAAA;AACA,iBAAA;AACF;",
+  "names": []
+}

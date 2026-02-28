@@ -1,0 +1,20 @@
+.header-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  height: var(--header-height);
+  box-shadow: var(--shadow-sm);
+}
+
+.turno-badge {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  padding: 4px 12px;
+  background: #ecfdf5;
+  border-radius: 12px;
+}

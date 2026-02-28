@@ -99,8 +99,14 @@ export const TurnosCajaService = {
       include: {
         ordenes: {
           where: { pagado: true },
-          select: { total: true, cambio: true, metodoPago: true },
-        },
+          select: { id: true, total: true, cambio: true, metodoPago: true },
+          include: {
+            pagos: {
+              where: { metodo: 'EFECTIVO' },
+              select: { monto: true },
+            },
+          },
+        } as any,
       },
     });
 
@@ -117,10 +123,22 @@ export const TurnosCajaService = {
       throw new ErrorNegocio('Solo puedes cerrar tu propio turno o ser ADMIN');
     }
 
-    // Calcular monto esperado: apertura + ventas en efectivo - cambio dado
-    const ventasEfectivo = turno.ordenes
-      .filter((o) => o.metodoPago === 'EFECTIVO' || o.metodoPago === 'MIXTO')
-      .reduce((sum, o) => sum + Number(o.total) - Number(o.cambio), 0);
+    // Calcular monto esperado: apertura + pagos en efectivo reales - cambio dado
+    // Para ordenes EFECTIVO: total - cambio
+    // Para ordenes MIXTO: sumar solo los montos de pagos en EFECTIVO de esa orden
+    let ventasEfectivo = 0;
+    for (const o of turno.ordenes as any[]) {
+      if (o.metodoPago === 'EFECTIVO') {
+        ventasEfectivo += Number(o.total) - Number(o.cambio);
+      } else if (o.metodoPago === 'MIXTO' && o.pagos) {
+        // Sumar solo la parte en efectivo de ordenes MIXTO
+        const efectivoEnOrden = o.pagos.reduce(
+          (sum: number, p: { monto: unknown }) => sum + Number(p.monto),
+          0,
+        );
+        ventasEfectivo += efectivoEnOrden - Number(o.cambio);
+      }
+    }
 
     const montoEsperado = Number(turno.montoApertura) + ventasEfectivo;
     const diferencia = dto.montoCierre - montoEsperado;
@@ -172,11 +190,14 @@ export const TurnosCajaService = {
   },
 
   /**
-   * Obtener turno por ID con detalles.
+   * Obtener turno por ID con detalles. Filtra por empresaId para evitar acceso cross-tenant.
    */
-  async obtenerPorId(turnoId: string) {
-    const turno = await prisma.turnoCaja.findUnique({
-      where: { id: turnoId },
+  async obtenerPorId(turnoId: string, empresaId: string) {
+    const turno = await prisma.turnoCaja.findFirst({
+      where: {
+        id: turnoId,
+        cajaRegistradora: { empresaId },
+      },
       include: {
         cajaRegistradora: { select: { id: true, nombre: true } },
         usuario: { select: { id: true, nombre: true } },

@@ -56,7 +56,7 @@ export const TurnosCajaController = {
    * Obtiene un turno por ID.
    */
   obtenerPorId: async (req: Request, res: Response): Promise<void> => {
-    const turno = await TurnosCajaService.obtenerPorId(req.params.id);
+    const turno = await TurnosCajaService.obtenerPorId(req.params.id, req.user!.empresaId);
 
     res.json(ApiResponse.ok(turno));
   },

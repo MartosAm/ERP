@@ -1,12 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angular Front ERP</title>
-    <link href="styles/globals.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <title>ERP POS</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ── Security Headers ────────────────────────────────────────── -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 img-src 'self' data: blob:;
+                 connect-src 'self';
+                 frame-src 'none';
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- ── Favicon ─────────────────────────────────────────────────── -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- ── Material Icons (self-hosted vía Angular Material) ──────── -->
+  <!-- Google Fonts CDN removido por seguridad/privacidad.
+       Las fuentes se cargan localmente vía Angular Material
+       y la fuente del sistema (font-family: Roboto, sans-serif). -->
 </head>
 <body>
-    <app-root></app-root>
+  <app-root></app-root>
 </body>
 </html>

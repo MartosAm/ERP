@@ -1,5 +1,137 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ================================================================
+ * globals.css — Tailwind CSS v4 + Angular Material overrides
+ * ================================================================
+ * Tailwind v4: CSS-first configuration via @import and @theme.
+ * No tailwind.config.js needed.
+ * ================================================================ */
+@import "tailwindcss";
 
-/* Custom global styles can be added below */
+/* ── Design Tokens ─────────────────────────────────────────────── */
+@theme {
+  --color-primary: #3f51b5;
+  --color-accent: #ff4081;
+  --color-warn: #f44336;
+  --color-success: #4caf50;
+  --color-surface: #ffffff;
+  --color-bg: #fafafa;
+  --color-text: #212121;
+  --color-text-secondary: #757575;
+}
+
+/* ── CSS Custom Properties (non-theme layout tokens) ───────────── */
+:root {
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --border-radius: 8px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Base Styles ───────────────────────────────────────────────── */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: "Roboto", "Segoe UI", sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Component Utilities ───────────────────────────────────────── */
+@utility page-container {
+  padding: 1.5rem;
+  max-width: 80rem;
+  margin-inline: auto;
+}
+
+@utility card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+  border: 1px solid #f3f4f6;
+}
+
+@utility card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+@utility card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+@utility kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@utility kpi-card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  border: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+}
+
+@utility kpi-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+@utility kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-top: 0.25rem;
+}
+
+@utility kpi-change {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* ── Responsive kpi-grid via media query ───────────────────────── */
+@media (min-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── KPI change colors ─────────────────────────────────────────── */
+.kpi-change.positive {
+  color: #16a34a;
+}
+.kpi-change.negative {
+  color: #dc2626;
+}
+
+/* ── Material overrides ────────────────────────────────────────── */
+.mat-mdc-table {
+  width: 100%;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}

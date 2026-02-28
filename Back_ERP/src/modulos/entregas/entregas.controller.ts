@@ -26,7 +26,7 @@ export const EntregasController = {
    * Actualizar estado de entrega.
    */
   actualizarEstado: async (req: Request, res: Response): Promise<void> => {
-    const entrega = await EntregasService.actualizarEstado(req.params.id, req.body);
+    const entrega = await EntregasService.actualizarEstado(req.params.id, req.body, req.user.empresaId);
 
     res.json(ApiResponse.ok(entrega, 'Estado de entrega actualizado'));
   },
@@ -36,7 +36,7 @@ export const EntregasController = {
    * Obtener detalle de entrega.
    */
   obtenerPorId: async (req: Request, res: Response): Promise<void> => {
-    const entrega = await EntregasService.obtenerPorId(req.params.id);
+    const entrega = await EntregasService.obtenerPorId(req.params.id, req.user.empresaId);
 
     res.json(ApiResponse.ok(entrega));
   },
@@ -46,7 +46,7 @@ export const EntregasController = {
    * Listar entregas con filtros.
    */
   listar: async (req: Request, res: Response): Promise<void> => {
-    const resultado = await EntregasService.listar(req.query as any);
+    const resultado = await EntregasService.listar(req.query as any, req.user.empresaId);
 
     res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
   },

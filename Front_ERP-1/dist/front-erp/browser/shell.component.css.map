@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/layout/shell.component.css"],
+  "sourcesContent": [".shell-container {\n  position: fixed;\n  top: var(--header-height);\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n\n.shell-sidebar {\n  width: var(--sidebar-width);\n  border-right: 1px solid #e5e7eb;\n}\n\n.shell-content {\n  background: var(--color-bg);\n  overflow-y: auto;\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,YAAA;AACA,OAAA,IAAA;AACA,UAAA;AACA,QAAA;AACA,SAAA;AACF;AAEA,CAAA;AACE,SAAA,IAAA;AACA,gBAAA,IAAA,MAAA;AACF;AAEA,CAAA;AACE,cAAA,IAAA;AACA,cAAA;AACF;",
+  "names": []
+}

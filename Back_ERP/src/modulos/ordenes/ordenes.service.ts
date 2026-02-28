@@ -84,15 +84,16 @@ export const OrdenesService = {
     // Mapear productos para acceso rapido
     const productoMap = new Map(productos.map((p) => [p.id, p]));
 
-    // Calcular totales y verificar stock
+    // Calcular totales y verificar stock (pre-validacion; stock se re-verifica en transaccion)
     let subtotal = 0;
     let montoImpuesto = 0;
     let montoDescuento = 0;
+    let totalOrden = 0;
 
     const detallesCalculados = dto.detalles.map((item) => {
       const producto = productoMap.get(item.productoId)!;
 
-      // Verificar stock si el producto rastrea inventario
+      // Pre-verificar stock (se re-verifica dentro de la transaccion)
       if (producto.rastrearInventario) {
         const existencia = producto.existencias[0];
         const stockDisponible = existencia ? Number(existencia.cantidad) : 0;
@@ -115,6 +116,10 @@ export const OrdenesService = {
       montoDescuento += itemDescuento;
       montoImpuesto += impuesto;
 
+      // Total por item: si impuesto incluido, la base ya lo contiene; si no, se suma
+      const itemTotal = producto.impuestoIncluido ? baseImponible : baseImponible + impuesto;
+      totalOrden += itemTotal;
+
       return {
         productoId: item.productoId,
         cantidad: item.cantidad,
@@ -126,13 +131,13 @@ export const OrdenesService = {
       };
     });
 
-    const total = subtotal - montoDescuento + (productos[0]?.impuestoIncluido ? 0 : montoImpuesto);
+    const total = totalOrden;
 
-    // 3. Validar pagos
+    // 3. Validar pagos (cash + credito debe cubrir el total)
     const totalPagos = dto.pagos.reduce((sum, p) => sum + p.monto, 0);
     const usaCredito = dto.pagos.some((p) => p.metodo === 'CREDITO_CLIENTE');
 
-    if (!usaCredito && totalPagos < total) {
+    if (totalPagos < total) {
       throw new ErrorNegocio(
         `Monto pagado ($${totalPagos.toFixed(2)}) es menor al total ($${total.toFixed(2)})`,
       );
@@ -167,25 +172,6 @@ export const OrdenesService = {
       }
     }
 
-    // 5. Generar numero de orden secuencial
-    const anio = dayjs().format('YYYY');
-    const ultimaOrden = await prisma.orden.findFirst({
-      where: {
-        empresaId,
-        numeroOrden: { startsWith: `VTA-${anio}-` },
-      },
-      orderBy: { creadoEn: 'desc' },
-      select: { numeroOrden: true },
-    });
-
-    let secuencial = 1;
-    if (ultimaOrden) {
-      const partes = ultimaOrden.numeroOrden.split('-');
-      secuencial = parseInt(partes[2], 10) + 1;
-    }
-
-    const numeroOrden = `VTA-${anio}-${String(secuencial).padStart(5, '0')}`;
-
     // Determinar metodo de pago principal
     const metodoPago = dto.pagos.length === 1
       ? dto.pagos[0].metodo
@@ -194,8 +180,47 @@ export const OrdenesService = {
     // Calcular cambio (solo aplica a efectivo)
     const cambio = totalPagos > total ? totalPagos - total : 0;
 
-    // 6. Transaccion atomica: crear orden + detalles + pagos + descontar stock + credito
+    // 6. Transaccion atomica: generar numero + verificar stock + crear orden + descontar stock + credito
     const orden = await prisma.$transaction(async (tx) => {
+      // 6a. Generar numero de orden secuencial (DENTRO de la transaccion para evitar race condition)
+      const anio = dayjs().format('YYYY');
+      const ultimaOrden = await tx.orden.findFirst({
+        where: {
+          empresaId,
+          numeroOrden: { startsWith: `VTA-${anio}-` },
+        },
+        orderBy: { creadoEn: 'desc' },
+        select: { numeroOrden: true },
+      });
+
+      let secuencial = 1;
+      if (ultimaOrden) {
+        const partes = ultimaOrden.numeroOrden.split('-');
+        secuencial = parseInt(partes[2], 10) + 1;
+      }
+
+      const numeroOrden = `VTA-${anio}-${String(secuencial).padStart(5, '0')}`;
+
+      // 6b. Re-verificar stock dentro de la transaccion (evita race condition)
+      for (const detalle of detallesCalculados) {
+        const producto = productoMap.get(detalle.productoId)!;
+        if (!producto.rastrearInventario) continue;
+
+        const existenciaActual = await tx.existencia.findFirst({
+          where: {
+            productoId: detalle.productoId,
+            almacen: { esPrincipal: true, empresaId },
+          },
+        });
+
+        const stockActual = existenciaActual ? Number(existenciaActual.cantidad) : 0;
+        if (stockActual < detalle.cantidad) {
+          throw new ErrorNegocio(
+            `Stock insuficiente para "${producto.nombre}". Disponible: ${stockActual}, Solicitado: ${detalle.cantidad}`,
+          );
+        }
+      }
+
       // Crear la orden
       const nuevaOrden = await tx.orden.create({
         data: {
@@ -236,13 +261,19 @@ export const OrdenesService = {
         })),
       });
 
-      // Descontar inventario por cada producto
+      // Descontar inventario por cada producto (usando datos frescos de la tx)
       for (const detalle of detallesCalculados) {
         const producto = productoMap.get(detalle.productoId)!;
 
         if (!producto.rastrearInventario) continue;
 
-        const existencia = producto.existencias[0];
+        // Leer existencia fresca dentro de la transaccion
+        const existencia = await tx.existencia.findFirst({
+          where: {
+            productoId: detalle.productoId,
+            almacen: { esPrincipal: true, empresaId },
+          },
+        });
         if (!existencia) continue;
 
         const cantidadAnterior = Number(existencia.cantidad);
@@ -309,7 +340,7 @@ export const OrdenesService = {
     logger.info({
       mensaje: 'Orden creada',
       ordenId: orden?.id,
-      numeroOrden,
+      numeroOrden: orden?.numeroOrden,
       total,
       items: dto.detalles.length,
       usuarioId,

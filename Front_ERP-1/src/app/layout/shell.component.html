@@ -1,0 +1,16 @@
+<!-- shell.component.html — Layout principal con header + sidebar + contenido -->
+<app-header (toggleSidebar)="sidenav.toggle()" />
+
+<mat-sidenav-container class="shell-container">
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="!isMobile()"
+    class="shell-sidebar">
+    <app-sidebar [collapsed]="false" />
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell-content">
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,95 @@
+<!-- dashboard.component.html — KPIs principales del sistema -->
+<div class="page-container">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+    <button mat-icon-button (click)="cargar()" title="Actualizar">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-20">
+      <mat-spinner diameter="48" />
+    </div>
+  } @else if (data()) {
+    <!-- KPI principales -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Ventas hoy</span>
+        <span class="kpi-value">{{ data()!.ventasHoy.total | currency:'$' }}</span>
+        <span class="text-xs text-gray-400">
+          {{ data()!.ventasHoy.cantidad }} órdenes · Ticket: {{ data()!.ventasHoy.ticketPromedio | currency:'$' }}
+        </span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Ventas del mes</span>
+        <span class="kpi-value">{{ data()!.ventasMes.total | currency:'$' }}</span>
+        <span class="kpi-change"
+              [class.positive]="data()!.ventasMes.variacionVsMesAnterior >= 0"
+              [class.negative]="data()!.ventasMes.variacionVsMesAnterior < 0">
+          {{ data()!.ventasMes.variacionVsMesAnterior >= 0 ? '+' : '' }}{{ data()!.ventasMes.variacionVsMesAnterior | number:'1.1-1' }}% vs mes anterior
+        </span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Utilidad bruta</span>
+        <span class="kpi-value">{{ data()!.utilidad.utilidadBruta | currency:'$' }}</span>
+        <span class="kpi-change positive">Margen: {{ data()!.utilidad.margenPorcentaje | number:'1.1-1' }}%</span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Productos stock bajo</span>
+        <span class="kpi-value" [class.text-red-600]="data()!.productosStockBajo > 0">
+          {{ data()!.productosStockBajo }}
+        </span>
+        <span class="text-xs text-gray-400">Requieren reposición</span>
+      </div>
+    </div>
+
+    <!-- Segunda fila -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Cotizaciones pendientes</span>
+        <span class="kpi-value">{{ data()!.cotizaciones.pendientes }}</span>
+        <span class="text-xs text-gray-400">
+          Valor: {{ data()!.cotizaciones.valorPendiente | currency:'$' }}
+        </span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Devoluciones (mes)</span>
+        <span class="kpi-value">{{ data()!.devoluciones.mes.cantidad }}</span>
+        <span class="text-xs text-gray-400">
+          {{ data()!.devoluciones.mes.total | currency:'$' }} · Hoy: {{ data()!.devoluciones.hoy.cantidad }}
+        </span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Compras del mes</span>
+        <span class="kpi-value">{{ data()!.comprasMes.total | currency:'$' }}</span>
+        <span class="text-xs text-gray-400">{{ data()!.comprasMes.cantidad }} órdenes de compra</span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Entregas pendientes</span>
+        <span class="kpi-value">{{ data()!.ordenesPendientesEntrega }}</span>
+        <span class="text-xs text-gray-400">Turnos abiertos: {{ data()!.turnosAbiertos }}</span>
+      </div>
+    </div>
+
+    <!-- Info del sistema -->
+    <div class="card mt-4">
+      <div class="flex items-center gap-4 text-sm text-gray-500">
+        <span>
+          <mat-icon class="text-base align-middle">schedule</mat-icon>
+          Actualizado: {{ data()!.generadoEn | date:'HH:mm:ss' }}
+        </span>
+        <span>
+          <mat-icon class="text-base align-middle">people</mat-icon>
+          Sesiones activas: {{ data()!.sesionesActivas }}
+        </span>
+      </div>
+    </div>
+  }
+</div>

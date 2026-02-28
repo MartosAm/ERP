@@ -52,25 +52,6 @@ export const ComprasService = {
       throw new ErrorPeticion('Uno o mas productos no existen o estan inactivos');
     }
 
-    // Generar numero de compra secuencial
-    const anio = dayjs().format('YYYY');
-    const ultimaCompra = await prisma.compra.findFirst({
-      where: {
-        empresaId,
-        numeroCompra: { startsWith: `COMP-${anio}-` },
-      },
-      orderBy: { creadoEn: 'desc' },
-      select: { numeroCompra: true },
-    });
-
-    let secuencial = 1;
-    if (ultimaCompra) {
-      const partes = ultimaCompra.numeroCompra.split('-');
-      secuencial = parseInt(partes[2], 10) + 1;
-    }
-
-    const numeroCompra = `COMP-${anio}-${String(secuencial).padStart(5, '0')}`;
-
     // Calcular totales
     let subtotal = 0;
     const detallesCalculados = dto.detalles.map((item) => {
@@ -89,29 +70,50 @@ export const ComprasService = {
     const montoImpuesto = subtotal * 0.16;
     const total = subtotal + montoImpuesto;
 
-    // Crear compra con detalles
-    const compra = await prisma.compra.create({
-      data: {
-        empresaId,
-        proveedorId: dto.proveedorId,
-        numeroCompra,
-        numeroFactura: dto.numeroFactura ?? null,
-        subtotal,
-        montoImpuesto,
-        total,
-        notas: dto.notas ?? null,
-        detalles: {
-          createMany: { data: detallesCalculados },
+    // Crear compra con detalles (numero secuencial generado dentro de la transaccion)
+    const compra = await prisma.$transaction(async (tx) => {
+      // Generar numero de compra secuencial (DENTRO de la transaccion)
+      const anio = dayjs().format('YYYY');
+      const ultimaCompra = await tx.compra.findFirst({
+        where: {
+          empresaId,
+          numeroCompra: { startsWith: `COMP-${anio}-` },
         },
-      },
-      include: {
-        detalles: {
-          include: {
-            producto: { select: { id: true, nombre: true, sku: true } },
+        orderBy: { creadoEn: 'desc' },
+        select: { numeroCompra: true },
+      });
+
+      let secuencial = 1;
+      if (ultimaCompra) {
+        const partes = ultimaCompra.numeroCompra.split('-');
+        secuencial = parseInt(partes[2], 10) + 1;
+      }
+
+      const numeroCompra = `COMP-${anio}-${String(secuencial).padStart(5, '0')}`;
+
+      return tx.compra.create({
+        data: {
+          empresaId,
+          proveedorId: dto.proveedorId,
+          numeroCompra,
+          numeroFactura: dto.numeroFactura ?? null,
+          subtotal,
+          montoImpuesto,
+          total,
+          notas: dto.notas ?? null,
+          detalles: {
+            createMany: { data: detallesCalculados },
           },
         },
-        proveedor: { select: { id: true, nombre: true } },
-      },
+        include: {
+          detalles: {
+            include: {
+              producto: { select: { id: true, nombre: true, sku: true } },
+            },
+          },
+          proveedor: { select: { id: true, nombre: true } },
+        },
+      });
     });
 
     invalidarCacheModulo(MODULO);
@@ -119,7 +121,7 @@ export const ComprasService = {
     logger.info({
       mensaje: 'Compra creada',
       compraId: compra.id,
-      numeroCompra,
+      numeroCompra: compra.numeroCompra,
       total,
       items: dto.detalles.length,
     });

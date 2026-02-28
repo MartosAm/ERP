@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/features/pos/pos.component.ts", "src/app/features/pos/pos.component.html"],
+  "sourcesContent": ["import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-pos',\n  standalone: true,\n  templateUrl: './pos.component.html',\n  styleUrl: './pos.component.css',\n})\nexport class PosComponent {}\n", "<div class=\"page-container\">\n  <h1 class=\"text-2xl font-bold mb-4\">Punto de Venta</h1>\n  <p class=\"text-gray-500\">Módulo POS en desarrollo...</p>\n</div>\n"],
+  "mappings": ";;;;;;;;;;AAQM,IAAO,eAAP,MAAO,cAAY;;;uBAAZ,eAAY;IAAA;EAAA;;yEAAZ,eAAY,WAAA,CAAA,CAAA,SAAA,CAAA,GAAA,YAAA,MAAA,UAAA,CAAA,6BAAA,GAAA,OAAA,GAAA,MAAA,GAAA,QAAA,CAAA,CAAA,GAAA,gBAAA,GAAA,CAAA,GAAA,YAAA,aAAA,MAAA,GAAA,CAAA,GAAA,eAAA,CAAA,GAAA,UAAA,SAAA,sBAAA,IAAA,KAAA;AAAA,UAAA,KAAA,GAAA;ACRzB,QAAA,yBAAA,GAAA,OAAA,CAAA,EAA4B,GAAA,MAAA,CAAA;AACU,QAAA,iBAAA,GAAA,gBAAA;AAAc,QAAA,uBAAA;AAClD,QAAA,yBAAA,GAAA,KAAA,CAAA;AAAyB,QAAA,iBAAA,GAAA,gCAAA;AAA2B,QAAA,uBAAA,EAAI;;;;;;6EDM7C,cAAY,EAAA,WAAA,gBAAA,UAAA,yCAAA,YAAA,EAAA,CAAA;AAAA,GAAA;",
+  "names": []
+}

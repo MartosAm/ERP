@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/layout/sidebar.component.css"],
+  "sourcesContent": [":host {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  background: white;\n}\n\n.sidebar-brand {\n  display: flex;\n  align-items: center;\n  padding: 16px;\n  height: var(--header-height);\n}\n\n.sidebar-footer {\n  margin-top: auto;\n}\n\n.active-link {\n  background: rgba(63, 81, 181, 0.08) !important;\n  color: var(--color-primary) !important;\n  border-right: 3px solid var(--color-primary);\n}\n"],
+  "mappings": ";AAAA;AACE,WAAA;AACA,kBAAA;AACA,UAAA;AACA,cAAA;AACF;AAEA,CAAA;AACE,WAAA;AACA,eAAA;AACA,WAAA;AACA,UAAA,IAAA;AACF;AAEA,CAAA;AACE,cAAA;AACF;AAEA,CAAA;AACE,cAAA,KAAA,EAAA,EAAA,EAAA,EAAA,GAAA,EAAA;AACA,SAAA,IAAA;AACA,gBAAA,IAAA,MAAA,IAAA;AACF;",
+  "names": []
+}

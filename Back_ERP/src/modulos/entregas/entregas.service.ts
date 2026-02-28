@@ -104,9 +104,9 @@ export const EntregasService = {
   /**
    * Actualiza el estado de una entrega con validacion de transiciones.
    */
-  async actualizarEstado(entregaId: string, dto: ActualizarEstadoDto) {
-    const entrega = await prisma.entrega.findUnique({
-      where: { id: entregaId },
+  async actualizarEstado(entregaId: string, dto: ActualizarEstadoDto, empresaId: string) {
+    const entrega = await prisma.entrega.findFirst({
+      where: { id: entregaId, orden: { empresaId } },
     });
 
     if (!entrega) {
@@ -173,9 +173,9 @@ export const EntregasService = {
   /**
    * Obtiene una entrega por ID.
    */
-  async obtenerPorId(entregaId: string) {
-    const entrega = await prisma.entrega.findUnique({
-      where: { id: entregaId },
+  async obtenerPorId(entregaId: string, empresaId: string) {
+    const entrega = await prisma.entrega.findFirst({
+      where: { id: entregaId, orden: { empresaId } },
       include: {
         orden: {
           select: { id: true, numeroOrden: true, total: true, estado: true },
@@ -195,14 +195,16 @@ export const EntregasService = {
   /**
    * Lista entregas con filtros y paginacion.
    */
-  async listar(filtros: FiltroEntregasDto) {
-    const cacheKey = `${MODULO}:listar:${JSON.stringify(filtros)}`;
+  async listar(filtros: FiltroEntregasDto, empresaId: string) {
+    const cacheKey = `${MODULO}:listar:${empresaId}:${JSON.stringify(filtros)}`;
     const cached = cache.get<{ datos: unknown; meta: unknown }>(cacheKey);
     if (cached) return cached;
 
     const parametros = { pagina: filtros.pagina, limite: filtros.limite };
 
-    const where: Prisma.EntregaWhereInput = {};
+    const where: Prisma.EntregaWhereInput = {
+      orden: { empresaId },
+    };
 
     if (filtros.estado) {
       where.estado = filtros.estado;

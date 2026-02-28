@@ -1,17 +1,81 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
-import { AboutComponent } from './pages/about/about.component';
-import { AuthGuard } from './guards/auth.guard';
+/**
+ * app.routes.ts — Rutas principales de la aplicación.
+ * ------------------------------------------------------------------
+ * Patron: lazy loading por feature. Cada feature se carga bajo demanda.
+ * El ShellComponent envuelve todas las rutas autenticadas.
+ *
+ * Roles: ADMIN tiene acceso completo. CAJERO solo a dashboard, pos,
+ * productos, inventario y clientes.
+ * ------------------------------------------------------------------
+ */
+import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
-const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'about', component: AboutComponent, canActivate: [AuthGuard] },
-  // Add more routes here as needed
+export const routes: Routes = [
+  // --- Auth (sin layout) ---
+  {
+    path: 'auth/login',
+    loadComponent: () =>
+      import('./features/auth/login.component').then((m) => m.LoginComponent),
+  },
+
+  // --- Rutas protegidas (con layout shell) ---
+  {
+    path: '',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./layout/shell.component').then((m) => m.ShellComponent),
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+
+      {
+        path: 'pos',
+        loadComponent: () =>
+          import('./features/pos/pos.component').then((m) => m.PosComponent),
+      },
+
+      {
+        path: 'productos',
+        loadComponent: () =>
+          import('./features/productos/productos.component').then((m) => m.ProductosComponent),
+      },
+
+      {
+        path: 'inventario',
+        loadComponent: () =>
+          import('./features/inventario/inventario.component').then((m) => m.InventarioComponent),
+      },
+
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
+      },
+
+      // --- Solo ADMIN ---
+      {
+        path: 'reportes',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/reportes/reportes.component').then((m) => m.ReportesComponent),
+      },
+
+      {
+        path: 'configuracion',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/configuracion/configuracion.component').then((m) => m.ConfiguracionComponent),
+      },
+    ],
+  },
+
+  // --- Wildcard: redirigir a login (authGuard decide si puede ver dashboard) ---
+  { path: '**', redirectTo: 'auth/login' },
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
-})
-export class AppRoutingModule { }
