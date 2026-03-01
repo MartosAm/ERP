@@ -13,7 +13,7 @@
 | **2** | Módulos CRUD simples | ✅ Completada | 5/5 módulos |
 | **3** | Módulos transaccionales | ✅ Completada | 5/5 módulos |
 | **4** | POS (Punto de Venta) | ✅ Completada | 4/4 componentes |
-| **5** | Administración | ❌ Pendiente | 0/3 módulos |
+| **5** | Administración | ✅ Completada | 3/3 módulos |
 | **6** | Pulido y producción | ❌ Pendiente | 0/8 tareas |
 
 ---
@@ -132,13 +132,25 @@
 
 ---
 
-## Fase 5 — Administración ❌
+## Fase 5 — Administración ✅
 
-| # | Módulo | Estado | Notas |
-|---|--------|--------|-------|
-| 5.1 | **Usuarios** | ❌ Pendiente | Listado, editar datos, asignar horario, activar/desactivar. Solo ADMIN |
-| 5.2 | **Reportes** (upgrade) | ❌ Pendiente | Tabs: Ventas, Top productos, Métodos de pago, Inventario, Cajeros, Entregas. Chart.js |
-| 5.3 | **Configuración** (upgrade) | ❌ Pendiente | Tabs: Perfil, Empresa, Cajas registradoras. Cambiar PIN |
+> Commit: `f0272020` — "feat(front): fase 5 — módulos administración completos"
+
+### Módulos completados
+
+| # | Módulo | Componentes | Funcionalidades clave |
+|---|--------|------------|----------------------|
+| 5.1 | **Usuarios** | `usuarios` (list), `usuario-form-dialog`, `usuario-registro-dialog`, `horario-dialog` | Listado paginado con filtros por rol (chips) y estado. Búsqueda por nombre/correo. Registro de nuevos usuarios. Editar datos básicos. Asignar horario laboral (hora inicio/fin + días). Activar/desactivar con confirmación. Cerrar sesiones activas. Avatar con inicial, badge de rol |
+| 5.2 | **Reportes** (upgrade) | `reportes` (tabs + charts) | 6 tabs: Ventas, Top productos, Métodos de pago, Inventario, Cajeros, Entregas. Date range picker. Gráficas Chart.js (bar, doughnut, pie). KPIs de ventas. Tablas top 10 productos, inventario valorizado por almacén/categoría, rendimiento por repartidor |
+| 5.3 | **Configuración** (upgrade) | `configuracion` (tabs) | Tab Perfil: datos del usuario actual (info personal, empresa, moneda, impuesto, horario, días laborales). Tab Seguridad (solo ADMIN): cambiar PIN de cualquier usuario con confirmación |
+
+### Infraestructura agregada
+
+- `CambiarPinDto` agregado a `api.model.ts`
+- `obtenerPerfil()`, `cambiarPin()`, `registrar()` en `auth.service.ts`
+- Ruta `/usuarios` con `roleGuard('ADMIN')`
+- Item "Usuarios" agregado al sidebar
+- Fix `FiltroFechas` spread en `reportes.service.ts`
 
 ---
 
@@ -181,4 +193,5 @@
 | `a240a3f4` | 2 | CRUD — categorías, proveedores, almacenes, productos upgrade, clientes upgrade |
 | `632402b8` | 3 | Transaccionales — órdenes, compras, inventario, entregas, turnos-caja |
 | `9b0f0d08` | 4 | POS — punto de venta completo con cobro, cliente, ticket |
-| — | 5 | Administración (pendiente) |
+| `f0272020` | 5 | Administración — usuarios, reportes con Chart.js, configuración |
+| — | 6 | Pulido y producción (pendiente) |
