@@ -1,7 +1,8 @@
 # Guía de Desarrollo — Front ERP (Angular 17 + Tailwind CSS v4)
 
 > Documento de referencia para el desarrollo completo del frontend del sistema ERP POS.
-> Última actualización: 28 de febrero de 2026.
+> Última actualización: 1 de marzo de 2026.
+> Estado: **Todas las fases completadas (1–6). Proyecto en producción.**
 
 ---
 
@@ -25,60 +26,44 @@
 
 ## 1. Estado actual del proyecto
 
-### ✅ Completado
+### ✅ Proyecto completado — 6 fases finalizadas
 
 | Capa | Detalle |
 |------|---------|
-| **Core / Models** | `api.model.ts` — 968 líneas con **todas** las interfaces tipadas 1:1 con el backend (13 módulos, 55 endpoints) |
-| **Core / Services** | 18 servicios: `api`, `auth`, `token`, `notification`, `inactividad`, `dashboard`, `reportes`, `productos`, `categorias`, `clientes`, `ordenes`, `inventario`, `turnos`, `almacenes`, `compras`, `entregas`, `proveedores`, `usuarios` |
+| **Core / Models** | `api.model.ts` — 968+ líneas con **todas** las interfaces tipadas 1:1 con el backend (13 módulos, 55 endpoints) |
+| **Core / Services** | 18 servicios singleton: `api`, `auth`, `token`, `notification`, `inactividad`, `dashboard`, `reportes`, `productos`, `categorias`, `clientes`, `ordenes`, `inventario`, `turnos`, `almacenes`, `compras`, `entregas`, `proveedores`, `usuarios` |
 | **Core / Utils** | `fecha.utils.ts`, `formato.utils.ts`, `tabla.utils.ts` |
 | **Core / Guards** | `authGuard` (funcional), `roleGuard` (factory funcional) |
 | **Core / Interceptors** | `authInterceptor` (JWT Bearer), `errorInterceptor` (retry + manejo global) |
-| **Layout** | `ShellComponent` (sidebar + header + router-outlet), `HeaderComponent`, `SidebarComponent` |
-| **Feature / auth** | `LoginComponent` — completo con formulario reactivo, signals, validación |
-| **Feature / dashboard** | `DashboardComponent` — KPIs completos, 8 tarjetas, auto-refresh |
-| **Tailwind v4** | Configuración CSS-first con `@theme` tokens, utilities personalizadas |
-| **Seguridad** | CSP meta tag, XSS protection, auto-logout por inactividad (30 min), token en memoria |
-
-### ⚠️ Parcial (solo listado, sin CRUD)
-
-| Módulo | Estado |
-|--------|--------|
-| `features/productos/` | Tabla paginada con búsqueda. **Falta:** crear, editar, detalle, eliminar |
-| `features/clientes/` | Tabla paginada con búsqueda. **Falta:** crear, editar, detalle, eliminar |
-
-### ❌ Stubs (placeholder vacío)
-
-| Módulo | Estado |
-|--------|--------|
-| `features/pos/` | Solo texto "en desarrollo" |
-| `features/inventario/` | Solo texto "en desarrollo" |
-| `features/reportes/` | Solo texto "en desarrollo" |
-| `features/configuracion/` | Solo texto "en desarrollo" |
-
-### 🚫 No existe aún
-
-| Módulo / Componente | Descripción |
-|---------------------|-------------|
-| `features/categorias/` | CRUD completo de categorías |
-| `features/proveedores/` | CRUD completo de proveedores |
-| `features/almacenes/` | CRUD completo de almacenes |
-| `features/compras/` | Gestión de órdenes de compra |
-| `features/entregas/` | Gestión de entregas / delivery |
-| `features/usuarios/` | Administración de usuarios |
-| `features/turnos-caja/` | Apertura/cierre + historial de turnos |
-| `shared/components/` | Carpeta vacía — 0 componentes reutilizables |
-| `shared/pipes/` | Carpeta vacía — 0 pipes |
-| `shared/directives/` | Carpeta vacía — 0 directivas |
-| Rutas en `app.routes.ts` | Faltan 7 rutas (categorías, proveedores, almacenes, compras, entregas, usuarios, turnos) |
+| **Layout** | `ShellComponent` (responsive sidenav + header + router-outlet), `HeaderComponent`, `SidebarComponent` |
+| **shared/** | 6 componentes, 5 pipes, 1 directiva reutilizables |
+| **features/** | 15 módulos completos (auth, dashboard, pos, productos, clientes, categorías, proveedores, almacenes, órdenes, compras, inventario, entregas, turnos-caja, usuarios, reportes, configuración) |
+| **Tailwind v4** | Configuración CSS-first con `@theme` tokens, `@utility`, dark mode, responsive |
+| **PWA** | Service worker, manifest, offline awareness |
+| **Dark mode** | `prefers-color-scheme: dark` automático con 15+ overrides Material |
+| **A11y** | Skip-nav, ARIA roles, focus-visible, cdkFocusInitial |
+| **Docker** | Multi-stage Dockerfile + Nginx con gzip + security headers |
+| **Seguridad** | CSP con worker-src, XSS protection, auto-logout (30 min), token en memoria |
 
 ### 📦 Dependencias instaladas
 
 ```
-Angular 17.3 (standalone)    Tailwind CSS v4      Angular Material 17.3
-chart.js 4.4                 dayjs 1.11           @fontsource/roboto
-material-icons               rxjs 7.8             zone.js 0.14
+Angular 17.3 (standalone)    Tailwind CSS v4.2     Angular Material 17.3
+@angular/service-worker      @tailwindcss/postcss   PostCSS 8.5
+chart.js 4.4                 dayjs 1.11             @fontsource/roboto
+material-icons               rxjs 7.8               zone.js 0.14
 ```
+
+### 📋 Historial de commits
+
+| Commit | Fase | Descripción |
+|--------|------|-------------|
+| `ebe51b3d` | 1 | shared/ — 6 componentes, 5 pipes, 1 directiva |
+| `a240a3f4` | 2 | CRUD — categorías, proveedores, almacenes, productos upgrade, clientes upgrade |
+| `632402b8` | 3 | Transaccionales — órdenes, compras, inventario, entregas, turnos-caja |
+| `9b0f0d08` | 4 | POS — punto de venta completo con cobro, cliente, ticket |
+| `f0272020` | 5 | Administración — usuarios, reportes con Chart.js, configuración |
+| `f57350ec` | 6 | Pulido — PWA, dark mode, a11y, responsive, Docker producción |
 
 ---
 
@@ -104,26 +89,27 @@ src/app/
 │   └── sidebar.component.*    ← Navegación lateral
 │
 ├── shared/                    ← Componentes/pipes/directivas reutilizables
-│   ├── components/            ← ⬜ Por desarrollar
-│   ├── pipes/                 ← ⬜ Por desarrollar
-│   └── directives/            ← ⬜ Por desarrollar
+│   ├── components/            ← ✅ 6 componentes (confirm-dialog, page-header, empty-state, estado-badge, search-input, form-dialog)
+│   ├── pipes/                 ← ✅ 5 pipes (moneda, fechaCorta, fechaHora, tiempoRelativo, enumLabel)
+│   └── directives/            ← ✅ 1 directiva (appRol)
 │
 └── features/                  ← Módulos de la aplicación (lazy-loaded)
     ├── auth/                  ← ✅ Login
-    ├── dashboard/             ← ✅ KPIs
-    ├── pos/                   ← ❌ Punto de venta
-    ├── productos/             ← ⚠️ Solo lista
-    ├── clientes/              ← ⚠️ Solo lista
-    ├── inventario/            ← ❌ Stub
-    ├── reportes/              ← ❌ Stub
-    ├── configuracion/         ← ❌ Stub
-    ├── categorias/            ← 🚫 No existe
-    ├── proveedores/           ← 🚫 No existe
-    ├── almacenes/             ← 🚫 No existe
-    ├── compras/               ← 🚫 No existe
-    ├── entregas/              ← 🚫 No existe
-    ├── usuarios/              ← 🚫 No existe
-    └── turnos-caja/           ← 🚫 No existe
+    ├── dashboard/             ← ✅ KPIs + gráficos
+    ├── pos/                   ← ✅ Punto de venta completo
+    ├── productos/             ← ✅ CRUD completo + detalle
+    ├── clientes/              ← ✅ CRUD completo + detalle + historial
+    ├── categorias/            ← ✅ CRUD + árbol jerárquico
+    ├── proveedores/           ← ✅ CRUD estándar
+    ├── almacenes/             ← ✅ CRUD + toggle principal
+    ├── ordenes/               ← ✅ Lista + detalle + acciones
+    ├── compras/               ← ✅ Crear + detalle + recibir mercancía
+    ├── inventario/            ← ✅ Existencias + movimientos + ajuste + traslado
+    ├── entregas/              ← ✅ Lista + detalle + seguimiento
+    ├── turnos-caja/           ← ✅ Abrir/cerrar + historial + detalle
+    ├── usuarios/              ← ✅ Listado + editar + roles
+    ├── reportes/              ← ✅ 6 tabs con Chart.js + date range
+    └── configuracion/         ← ✅ Perfil + empresa + cajas
 ```
 
 ### Principios arquitectónicos
@@ -141,10 +127,10 @@ src/app/
 
 ## 3. Plan de desarrollo por fases
 
-### Fase 1 — shared/ Infrastructure (Componentes reutilizables)
+### Fase 1 — shared/ Infrastructure ✅ (commit `ebe51b3d`)
 
 > **Objetivo:** Crear los building blocks que se reutilizarán en TODOS los módulos.
-> **Prioridad:** MÁXIMA — sin estos, cada módulo reinventa la rueda.
+> **Estado:** Completada — 6 componentes, 5 pipes, 1 directiva.
 
 | # | Componente | Tipo | Descripción |
 |---|-----------|------|-------------|
@@ -159,10 +145,10 @@ src/app/
 | 1.9 | `tiempo-relativo.pipe` | Pipe | `{{ iso \| tiempoRelativo }}` → `Hace 5 min` |
 | 1.10 | `rol.directive` | Directive | `*appRol="'ADMIN'"` — muestra/oculta por rol del usuario |
 
-### Fase 2 — Módulos CRUD simples (catálogos)
+### Fase 2 — Módulos CRUD simples ✅ (commit `a240a3f4`)
 
-> **Objetivo:** Completar los módulos de catálogo base. Son los más simples y sientan el patrón.
-> **Cada módulo incluye:** Listado paginado + Búsqueda + MatDialog crear/editar + Detalle + Eliminar con confirmación.
+> **Objetivo:** Completar los módulos de catálogo base.
+> **Estado:** Completada — categorías, proveedores, almacenes, productos y clientes con CRUD completo.
 
 | # | Módulo | Rutas | MatDialogs | Notas |
 |---|--------|-------|------------|-------|
@@ -172,9 +158,10 @@ src/app/
 | 2.4 | `productos` (upgrade) | `/productos`, `/productos/:id` | Crear/Editar producto | Agregar vista detalle, diálogos CRUD, filtros avanzados (categoría, proveedor, estado) |
 | 2.5 | `clientes` (upgrade) | `/clientes`, `/clientes/:id` | Crear/Editar cliente | Agregar vista detalle (historial de órdenes), diálogos CRUD |
 
-### Fase 3 — Módulos transaccionales
+### Fase 3 — Módulos transaccionales ✅ (commit `632402b8`)
 
-> **Objetivo:** Módulos que manejan transacciones de negocio con flujos más complejos.
+> **Objetivo:** Módulos que manejan transacciones de negocio con flujos complejos.
+> **Estado:** Completada — órdenes, compras, inventario, entregas, turnos-caja.
 
 | # | Módulo | Rutas | Componentes especiales |
 |---|--------|-------|----------------------|
@@ -184,10 +171,10 @@ src/app/
 | 3.4 | `entregas` | `/entregas`, `/entregas/:id` | Lista con filtros por estado, mapa conceptual de seguimiento, actualización de estado, vista repartidor |
 | 3.5 | `turnos-caja` | `/turnos-caja` | Abrir turno (diálogo), cerrar turno (diálogo con montos), historial, detalle con diferencias |
 
-### Fase 4 — POS (Punto de Venta)
+### Fase 4 — POS (Punto de Venta) ✅ (commit `9b0f0d08`)
 
 > **Objetivo:** Pantalla principal de venta, full-screen, optimizada para táctil y teclado.
-> **Es el módulo más complejo — necesita todo lo anterior terminado.**
+> **Estado:** Completada — POS completo con cobro, cliente, ticket, turno de caja requerido.
 
 | Zona | Funcionalidad |
 |------|---------------|
@@ -198,7 +185,7 @@ src/app/
 | **Diálogos** | Selección de cliente, pago mixto, ticket/comprobante, apertura/cierre de turno |
 | **Requisito previo** | Turno de caja abierto para poder vender |
 
-### Fase 5 — Administración
+### Fase 5 — Administración ✅ (commit `f0272020`)
 
 | # | Módulo | Rutas | Funcionalidad |
 |---|--------|-------|---------------|
@@ -206,7 +193,7 @@ src/app/
 | 5.2 | `reportes` (upgrade) | `/reportes` | Tabs: Ventas · Top productos · Métodos de pago · Inventario · Cajeros · Entregas. Gráficas con Chart.js. Date range picker. |
 | 5.3 | `configuracion` (upgrade) | `/configuracion` | Tabs: Perfil · Empresa · Cajas registradoras. Editar perfil, cambiar PIN. |
 
-### Fase 6 — Pulido y producción
+### Fase 6 — Pulido y producción ✅ (commit `f57350ec`)
 
 | Tarea | Detalle |
 |-------|---------|
@@ -220,7 +207,9 @@ src/app/
 
 ---
 
-## 4. Componentes shared/ pendientes
+## 4. Componentes shared/ ✅ (referencia)
+
+> Todos implementados en Fase 1. Documentación de interfaz mantenida como referencia.
 
 ### 4.1 `confirm-dialog`
 
@@ -344,7 +333,9 @@ Wrapper genérico para diálogos CRUD:
 
 ---
 
-## 5. Módulos feature/ por desarrollar
+## 5. Módulos feature/ ✅ (referencia)
+
+> Todos implementados en Fases 2–5. Documentación de estructura mantenida como referencia.
 
 ### Vista general — archivos por módulo CRUD típico
 
@@ -557,77 +548,290 @@ export class ProductosComponent implements OnInit {
 
 ## 7. Guía de estilos con Tailwind CSS v4
 
-### 7.1 Configuración actual
+> **Versión**: Tailwind CSS **v4.2** — configuración CSS-first (sin `tailwind.config.js`).
 
-Tailwind v4 usa **configuración CSS-first** (sin `tailwind.config.js`):
+### 7.1 Instalación y configuración
 
-```css
-/* src/styles/globals.css */
-@import "tailwindcss";
+#### Paquetes (package.json devDependencies)
 
-@theme {
-  --color-primary: #3f51b5;
-  --color-accent: #ff4081;
-  --color-warn: #f44336;
-  --color-success: #4caf50;
-  --color-surface: #ffffff;
-  --color-bg: #fafafa;
-  --color-text: #212121;
-  --color-text-secondary: #757575;
+```json
+"tailwindcss": "^4.0.0",
+"@tailwindcss/postcss": "^4.0.0",
+"postcss": "^8.5.0"
+```
+
+#### PostCSS — `.postcssrc.json`
+
+```json
+{
+  "plugins": {
+    "@tailwindcss/postcss": {}
+  }
 }
 ```
 
-### 7.2 Tokens de diseño
+> ⚠️ **No existe** `tailwind.config.js`, `postcss.config.js` ni `postcss.config.mjs`.
+> En Tailwind v4 toda la configuración vive en **CSS** (`globals.css`).
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--color-primary` | `#3f51b5` | Acciones principales, links activos, botones primarios |
-| `--color-accent` | `#ff4081` | CTAs secundarios, badges de atención |
-| `--color-warn` | `#f44336` | Errores, eliminaciones, alertas |
-| `--color-success` | `#4caf50` | Confirmaciones, estados exitosos |
-| `--color-bg` | `#fafafa` | Fondo general de la app |
-| `--color-surface` | `#ffffff` | Fondo de cards, diálogos, tablas |
-| `--sidebar-width` | `260px` | Ancho del sidebar |
-| `--header-height` | `64px` | Alto del header |
-| `--border-radius` | `8px` | Radio de bordes estándar |
-| `--shadow-sm` | `0 1px 3px rgba(0,0,0,0.12)` | Sombra para cards |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Sombra para modales |
+#### angular.json — orden de estilos
 
-### 7.3 Utilities personalizadas
-
-```css
-@utility page-container { padding: 1.5rem; max-width: 80rem; margin-inline: auto; }
-@utility card { background: white; border-radius: 0.5rem; box-shadow: var(--shadow-sm); padding: 1rem; border: 1px solid #f3f4f6; }
-@utility card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-@utility card-title { font-size: 1.125rem; font-weight: 600; color: #1f2937; }
-@utility kpi-grid { display: grid; ... }
-@utility kpi-card { ... }
-@utility kpi-label { ... }
-@utility kpi-value { ... }
+```json
+"styles": [
+  "node_modules/@fontsource/roboto/400.css",
+  "node_modules/@fontsource/roboto/500.css",
+  "node_modules/@fontsource/roboto/700.css",
+  "node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
+  "node_modules/material-icons/iconfont/material-icons.css",
+  "src/styles/globals.css"       // ← último: sobrescribe Material
+]
 ```
 
-### 7.4 Reglas de uso
+#### Nota sobre peer dependencies
+
+`@angular-devkit/build-angular@17.3` reporta un peer warning pidiendo `tailwindcss ^2 || ^3`.
+Es **inofensivo** — el build compila sin errores con TW v4. Angular CLI aún no actualiza su lista de peers.
+
+### 7.2 Diferencias clave v3 → v4
+
+| Concepto | Tailwind v3 | Tailwind v4 |
+|----------|------------|------------|
+| **Configuración** | `tailwind.config.js` (JavaScript) | CSS-first: `@theme {}` en `.css` |
+| **Directivas CSS** | `@tailwind base; @tailwind components; @tailwind utilities;` | `@import "tailwindcss";` |
+| **Colores custom** | `theme.extend.colors` en JS | `@theme { --color-nombre: #hex; }` |
+| **Utilities custom** | `@layer utilities { .nombre { @apply ... } }` | `@utility nombre { propiedad: valor; }` |
+| **Plugin PostCSS** | `tailwindcss` (paquete principal) | `@tailwindcss/postcss` (dedicado) |
+| **Config PostCSS** | `postcss.config.js` con `require('tailwindcss')` | `.postcssrc.json` con `"@tailwindcss/postcss"` |
+| **Prefixes** | Siguen igual: `sm:`, `md:`, `hover:`, etc. | Sin cambio |
+| **@apply** | Se usa frecuentemente | Se desaconseja; preferir `@utility` |
+| **Dark mode** | `darkMode: 'class'` en config JS | `@media (prefers-color-scheme: dark)` nativo o variantes |
+
+### 7.3 Tokens de diseño — `@theme`
+
+Los tokens definidos en `@theme {}` se exponen automáticamente como clases Tailwind (p.ej. `bg-primary`, `text-accent`, `border-border`):
+
+```css
+@theme {
+  --color-primary:        #3f51b5;   /* Indigo — botones, links, header activo */
+  --color-primary-light:  #7986cb;   /* Indigo claro — hover, focus */
+  --color-primary-dark:   #303f9f;   /* Indigo oscuro — pressed, active */
+  --color-accent:         #ff4081;   /* Pink — CTAs secundarios, badges */
+  --color-warn:           #f44336;   /* Red — errores, eliminaciones */
+  --color-success:        #4caf50;   /* Green — confirmaciones, activo */
+  --color-surface:        #ffffff;   /* Fondo de cards, diálogos */
+  --color-bg:             #fafafa;   /* Fondo general */
+  --color-text:           #212121;   /* Texto principal */
+  --color-text-secondary: #757575;   /* Texto secundario, labels */
+  --color-border:         #e5e7eb;   /* Bordes normales */
+  --color-border-light:   #f3f4f6;   /* Bordes sutiles (cards, rows) */
+}
+```
+
+Esto genera automáticamente utilidades como:
+
+```html
+<div class="bg-primary text-surface">Header</div>
+<p class="text-text-secondary">Subtítulo</p>
+<div class="border border-border-light">Card</div>
+```
+
+### 7.4 CSS Custom Properties — tokens de layout y dark mode
+
+Tokens que **no** van en `@theme` (no necesitan generar clases Tailwind):
+
+```css
+:root {
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --border-radius: 8px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Dark mode aliases (light defaults) */
+  --dm-bg: var(--color-bg);
+  --dm-surface: var(--color-surface);
+  --dm-text: var(--color-text);
+  --dm-text-secondary: var(--color-text-secondary);
+  --dm-border: var(--color-border);
+  --dm-border-light: var(--color-border-light);
+  --dm-card-bg: #ffffff;
+  --dm-hover: #f9fafb;
+  --dm-shadow-sm: var(--shadow-sm);
+  --dm-shadow-md: var(--shadow-md);
+}
+```
+
+### 7.5 Sistema de Dark Mode
+
+Se usa `prefers-color-scheme: dark` (automático OS). Las `@utility` leen las variables `--dm-*`, que se sobrescriben en dark mode:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dm-bg: #121212;
+    --dm-surface: #1e1e1e;
+    --dm-text: #e0e0e0;
+    --dm-text-secondary: #a0a0a0;
+    --dm-border: #333333;
+    --dm-border-light: #2a2a2a;
+    --dm-card-bg: #1e1e1e;
+    --dm-hover: #2a2a2a;
+    --dm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --dm-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+```
+
+**Regla clave:** Todas las `@utility` deben leer `var(--dm-xxx, fallback)` en vez de colores hardcodeados. Así el dark mode funciona automáticamente sin duplicar reglas.
+
+Se incluyen 15+ overrides de Angular Material para dark mode:
+- Cards, toolbar, diálogos, tablas (header, cell, row hover)
+- Form fields (outline, input text, select), menús
+- Tabs, paginator, chips, divider, snackbar
+- Scrollbar personalizada
+
+### 7.6 Utilities personalizadas — `@utility`
+
+En Tailwind v4, las utilities custom se definen con `@utility nombre { ... }` (no `@layer utilities`):
+
+```css
+/* Layout */
+@utility page-container {
+  padding: 1.5rem;
+  max-width: 80rem;
+  margin-inline: auto;
+}
+
+/* Cards */
+@utility card {
+  background: var(--dm-card-bg, white);
+  border-radius: 0.5rem;
+  box-shadow: var(--dm-shadow-sm, var(--shadow-sm));
+  padding: 1rem;
+  border: 1px solid var(--dm-border-light, #f3f4f6);
+}
+
+@utility card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+@utility card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dm-text, #1f2937);
+}
+
+/* KPI Dashboard */
+@utility kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);  /* →2 cols @sm, →4 cols @lg via media query */
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@utility kpi-card {
+  background: var(--dm-card-bg, white);
+  border-radius: 0.5rem;
+  box-shadow: var(--dm-shadow-sm, var(--shadow-sm));
+  padding: 1.25rem;
+  border: 1px solid var(--dm-border-light, #f3f4f6);
+  display: flex;
+  flex-direction: column;
+}
+
+@utility kpi-label {
+  font-size: 0.875rem;
+  color: var(--dm-text-secondary, #6b7280);
+  font-weight: 500;
+}
+
+@utility kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dm-text, #1f2937);
+  margin-top: 0.25rem;
+}
+
+@utility kpi-change {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+```
+
+> **Responsividad de kpi-grid:** Las columnas se adaptan con media queries estándar porque `@utility` no acepta media queries anidadas. En `globals.css` hay:
+> `@media (min-width: 640px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }`
+> `@media (min-width: 1024px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }`
+
+### 7.7 Tailwind en componentes Angular
+
+Angular usa **View Encapsulation** por defecto. Consideraciones:
+
+| Escenario | Dónde | Cómo |
+|-----------|-------|------|
+| **Clases Tailwind en templates** | `component.html` | Funcionan directamente — `class="flex gap-4 p-4"` |
+| **Estilos globales** (`page-container`, `card`, etc.) | `globals.css` | Se aplican porque no están encapsulados |
+| **CSS específico del componente** | `component.css` | Usar selectores Tailwind o CSS puro; `@apply` disponible pero **no recomendado** |
+| **Overrides de Material** | `globals.css` | Usar selectores de Material + `!important` donde sea necesario |
+| **Tokens de diseño** | `globals.css` + templates | Usar `var(--dm-xxx)` en CSS, `bg-primary` etc. en templates |
+
+**Regla:** Preferir siempre clases Tailwind en el template HTML antes que CSS en `component.css`. Si se necesita un estilo que se repite 3+ veces, crear una `@utility` en `globals.css`.
+
+### 7.8 Estilos de impresión
+
+```css
+@media print {
+  /* Ocultar chrome: header, sidebar, sidenav, paginator, botones, skip-nav */
+  /* Contenido a ancho completo sin margins */
+  /* Cards sin shadow, con border sutil */
+  /* Tablas a 10pt compactas */
+  /* print-color-adjust: exact para gráficos */
+}
+```
+
+Clase `.no-print` disponible para ocultar elementos en impresión.
+
+### 7.9 Accesibilidad CSS
+
+| Feature | Implementación |
+|---------|---------------|
+| **Skip navigation** | `.skip-nav` oculto, visible con `:focus` (Tab) |
+| **Focus visible** | `*:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }` |
+| **Scrollbar custom** | Sutil 6px, respeta dark mode |
+| **Density compact** | `.density-compact` reduce form fields para espacios reducidos |
+
+### 7.10 Reglas de uso
 
 | ✅ Hacer | ❌ No hacer |
 |---------|-----------|
 | Usar clases Tailwind en templates HTML | Escribir CSS custom para márgenes/paddings |
 | Usar `@utility` para patrones repetidos (3+ veces) | Crear clases CSS sueltas en component.css |
-| Usar `@theme` para colores y tokens del diseño | Hardcodear colores hex en templates |
-| Usar responsive prefixes: `sm:`, `md:`, `lg:` | Escribir media queries manuales (excepto en `@utility`) |
-| Componer clases: `class="flex items-center gap-2"` | Crear wrapper divs innecesarios para layout |
-| Usar `@apply` SOLO en component.css cuando Tailwind no alcance | Usar `@apply` en globals.css |
+| Usar `@theme` para colores del diseño | Hardcodear colores hex en templates |
+| Usar responsive prefixes: `sm:`, `md:`, `lg:` | Escribir media queries manuales salvo en `@utility` |
+| Componer clases: `class="flex items-center gap-2"` | Crear wrapper divs innecesarios |
+| Leer `var(--dm-xxx, fallback)` en `@utility` para dark mode | Usar colores hex directos en utilities |
+| Usar `@import "tailwindcss"` (v4) | Usar `@tailwind base/components/utilities` (v3) |
+| Definir tokens en `@theme {}` | Crear un `tailwind.config.js` |
+| Usar `.postcssrc.json` con `@tailwindcss/postcss` | Usar `postcss.config.js` con `tailwindcss` |
 
-### 7.5 Breakpoints (Tailwind v4 defaults)
+### 7.11 Breakpoints (Tailwind v4 defaults)
 
-| Prefix | Min-width | Uso |
+| Prefix | Min-width | Uso en el proyecto |
 |--------|-----------|-----|
-| `sm:` | 640px | Tablets pequeñas |
-| `md:` | 768px | Tablets |
-| `lg:` | 1024px | Desktop |
-| `xl:` | 1280px | Desktop grande |
+| `sm:` | 640px | Tablets pequeñas — kpi-grid 2 cols, POS stacking |
+| `md:` | 768px | Tablets — sidebar se colapsa, tablas visibles |
+| `lg:` | 1024px | Desktop — kpi-grid 4 cols, grid 2 cols, sidebar expandido |
+| `xl:` | 1280px | Desktop grande — layouts anchos |
 | `2xl:` | 1536px | Pantallas ultra anchas |
 
-### 7.6 Patrones de layout comunes
+### 7.12 Patrones de layout comunes
 
 ```html
 <!-- Página estándar -->
@@ -651,9 +855,20 @@ Tailwind v4 usa **configuración CSS-first** (sin `tailwind.config.js`):
 <div class="card overflow-x-auto">
   <table mat-table class="w-full">...</table>
 </div>
+
+<!-- KPI Dashboard -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <span class="kpi-label">Ventas hoy</span>
+    <span class="kpi-value">{{ ventasHoy | currency }}</span>
+    <span class="kpi-change" [class.positive]="cambio >= 0" [class.negative]="cambio < 0">
+      {{ cambio >= 0 ? '+' : '' }}{{ cambio }}%
+    </span>
+  </div>
+</div>
 ```
 
-### 7.7 Colores semánticos para estados
+### 7.13 Colores semánticos para estados
 
 ```html
 <!-- Estados de orden -->
@@ -951,29 +1166,33 @@ readonly items$ = this.svc.listar(params);
 
 ## 13. Checklist de lanzamiento
 
-### Pre-producción
+### Pre-producción ✅
 
-- [ ] Todos los módulos funcionales (13 features)
-- [ ] shared/ con todos los componentes reutilizables
-- [ ] Responsive verificado en 3 breakpoints
-- [ ] A11y: tab navigation, ARIA labels, focus trap
-- [ ] Build de producción sin warnings
-- [ ] Bundle size dentro de budgets (initial < 500kb warning, < 1MB error)
-- [ ] CSP headers configurados en Nginx
-- [ ] Environment prod apuntando a `/api/v1`
-- [ ] Docker + Nginx configurados
-- [ ] Favicon y meta tags actualizados
+- [x] Todos los módulos funcionales (15 features + auth)
+- [x] shared/ con todos los componentes reutilizables (6 componentes, 5 pipes, 1 directiva)
+- [x] Responsive verificado en 3 breakpoints (mobile, tablet, desktop)
+- [x] Dark mode con `prefers-color-scheme: dark` (15+ overrides Material)
+- [x] A11y: skip-nav, ARIA roles, focus-visible, cdkFocusInitial
+- [x] Estilos de impresión (`@media print`)
+- [x] PWA: service worker, manifest, 8 iconos, offline awareness
+- [x] Build de producción sin errores
+- [x] Bundle size dentro de budgets (initial < 750kb warning, < 1.5MB error; component < 8kb/12kb)
+- [x] CSP headers configurados en Nginx + `index.html` meta tag
+- [x] Environment prod apuntando a `/api/v1`
+- [x] Docker multi-stage + Nginx con gzip + security headers
+- [x] Favicon, meta tags y manifest actualizados
+- [x] Tailwind CSS v4 con configuración CSS-first (sin `tailwind.config.js`)
 
-### Módulos por completar (orden de prioridad)
+### Fases completadas
 
-1. **shared/ components** — Fase 1 (prereq para todo lo demás)
-2. **POS** — Fase 4 (la pantalla más usada del sistema)
-3. **Productos + Clientes** — Fase 2 (upgrade a CRUD completo)
-4. **Órdenes** — Fase 3 (historial de ventas)
-5. **Inventario** — Fase 3 (existencias y movimientos)
-6. **Categorías + Proveedores + Almacenes** — Fase 2 (catálogos base)
-7. **Compras + Entregas + Turnos** — Fase 3 (transacciones)
-8. **Usuarios + Reportes + Configuración** — Fase 5 (admin)
+| Fase | Commit | Contenido |
+|------|--------|-----------|
+| 1 — shared/ | `ebe51b3d` | 6 componentes + 5 pipes + 1 directiva |
+| 2 — CRUD | `a240a3f4` | categorías, proveedores, almacenes, productos y clientes upgrade |
+| 3 — Transaccional | `632402b8` | órdenes, compras, inventario, entregas, turnos-caja |
+| 4 — POS | `9b0f0d08` | punto de venta completo con cobro, cliente, ticket |
+| 5 — Administración | `f0272020` | usuarios, reportes con Chart.js, configuración |
+| 6 — Pulido | `f57350ec` | PWA, dark mode, a11y, responsive, Docker producción |
 
 ---
 
