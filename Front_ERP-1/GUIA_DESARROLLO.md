@@ -1192,57 +1192,608 @@ Usan las variables semánticas `--dm-*` con `!important`:
 
 ## 9. Patrón CRUD estándar de un módulo
 
-### Paso a paso para crear un módulo nuevo (ej: proveedores)
+> Referencia para crear nuevos módulos. Basado en los 11 módulos implementados.
+> Existen 3 tipos de módulo; cada uno con estructura distinta.
 
-#### 1. Crear archivos de estructura
+### 9.1 Tipos de módulo
+
+| Tipo | Ejemplo | Archivos | Rutas | Características |
+|------|---------|----------|-------|----------------|
+| **CRUD simple** | proveedores, categorías, almacenes | list + form-dialog (6 archivos) | 1 ruta plana | Crear/editar vía MatDialog, eliminar con confirmación |
+| **CRUD + extras** | productos, clientes | list + form-dialog (6 archivos) | 1 ruta plana | CRUD + toggleActivo, filtros avanzados, tabs en diálogo |
+| **Transaccional** | órdenes, compras, entregas, turnos | list + detalle + action-dialogs (8-10 archivos) | 2 rutas (`/` + `/:id`) | Sin CRUD directo, detalle con acciones de dominio, filtros por estado |
+
+### 9.2 Estructura de archivos
+
+#### CRUD simple
 
 ```
 features/proveedores/
-├── proveedores.component.ts       ← Listado
+├── proveedores.component.ts            ← Listado paginado
 ├── proveedores.component.html
 ├── proveedores.component.css
-├── proveedor-form-dialog.component.ts  ← Crear/Editar
+├── proveedor-form-dialog.component.ts  ← Diálogo crear/editar
 ├── proveedor-form-dialog.component.html
 └── proveedor-form-dialog.component.css
 ```
 
-#### 2. Implementar el listado
+#### Transaccional con detalle
 
-- Inyectar servicio, dialog, notify, destroyRef
-- Signals: `items`, `meta`, `cargando`
-- Métodos: `cargar()`, `onBuscar()`, `onPage()`, `crear()`, `editar()`, `eliminar()`
-- Template: `page-header` + `search-input` + tabla + paginador + `empty-state`
+```
+features/ordenes/
+├── ordenes.component.ts                ← Listado con filtros
+├── ordenes.component.html
+├── ordenes.component.css
+├── orden-detalle.component.ts          ← Vista detalle (/:id)
+├── orden-detalle.component.html
+├── orden-detalle.component.css
+├── cancelar-orden-dialog.component.ts  ← Diálogo de acción
+├── cancelar-orden-dialog.component.html
+├── devolucion-dialog.component.ts      ← Diálogo de acción
+└── devolucion-dialog.component.html
+```
 
-#### 3. Implementar el diálogo de formulario
+### 9.3 Componente de listado — TypeScript
 
-- Inyectar `MAT_DIALOG_DATA`, `MatDialogRef`, servicio, notify
-- Formulario reactivo con `FormBuilder`
-- Modo `crear` | `editar` determinado por los datos inyectados
-- Validaciones Zod-compatibles (required, minLength, email, etc.)
-- Botón guardar con loading state
-
-#### 4. Implementar confirmación de eliminación
-
-- Usar `ConfirmDialogComponent` de shared
-- Llamar `svc.eliminar()` solo si el usuario confirma
-- Recargar lista después de eliminar
-
-#### 5. Agregar ruta en app.routes.ts
+Estructura canónica (basada en `proveedores.component.ts`):
 
 ```typescript
+// 1. Angular
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+// 2. Material
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+// 3. Servicios
+import { ProveedoresService } from '../../core/services/proveedores.service';
+import { NotificationService } from '../../core/services/notification.service';
+// 4. Shared
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+// 5. Diálogo local
+import { ProveedorFormDialogComponent } from './proveedor-form-dialog.component';
+// 6. Tipos
+import type { Proveedor, PaginacionMeta } from '../../core/models/api.model';
+
+@Component({
+  selector: 'app-proveedores',
+  standalone: true,
+  imports: [ /* solo lo que se usa */ ],
+  templateUrl: './proveedores.component.html',
+  styleUrl: './proveedores.component.css',
+})
+export class ProveedoresComponent implements OnInit {
+  // ── Inyecciones (private readonly) ──
+  private readonly svc = inject(ProveedoresService);
+  private readonly dialog = inject(MatDialog);
+  private readonly notify = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // ── Signals de estado ──
+  readonly items = signal<Proveedor[]>([]);
+  readonly meta = signal<PaginacionMeta | null>(null);
+  readonly cargando = signal(false);
+
+  // ── Columnas de tabla ──
+  readonly columnas = ['nombre', 'contacto', 'telefono', 'correo', 'activo', 'acciones'];
+
+  // ── Paginación y búsqueda (propiedades simples) ──
+  buscar = '';
+  pagina = 1;
+  limite = 20;
+
+  // ── Lifecycle ──
+  ngOnInit(): void { this.cargar(); }
+
+  // ── Cargar datos ──
+  cargar(): void {
+    this.cargando.set(true);
+    const params: Record<string, string | number> = {
+      pagina: this.pagina,
+      limite: this.limite,
+    };
+    if (this.buscar) params['buscar'] = this.buscar;
+
+    this.svc.listar(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.items.set(res.datos);
+          this.meta.set(res.meta);
+          this.cargando.set(false);
+        },
+        error: () => {
+          this.notify.error('Error al cargar proveedores');
+          this.cargando.set(false);
+        },
+      });
+  }
+
+  // ── Handlers de búsqueda y paginación ──
+  onBuscar(term: string): void {
+    this.buscar = term;
+    this.pagina = 1;
+    this.cargar();
+  }
+
+  onPage(ev: PageEvent): void {
+    this.pagina = ev.pageIndex + 1;
+    this.limite = ev.pageSize;
+    this.cargar();
+  }
+
+  // ── CRUD: Crear ──
+  crear(): void {
+    const ref = this.dialog.open(ProveedorFormDialogComponent, {
+      width: '600px',
+      data: { modo: 'crear' },
+    });
+    ref.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(ok => { if (ok) this.cargar(); });
+  }
+
+  // ── CRUD: Editar ──
+  editar(item: Proveedor): void {
+    const ref = this.dialog.open(ProveedorFormDialogComponent, {
+      width: '600px',
+      data: { modo: 'editar', proveedor: item },
+    });
+    ref.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(ok => { if (ok) this.cargar(); });
+  }
+
+  // ── CRUD: Eliminar ──
+  eliminar(item: Proveedor): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        titulo: 'Eliminar proveedor',
+        mensaje: `¿Estás seguro de eliminar "${item.nombre}"?`,
+      },
+    });
+    ref.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(ok => {
+        if (!ok) return;
+        this.svc.eliminar(item.id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => { this.notify.exito('Proveedor eliminado'); this.cargar(); },
+            error: () => this.notify.error('Error al eliminar proveedor'),
+          });
+      });
+  }
+}
+```
+
+### 9.4 Componente de listado — template HTML
+
+```html
+<div class="page-container">
+  <!-- 1. Header con botón de acción -->
+  <app-page-header titulo="Proveedores" subtitulo="Gestión de proveedores" icono="local_shipping">
+    <button mat-raised-button color="primary" (click)="crear()">
+      <mat-icon>add</mat-icon> Nuevo proveedor
+    </button>
+  </app-page-header>
+
+  <!-- 2. Card de búsqueda -->
+  <div class="card mb-4">
+    <app-search-input placeholder="Buscar proveedor..." (buscar)="onBuscar($event)" />
+  </div>
+
+  <!-- 3. Loading spinner -->
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <!-- 4. Card con tabla -->
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+        <!-- Columnas de datos... -->
+
+        <!-- Columna de acciones (siempre última) -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let p">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="editar(p)">
+                <mat-icon>edit</mat-icon> Editar
+              </button>
+              <button mat-menu-item (click)="eliminar(p)" class="!text-red-600">
+                <mat-icon class="!text-red-600">delete</mat-icon> Eliminar
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50"></tr>
+      </table>
+
+      <!-- 5. Empty state -->
+      @if (items().length === 0) {
+        <app-empty-state icono="local_shipping" mensaje="No se encontraron proveedores"
+          textoAccion="Crear proveedor" (accion)="crear()" />
+      }
+
+      <!-- 6. Paginador -->
+      @if (meta()) {
+        <mat-paginator [length]="meta()!.total" [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1" [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)" showFirstLastButtons />
+      }
+    </div>
+  }
+</div>
+```
+
+### 9.5 Diálogo de formulario — TypeScript
+
+```typescript
+interface DialogData {
+  modo: 'crear' | 'editar';
+  proveedor?: Proveedor;       // nombre de la entidad cambia por módulo
+}
+
+@Component({ standalone: true, imports: [...], templateUrl, styleUrl })
+export class ProveedorFormDialogComponent {
+  // Inyecciones
+  private readonly fb = inject(FormBuilder);
+  private readonly svc = inject(ProveedoresService);
+  private readonly notify = inject(NotificationService);
+  readonly dialogRef = inject(MatDialogRef<ProveedorFormDialogComponent>);
+  readonly data: DialogData = inject(MAT_DIALOG_DATA);
+
+  // Estado de guardado
+  readonly guardando = signal(false);
+
+  // Formulario reactivo (fb.nonNullable.group)
+  readonly form = this.fb.nonNullable.group({
+    nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
+    nombreContacto: [''],
+    telefono: [''],
+    correo: ['', [Validators.email]],
+    direccion: [''],
+    rfc: ['', [Validators.maxLength(13)]],
+    notas: [''],
+  });
+
+  // Getter de conveniencia
+  get esEdicion(): boolean { return this.data.modo === 'editar'; }
+
+  // Patch de datos en modo edición (constructor o ngOnInit)
+  constructor() {
+    if (this.esEdicion && this.data.proveedor) {
+      this.form.patchValue({
+        nombre: this.data.proveedor.nombre,
+        nombreContacto: this.data.proveedor.nombreContacto ?? '',
+        // ... etc.
+      });
+    }
+  }
+
+  // Guardar
+  guardar(): void {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.guardando.set(true);
+    const raw = this.form.getRawValue();
+
+    // Construir payload (solo incluir campos opcionales si no están vacíos)
+    const payload: Record<string, unknown> = { nombre: raw.nombre };
+    if (raw.telefono) payload['telefono'] = raw.telefono;
+    // ...
+
+    const obs$ = this.esEdicion
+      ? this.svc.actualizar(this.data.proveedor!.id, payload)
+      : this.svc.crear(payload as { nombre: string });
+
+    obs$.subscribe({
+      next: () => {
+        this.notify.exito(this.esEdicion ? 'Proveedor actualizado' : 'Proveedor creado');
+        this.dialogRef.close(true);
+      },
+      error: () => {
+        this.guardando.set(false);
+        this.notify.error('Error al guardar proveedor');
+      },
+    });
+  }
+}
+```
+
+> **Nota:** Si el diálogo necesita cargar datos externos (ej: listas de categorías en `producto-form-dialog`), implementar `OnInit` y mover la carga/patch a `ngOnInit()`.
+
+### 9.6 Diálogo de formulario — template HTML
+
+```html
+<!-- Título dinámico -->
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar' : 'Nuevo' }} proveedor</h2>
+
+<!-- Contenido -->
+<mat-dialog-content class="flex flex-col gap-4">
+  <form [formGroup]="form" id="proveedorForm" (ngSubmit)="guardar()" class="flex flex-col gap-4 pt-2">
+
+    <!-- Campo full-width -->
+    <mat-form-field class="w-full">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" placeholder="Nombre del proveedor" />
+      @if (form.controls.nombre.hasError('required')) {
+        <mat-error>El nombre es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Campos lado a lado (responsive) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field>
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="telefono" />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Correo</mat-label>
+        <input matInput formControlName="correo" type="email" />
+        @if (form.controls.correo.hasError('email')) {
+          <mat-error>Correo inválido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Textarea -->
+    <mat-form-field class="w-full">
+      <mat-label>Dirección</mat-label>
+      <textarea matInput formControlName="direccion" rows="2"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<!-- Acciones -->
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
+  <button mat-flat-button color="primary" type="submit" form="proveedorForm" [disabled]="guardando()">
+    @if (guardando()) {
+      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+    }
+    {{ esEdicion ? 'Actualizar' : 'Crear' }}
+  </button>
+</mat-dialog-actions>
+```
+
+**Patrón clave:** El `<form>` tiene un atributo `id` y el botón Submit usa `form="proveedorForm"` (external submit). El botón Cancel usa `mat-dialog-close` para cerrar sin valor. El spinner es inline dentro del botón.
+
+> **Nota:** `appearance="outline"` ya no es necesario por campo individual — se provee globalmente vía `MAT_FORM_FIELD_DEFAULT_OPTIONS` en `app.config.ts`.
+
+### 9.7 Componente de detalle (transaccional)
+
+Para módulos transaccionales con vista `/modulo/:id`:
+
+```typescript
+export class OrdenDetalleComponent implements OnInit {
+  // Inyecta ActivatedRoute + Router además del servicio
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly svc = inject(OrdenesService);
+  private readonly dialog = inject(MatDialog);
+  private readonly notify = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // Signal del objeto completo + cargando arranca en TRUE
+  readonly orden = signal<OrdenDetalle | null>(null);
+  readonly cargando = signal(true);
+
+  // Columnas para sub-tablas (detalles, pagos, etc.)
+  readonly colDetalles = ['producto', 'cantidad', 'precioUnitario', 'descuento', 'subtotal'];
+  readonly colPagos = ['metodo', 'monto', 'referencia', 'fecha'];
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) this.cargar(id);
+  }
+
+  cargar(id: string): void {
+    this.cargando.set(true);
+    this.svc.obtenerPorId(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (o) => { this.orden.set(o); this.cargando.set(false); },
+        error: () => { this.notify.error('Error al cargar'); this.cargando.set(false); },
+      });
+  }
+
+  // Getters para visibilidad de acciones
+  get puedeCancelar(): boolean { /* check estado */ }
+  get puedeDevolver(): boolean { /* check estado */ }
+
+  // Acciones de dominio (diálogo → servicio → recargar)
+  cancelar(): void { /* ... */ }
+  devolver(): void { /* ... */ }
+  volver(): void { this.router.navigate(['/ordenes']); }
+}
+```
+
+**Template del detalle:**
+
+```html
+<div class="page-container">
+  @if (cargando()) {
+    <div class="flex justify-center py-16"><mat-spinner diameter="48" /></div>
+  } @else if (orden()) {
+    <!-- Page header con botones de acción + volver -->
+    <app-page-header [titulo]="'Orden ' + orden()!.numeroOrden" icono="receipt_long">
+      <button mat-button (click)="volver()"><mat-icon>arrow_back</mat-icon> Volver</button>
+      @if (puedeCancelar) {
+        <button mat-raised-button color="warn" (click)="cancelar()">Cancelar orden</button>
+      }
+    </app-page-header>
+
+    <!-- Grid de cards informativas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="card"><strong>Estado:</strong> <app-estado-badge ... /></div>
+      <!-- más cards -->
+    </div>
+
+    <!-- Sub-tablas en cards -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-3">Detalles</h3>
+      <table mat-table [dataSource]="orden()!.detalles" class="w-full"> ... </table>
+    </div>
+
+    <!-- Secciones condicionales -->
+    @if (orden()!.pagos.length > 0) {
+      <div class="card mb-6"> ... </div>
+    }
+  }
+</div>
+```
+
+### 9.8 Servicio del módulo
+
+#### CRUD simple
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ProveedoresService {
+  private readonly api = inject(ApiService);
+
+  listar(params?: Record<string, string | number | boolean>): Observable<ApiPaginada<Proveedor>> {
+    return this.api.getPaginado<Proveedor>('proveedores', params);
+  }
+
+  obtenerPorId(id: string): Observable<ProveedorDetalle> {
+    return this.api.get<ProveedorDetalle>(`proveedores/${id}`);
+  }
+
+  crear(data: ProveedorDto): Observable<Proveedor> {
+    return this.api.post<Proveedor>('proveedores', data);
+  }
+
+  actualizar(id: string, data: Partial<ProveedorDto>): Observable<Proveedor> {
+    return this.api.patch<Proveedor>(`proveedores/${id}`, data);
+  }
+
+  eliminar(id: string): Observable<void> {
+    return this.api.delete<void>(`proveedores/${id}`);
+  }
+}
+```
+
+> **5 métodos estándar:** `listar`, `obtenerPorId`, `crear`, `actualizar`, `eliminar`.
+> Todos delegan en `ApiService` que hace unwrap de `ApiResponse<T>`.
+
+#### Transaccional (sin CRUD clásico)
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class OrdenesService {
+  listar(params?)                              // listado paginado
+  obtenerPorId(id)                             // detalle completo
+  crear(payload)                               // crear orden de venta
+  crearCotizacion(payload)                     // crear cotización
+  confirmarCotizacion(id, payload)             // confirmar cotización → orden
+  cancelar(id, dto)                            // cancelar con motivo
+  devolver(id, payload)                        // devolución parcial/total
+}
+```
+
+### 9.9 Registro de rutas
+
+En `app.routes.ts`, dentro de los `children` del `ShellComponent`:
+
+```typescript
+// CRUD simple — una ruta plana
 {
   path: 'proveedores',
   canActivate: [roleGuard('ADMIN')],
-  loadComponent: () => import('./features/proveedores/proveedores.component')
-    .then(m => m.ProveedoresComponent),
+  loadComponent: () =>
+    import('./features/proveedores/proveedores.component')
+      .then(m => m.ProveedoresComponent),
+},
+
+// Transaccional — dos rutas hermanas (NO children anidados)
+{
+  path: 'ordenes',
+  loadComponent: () =>
+    import('./features/ordenes/ordenes.component')
+      .then(m => m.OrdenesComponent),
+},
+{
+  path: 'ordenes/:id',
+  loadComponent: () =>
+    import('./features/ordenes/orden-detalle.component')
+      .then(m => m.OrdenDetalleComponent),
 },
 ```
 
-#### 6. Agregar item en sidebar
+**Reglas:**
+- Todas las rutas son `loadComponent` (lazy-loaded, standalone)
+- Rutas de detalle (`/:id`) son **hermanas**, no hijas de la ruta de listado
+- `canActivate: [roleGuard('ADMIN')]` solo en rutas restringidas por rol
+- Sin guard para módulos accesibles por todos los roles autenticados
+
+### 9.10 Registro en sidebar
+
+En `sidebar.component.ts`:
 
 ```typescript
-{ label: 'Proveedores', icon: 'local_shipping', route: '/proveedores', roles: ['ADMIN'] },
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  roles?: string[];   // Si se omite → visible para TODOS los autenticados
+}
+
+readonly navItems: NavItem[] = [
+  { label: 'Dashboard',       icon: 'dashboard',       route: '/dashboard' },
+  { label: 'Punto de Venta',  icon: 'point_of_sale',   route: '/pos',          roles: ['ADMIN', 'CAJERO'] },
+  { label: 'Órdenes',         icon: 'receipt_long',    route: '/ordenes' },
+  { label: 'Productos',       icon: 'inventory_2',     route: '/productos' },
+  { label: 'Categorías',      icon: 'category',        route: '/categorias' },
+  { label: 'Clientes',        icon: 'people',          route: '/clientes' },
+  { label: 'Proveedores',     icon: 'handshake',       route: '/proveedores',  roles: ['ADMIN'] },
+  // ... etc.
+];
 ```
+
+El template filtra con `@if (!item.roles || tieneRol(item.roles))` y usa `routerLinkActive="active-link"`.
+
+### 9.11 Paso a paso — crear un módulo CRUD nuevo
+
+1. **Crear 6 archivos** en `features/nombre/` (list × 3 + form-dialog × 3)
+2. **Implementar servicio** en `core/services/` con los 5 métodos estándar
+3. **Agregar tipos** en `core/models/api.model.ts` (DTO + interfaz de respuesta)
+4. **Implementar el listado** siguiendo §9.3 + §9.4
+5. **Implementar el diálogo** siguiendo §9.5 + §9.6
+6. **Agregar ruta** en `app.routes.ts` dentro de los children del Shell
+7. **Agregar item** en `sidebar.component.ts` con icono e ícono de Material Icons
+8. **Verificar** con `ng build --configuration development`
+
+### 9.12 Diferencias entre tipos de módulo
+
+| Aspecto | CRUD simple | CRUD + extras | Transaccional |
+|---------|------------|---------------|---------------|
+| **Archivos** | 6 (list + form-dialog) | 6 (list + form-dialog con tabs) | 8-10 (list + detalle + action-dialogs) |
+| **Rutas** | 1 (`/modulo`) | 1 (`/modulo`) | 2 (`/modulo` + `/modulo/:id`) |
+| **Botón "Nuevo"** | Sí | Sí | No (items se crean desde otro flujo) |
+| **Editar en lista** | Sí (MatDialog) | Sí (MatDialog) | No |
+| **Eliminar en lista** | Sí (ConfirmDialog) | Sí (ConfirmDialog) | No |
+| **Click en fila** | No | No | Navega a detalle |
+| **Filtros extra** | Ninguno | Selectores avanzados | Chips de estado + date range |
+| **Menú de fila** | Editar, Eliminar | Editar, Toggle, Eliminar | Ver detalle |
+| **Empty state** | Con `textoAccion` + `(accion)` | Con `textoAccion` + `(accion)` | Solo `submensaje` (sin acción) |
+| **Router** | No se inyecta | No se inyecta | Sí (para navegación a detalle) |
+| **Servicio** | 5 métodos CRUD | 5 CRUD + extras | list + getById + acciones de dominio |
 
 ---
 
