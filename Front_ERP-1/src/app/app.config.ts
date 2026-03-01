@@ -6,11 +6,13 @@
  *  - HTTP client con interceptors
  *  - Animaciones async
  *  - APP_INITIALIZER para validar sesión JWT al arranque
+ *  - Service Worker para PWA offline
  */
-import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, inject, isDevMode } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideServiceWorker } from '@angular/service-worker';
 import { firstValueFrom, of } from 'rxjs';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -38,6 +40,10 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([authInterceptor, errorInterceptor]),
     ),
     provideAnimationsAsync(),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     {
       provide: APP_INITIALIZER,
       useFactory: inicializarSesion,

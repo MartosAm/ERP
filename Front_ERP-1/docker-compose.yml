@@ -3,12 +3,11 @@ version: '3.8'
 services:
   frontend:
     build:
-      context: ./docker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/Dockerfile
     ports:
       - "80:80"
-    volumes:
-      - ./src:/usr/share/nginx/html
+    restart: unless-stopped
     networks:
       - frontend-network
 

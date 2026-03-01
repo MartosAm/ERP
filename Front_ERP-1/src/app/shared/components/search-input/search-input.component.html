@@ -1,9 +1,10 @@
-<mat-form-field appearance="outline" class="w-full search-field">
-  <mat-icon matPrefix class="text-gray-400 mr-1">search</mat-icon>
+<mat-form-field appearance="outline" class="w-full search-field" role="search">
+  <mat-icon matPrefix class="text-gray-400 mr-1" aria-hidden="true">search</mat-icon>
   <input
     matInput
     [formControl]="control"
     [placeholder]="placeholder"
+    [attr.aria-label]="placeholder"
     autocomplete="off" />
   @if (control.value) {
     <button

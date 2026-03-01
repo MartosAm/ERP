@@ -9,6 +9,8 @@
 /* ── Design Tokens ─────────────────────────────────────────────── */
 @theme {
   --color-primary: #3f51b5;
+  --color-primary-light: #7986cb;
+  --color-primary-dark: #303f9f;
   --color-accent: #ff4081;
   --color-warn: #f44336;
   --color-success: #4caf50;
@@ -16,6 +18,8 @@
   --color-bg: #fafafa;
   --color-text: #212121;
   --color-text-secondary: #757575;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
 }
 
 /* ── CSS Custom Properties (non-theme layout tokens) ───────────── */
@@ -25,6 +29,143 @@
   --border-radius: 8px;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Dark mode semantic aliases — light defaults */
+  --dm-bg: var(--color-bg);
+  --dm-surface: var(--color-surface);
+  --dm-text: var(--color-text);
+  --dm-text-secondary: var(--color-text-secondary);
+  --dm-border: var(--color-border);
+  --dm-border-light: var(--color-border-light);
+  --dm-card-bg: #ffffff;
+  --dm-hover: #f9fafb;
+  --dm-shadow-sm: var(--shadow-sm);
+  --dm-shadow-md: var(--shadow-md);
+}
+
+/* ── Dark Mode ─────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dm-bg: #121212;
+    --dm-surface: #1e1e1e;
+    --dm-text: #e0e0e0;
+    --dm-text-secondary: #a0a0a0;
+    --dm-border: #333333;
+    --dm-border-light: #2a2a2a;
+    --dm-card-bg: #1e1e1e;
+    --dm-hover: #2a2a2a;
+    --dm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --dm-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+
+  html, body {
+    background: var(--dm-bg);
+    color: var(--dm-text);
+  }
+
+  /* Material overrides for dark */
+  .mat-mdc-card,
+  .mdc-card {
+    background-color: var(--dm-surface) !important;
+    color: var(--dm-text) !important;
+  }
+
+  .mat-toolbar {
+    background-color: var(--dm-surface) !important;
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: var(--dm-surface) !important;
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-table {
+    background: var(--dm-surface) !important;
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--dm-text-secondary) !important;
+    border-bottom-color: var(--dm-border) !important;
+  }
+
+  .mat-mdc-cell {
+    color: var(--dm-text) !important;
+    border-bottom-color: var(--dm-border-light) !important;
+  }
+
+  .mat-mdc-row:hover .mat-mdc-cell {
+    background-color: var(--dm-hover) !important;
+  }
+
+  .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__leading,
+  .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__notch,
+  .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline__trailing {
+    border-color: var(--dm-border) !important;
+  }
+
+  .mat-mdc-form-field .mat-mdc-input-element {
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-select-value {
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-menu-panel {
+    background: var(--dm-surface) !important;
+  }
+
+  .mat-mdc-menu-item {
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-tab-header {
+    background: var(--dm-surface) !important;
+  }
+
+  .mat-mdc-paginator {
+    background: var(--dm-surface) !important;
+    color: var(--dm-text) !important;
+  }
+
+  .mat-mdc-chip {
+    background-color: var(--dm-hover) !important;
+    color: var(--dm-text) !important;
+  }
+
+  .mat-divider {
+    border-top-color: var(--dm-border) !important;
+  }
+
+  .mat-mdc-snack-bar-container .mdc-snackbar__surface {
+    background-color: #333 !important;
+  }
+
+  /* Utility dark overrides */
+  .card, .kpi-card {
+    background: var(--dm-card-bg) !important;
+    border-color: var(--dm-border-light) !important;
+    box-shadow: var(--dm-shadow-sm) !important;
+  }
+
+  .card-title, .kpi-value {
+    color: var(--dm-text) !important;
+  }
+
+  .kpi-label {
+    color: var(--dm-text-secondary) !important;
+  }
+
+  /* Scrollbar dark */
+  ::-webkit-scrollbar-thumb {
+    background: #555 !important;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--dm-bg) !important;
+  }
 }
 
 /* ── Base Styles ───────────────────────────────────────────────── */
@@ -33,9 +174,28 @@ body {
   height: 100%;
   margin: 0;
   font-family: "Roboto", "Segoe UI", sans-serif;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--dm-bg, var(--color-bg));
+  color: var(--dm-text, var(--color-text));
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── Skip Navigation (A11y) ────────────────────────────────────── */
+.skip-nav {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 0.5rem 0;
+  transition: top 0.2s;
+}
+
+.skip-nav:focus {
+  top: 0;
 }
 
 /* ── Component Utilities ───────────────────────────────────────── */
@@ -46,11 +206,11 @@ body {
 }
 
 @utility card {
-  background: white;
+  background: var(--dm-card-bg, white);
   border-radius: 0.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--dm-shadow-sm, var(--shadow-sm));
   padding: 1rem;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--dm-border-light, #f3f4f6);
 }
 
 @utility card-header {
@@ -63,7 +223,7 @@ body {
 @utility card-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--dm-text, #1f2937);
 }
 
 @utility kpi-grid {
@@ -74,25 +234,25 @@ body {
 }
 
 @utility kpi-card {
-  background: white;
+  background: var(--dm-card-bg, white);
   border-radius: 0.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--dm-shadow-sm, var(--shadow-sm));
   padding: 1.25rem;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--dm-border-light, #f3f4f6);
   display: flex;
   flex-direction: column;
 }
 
 @utility kpi-label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--dm-text-secondary, #6b7280);
   font-weight: 500;
 }
 
 @utility kpi-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--dm-text, #1f2937);
   margin-top: 0.25rem;
 }
 
@@ -100,6 +260,13 @@ body {
   font-size: 0.75rem;
   margin-top: 0.25rem;
   font-weight: 500;
+}
+
+/* ── Responsive utilities ──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page-container {
+    padding: 0.75rem;
+  }
 }
 
 /* ── Responsive kpi-grid via media query ───────────────────────── */
@@ -122,9 +289,27 @@ body {
   color: #dc2626;
 }
 
+/* ── Table responsive wrapper ──────────────────────────────────── */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ── Material overrides ────────────────────────────────────────── */
 .mat-mdc-table {
   width: 100%;
+}
+
+/* Compact density helper (reusable) */
+.density-compact {
+  --mat-form-field-container-height: 40px;
+  --mat-form-field-container-vertical-padding: 4px;
+}
+
+/* ── Focus visible ring (A11y) ─────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────── */
@@ -134,4 +319,69 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 3px;
+}
+
+/* ── Print Styles ──────────────────────────────────────────────── */
+@media print {
+  /* Hide shell chrome */
+  app-header,
+  app-sidebar,
+  mat-sidenav,
+  .mat-drawer-backdrop,
+  .skip-nav,
+  .mat-mdc-paginator,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Full-width content */
+  mat-sidenav-container,
+  mat-sidenav-content,
+  .shell-container {
+    position: static !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Clean cards for print */
+  .card, .kpi-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+  }
+
+  /* Tables: keep readable */
+  .mat-mdc-table {
+    font-size: 10pt !important;
+  }
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    padding: 4px 8px !important;
+  }
+
+  /* Page breaks */
+  .kpi-grid {
+    break-inside: avoid;
+  }
+
+  /* Force backgrounds for charts etc */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
 }

@@ -1,4 +1,6 @@
 <!-- shell.component.html — Layout principal con header + sidebar + contenido -->
+<a class="skip-nav" href="#main-content">Saltar al contenido</a>
+
 <app-header (toggleSidebar)="sidenav.toggle()" />
 
 <mat-sidenav-container class="shell-container">
@@ -6,11 +8,13 @@
     #sidenav
     [mode]="isMobile() ? 'over' : 'side'"
     [opened]="!isMobile()"
-    class="shell-sidebar">
+    class="shell-sidebar"
+    role="navigation"
+    aria-label="Menú principal">
     <app-sidebar [collapsed]="false" />
   </mat-sidenav>
 
-  <mat-sidenav-content class="shell-content">
+  <mat-sidenav-content class="shell-content" id="main-content" role="main">
     <router-outlet />
   </mat-sidenav-content>
 </mat-sidenav-container>

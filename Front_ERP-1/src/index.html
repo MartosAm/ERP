@@ -5,6 +5,15 @@
   <title>ERP POS</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sistema ERP con punto de venta integrado">
+
+  <!-- ── PWA ─────────────────────────────────────────────────────── -->
+  <meta name="theme-color" content="#3f51b5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ERP POS">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/icon-152x152.png">
 
   <!-- ── Security Headers ────────────────────────────────────────── -->
   <meta http-equiv="Content-Security-Policy"
@@ -14,6 +23,7 @@
                  font-src 'self' data:;
                  img-src 'self' data: blob:;
                  connect-src 'self';
+                 worker-src 'self';
                  frame-src 'none';
                  object-src 'none';
                  base-uri 'self';
@@ -31,6 +41,11 @@
        y la fuente del sistema (font-family: Roboto, sans-serif). -->
 </head>
 <body>
+  <noscript>
+    <p style="text-align:center;margin:2rem;font-family:sans-serif">
+      Activa JavaScript para usar <strong>ERP POS</strong>.
+    </p>
+  </noscript>
   <app-root></app-root>
 </body>
 </html>

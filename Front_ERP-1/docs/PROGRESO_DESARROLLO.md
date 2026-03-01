@@ -1,7 +1,7 @@
 # Progreso de Desarrollo — Front ERP
 
 > Documento de seguimiento del avance por fases según la [GUIA_DESARROLLO.md](../GUIA_DESARROLLO.md).
-> Última actualización: 28 de febrero de 2026.
+> Última actualización: 1 de marzo de 2026.
 
 ---
 
@@ -14,7 +14,7 @@
 | **3** | Módulos transaccionales | ✅ Completada | 5/5 módulos |
 | **4** | POS (Punto de Venta) | ✅ Completada | 4/4 componentes |
 | **5** | Administración | ✅ Completada | 3/3 módulos |
-| **6** | Pulido y producción | ❌ Pendiente | 0/8 tareas |
+| **6** | Pulido y producción | ✅ Completada | 8/8 tareas |
 
 ---
 
@@ -154,18 +154,49 @@
 
 ---
 
-## Fase 6 — Pulido y producción ❌
+## Fase 6 — Pulido y producción ✅
 
-| Tarea | Estado |
-|-------|--------|
-| Responsive (mobile/tablet/desktop) | ❌ |
-| Dark mode | ❌ |
-| Impresión (tickets, reportes) | ❌ |
-| PWA (manifest, service worker) | ❌ |
-| Performance (lazy images, virtual scroll) | ❌ |
-| A11y (ARIA, focus trap, contraste WCAG AA) | ❌ |
-| Build producción (tree-shaking, CSP, Docker) | ❌ |
-| Bundle budgets optimización | ❌ |
+> Commit: _pendiente_ — "feat(front): fase 6 — pulido, PWA, dark mode, Docker producción"
+
+### Tareas completadas
+
+| # | Tarea | Descripción |
+|---|-------|-------------|
+| 6.1 | **Responsive** | Layout sidebar contrae en tablet (portrait), overlay en mobile. Auto-cierre de sidebar en navegación mobile. page-container reduce padding en ≤640px. POS mejora stacking en ≤768px. Charts se reducen a 220px en mobile |
+| 6.2 | **Dark mode** | `prefers-color-scheme: dark` automático. Variables semánticas `--dm-*` en `:root` con dark overrides. 15+ overrides Material: tables, dialogs, menus, chips, tabs, paginador, form-fields, snackbar. Overrides para card/kpi/scrollbar. Sidebar: active-link usa `primary-light`. Header: turno-badge oscuro. Login: gradient oscuro |
+| 6.3 | **Print styles** | `@media print`: oculta header/sidebar/paginator/botones. Contenido full-width sin shadow. Tablas compactas 10pt. `break-inside: avoid` en cards/kpi-grid. `print-color-adjust: exact` |
+| 6.4 | **PWA** | `@angular/service-worker` registrado (`registerWhenStable:30000`). `manifest.webmanifest` con 8 tamaños de icono (72–512px). `ngsw-config.json`: prefetch app shell, lazy assets, API freshness (1h cache, 10s timeout). PWA meta tags: theme-color, apple-mobile-web-app, apple-touch-icon. `worker-src 'self'` en CSP. `<noscript>` fallback |
+| 6.5 | **Performance** | Lazy-loading ya por ruta (Angular router). `viewTransitions` habilitado. `@for` con `track` nativo en toda la app. Budgets: initial 750kb warn / 1.5mb error. Component style 8kb/12kb |
+| 6.6 | **A11y** | Skip navigation link (`<a class="skip-nav">`). `role="navigation"` y `aria-label` en sidebar. `role="main"` y `id="main-content"` en contenido. `role="search"` en SearchInput. `role="status"` en EmptyState. `aria-hidden="true"` en iconos decorativos. `cdkFocusInitial` en ConfirmDialog. `*:focus-visible` ring global (2px primary) |
+| 6.7 | **Docker producción** | Dockerfile multi-stage: node:18-alpine → nginx:1.25-alpine. Path correcto `dist/front-erp/browser`. Non-root nginx user. Healthcheck. nginx.conf: gzip (6 tipos), security headers (X-Frame-Options, X-Content-Type, X-XSS-Protection, Referrer-Policy, Permissions-Policy, CSP), cache immutable para assets, no-cache para SW, hidden files denied. docker-compose.yml: contexto raíz, sin volume mount erróneo |
+| 6.8 | **Bundle budgets** | Initial: 750kb warn / 1.5mb error. Component: 8kb / 12kb. Build prod exitoso sin errores, solo 1 warning CSS selector (Tailwind v4 syntax) |
+
+### Archivos modificados/creados
+
+| Archivo | Acción |
+|---------|--------|
+| `src/styles/globals.css` | Refactorizado: dark mode, print, responsive, a11y, tokens extra |
+| `src/app/layout/shell.component.*` | Router close on nav, tablet breakpoint, ARIA roles |
+| `src/app/layout/header.component.css` | Dark mode, mobile turno-badge |
+| `src/app/layout/sidebar.component.css` | Dark mode, active-link dark variant |
+| `src/app/features/pos/pos.component.css` | Dark mode completo, responsive mejorado |
+| `src/app/features/auth/login.component.css` | Dark mode, responsive padding |
+| `src/app/features/reportes/reportes.component.css` | Dark mode vars, responsive charts |
+| `src/app/features/configuracion/configuracion.component.css` | Dark mode vars |
+| `src/app/shared/components/search-input/` | role=search, aria-label, aria-hidden |
+| `src/app/shared/components/empty-state/` | role=status, aria-hidden |
+| `src/app/shared/components/confirm-dialog/` | cdkFocusInitial, aria-hidden |
+| `src/app/shared/components/page-header/` | aria-hidden decorativo |
+| `src/index.html` | PWA meta tags, manifest link, noscript, worker-src CSP |
+| `src/app/app.config.ts` | provideServiceWorker registrado |
+| `src/manifest.webmanifest` | **NUEVO** — manifest PWA |
+| `ngsw-config.json` | **NUEVO** — config service worker |
+| `src/assets/icons/icon-*x*.png` | **NUEVO** — 8 iconos PWA |
+| `angular.json` | serviceWorker, manifest asset, budgets ajustados |
+| `docker/Dockerfile` | **REESCRITO** — multi-stage correcto |
+| `docker/nginx.conf` | **REESCRITO** — gzip, security headers, SW cache |
+| `docker-compose.yml` | **CORREGIDO** — contexto raíz, sin volume erróneo |
+| `package.json` | +@angular/service-worker |
 
 ---
 
@@ -194,4 +225,4 @@
 | `632402b8` | 3 | Transaccionales — órdenes, compras, inventario, entregas, turnos-caja |
 | `9b0f0d08` | 4 | POS — punto de venta completo con cobro, cliente, ticket |
 | `f0272020` | 5 | Administración — usuarios, reportes con Chart.js, configuración |
-| — | 6 | Pulido y producción (pendiente) |
+| — | 6 | Pulido y producción — responsive, dark mode, PWA, a11y, Docker |

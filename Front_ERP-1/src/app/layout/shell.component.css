@@ -8,10 +8,17 @@
 
 .shell-sidebar {
   width: var(--sidebar-width);
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--dm-border, #e5e7eb);
 }
 
 .shell-content {
-  background: var(--color-bg);
+  background: var(--dm-bg, var(--color-bg));
   overflow-y: auto;
+}
+
+/* Tablet: narrower sidebar */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .shell-sidebar {
+    width: 220px;
+  }
 }

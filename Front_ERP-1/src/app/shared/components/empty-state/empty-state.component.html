@@ -1,5 +1,5 @@
-<div class="flex flex-col items-center justify-center py-12 text-center">
-  <mat-icon class="text-gray-300 mb-4 !text-6xl !w-16 !h-16">{{ icono }}</mat-icon>
+<div class="flex flex-col items-center justify-center py-12 text-center" role="status">
+  <mat-icon class="text-gray-300 mb-4 !text-6xl !w-16 !h-16" aria-hidden="true">{{ icono }}</mat-icon>
   <p class="text-gray-500 font-medium text-base">{{ mensaje }}</p>
   @if (submensaje) {
     <p class="text-gray-400 text-sm mt-1">{{ submensaje }}</p>

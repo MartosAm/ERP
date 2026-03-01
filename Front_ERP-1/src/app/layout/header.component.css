@@ -4,10 +4,11 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--dm-surface, white);
+  border-bottom: 1px solid var(--dm-border, #e5e7eb);
   height: var(--header-height);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--dm-shadow-sm, var(--shadow-sm));
+  color: var(--dm-text, inherit);
 }
 
 .turno-badge {
@@ -17,4 +18,22 @@
   padding: 4px 12px;
   background: #ecfdf5;
   border-radius: 12px;
+}
+
+/* Mobile: hide turno text, show only icon */
+@media (max-width: 480px) {
+  .turno-badge span:not(.mat-icon) {
+    display: none;
+  }
+  .turno-badge {
+    padding: 4px 8px;
+    margin-right: 4px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .turno-badge {
+    background: #064e3b;
+    color: #a7f3d0;
+  }
 }

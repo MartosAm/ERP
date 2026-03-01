@@ -1,5 +1,5 @@
 <h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-warn">warning</mat-icon>
+  <mat-icon class="text-warn" aria-hidden="true">warning</mat-icon>
   {{ data.titulo }}
 </h2>
 
@@ -8,7 +8,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="gap-2 pt-2">
-  <button mat-button (click)="cancelar()">{{ textoCancelar }}</button>
+  <button mat-button (click)="cancelar()" cdkFocusInitial>{{ textoCancelar }}</button>
   <button mat-raised-button [color]="color" (click)="confirmar()">
     {{ textoConfirmar }}
   </button>
