@@ -2395,26 +2395,286 @@ worker-src  'self';
 
 ## 12. Testing y calidad
 
-### 12.1 Estrategia de testing
+### 12.1 Estado actual — auditoría honesta
 
-| Nivel | Herramienta | Qué testear |
-|-------|-------------|-------------|
-| Unit | Jasmine + Karma | Services (mocks de HttpClient), Utils, Pipes |
-| Component | TestBed + ComponentFixture | Renderizado condicional, inputs/outputs, form validation |
-| E2E | Playwright | Flujos críticos: login, crear venta, CRUD producto |
+| Aspecto | Frontend | Backend |
+|---------|----------|---------|
+| **Test runner configurado** | ❌ No (Karma/Jest ausentes) | ⚠️ Jest 30 instalado pero sin archivos de test |
+| **Archivos `*.spec.ts`** | 0 | 0 |
+| **E2E** | ❌ No | ⚠️ `test-flujo-completo.sh` (curl, 391 líneas, solo valida status codes) |
+| **ESLint** | ❌ No configurado | ❌ `"lint"` es solo `tsc --noEmit` |
+| **Prettier** | ❌ No configurado | ❌ No configurado |
+| **EditorConfig** | ❌ No existe | ❌ No existe |
+| **CI/CD** | ❌ No hay workflows | ❌ El script `"ci"` pasa con `--passWithNoTests` |
+| **Pre-commit hooks** | ❌ No (sin husky) | ❌ No (sin husky) |
+| **TypeScript strict** | ✅ `strict: true` + Angular strict templates | ✅ `strict: true` + `noUnusedLocals/Parameters` |
+| **Budgets** | ✅ initial < 750kb warn / < 1.5MB error | N/A |
+| **`console.log`** | ✅ Solo 1 (`main.ts` bootstrap error) | ✅ Solo 2 (`env.ts` — antes de iniciar logger) |
+| **TODO/FIXME/HACK** | ✅ 0 | ✅ 0 |
+| **`@ts-ignore`** | ✅ 0 | ✅ 0 |
 
-### 12.2 Checklist antes de commit
+### 12.2 Uso de `any` — inventario real
 
-- [ ] `ng build --configuration development` sin errores
-- [ ] No hay `any` en el código
-- [ ] Todos los `subscribe()` tienen `takeUntilDestroyed()`
-- [ ] Los diálogos tienen `disableClose: true` en formularios
-- [ ] Los botones de eliminación usan `ConfirmDialog`
-- [ ] Las tablas tienen `empty-state` para 0 resultados
-- [ ] Los formularios tienen validación visible
+**Frontend — 8 ocurrencias:**
+
+| Archivo | Línea | Uso |
+|---------|-------|-----|
+| `cobrar-dialog.component.ts` | 153 | `as any[]` |
+| `devolucion-dialog.component.ts` | 76 | `as any[]` |
+| `entrega-detalle.component.ts` | 144 | `as any` |
+| `abrir-turno-dialog.component.ts` | 75 | `as any` |
+| `cerrar-turno-dialog.component.ts` | 52 | `as any` |
+| `usuario-registro-dialog.component.ts` | 101 | `as any` |
+| `compra-form-dialog.component.ts` | 102, 111 | `as any[]`, `as any` |
+
+**Backend — 31 ocurrencias**, patrón recurrente: `req.query as any` en todos los controllers y `resultado.meta as any`. Es un gap sistémico de tipos entre Zod y la capa de servicio.
+
+### 12.3 Lo que sí funciona como gate de calidad
+
+Aunque no hay tests formales, el proyecto tiene gates implícitos:
+
+| Gate | Herramienta | Qué previene |
+|------|-------------|-------------|
+| **TypeScript strict** | `tsc --noEmit` | Errores de tipos, null safety, parámetros no usados |
+| **Angular strict templates** | `strictTemplates: true` | Bindings inválidos, propiedades inexistentes |
+| **Build de producción** | `ng build` | Bundle budgets, imports rotos, dead code |
+| **Prisma typed client** | `prisma generate` | Queries con campos inexistentes, tipos incorrectos en DB |
+| **Zod validation** | Runtime | Datos de entrada inválidos (backend) |
+
+### 12.4 Plan de testing — qué implementar y en qué orden
+
+#### Prioridad 1: Linting y formateo (bajo esfuerzo, alto impacto)
+
+```bash
+# Frontend
+ng add @angular-eslint/schematics
+npm install -D prettier eslint-config-prettier
+
+# Backend
+npm install -D eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser prettier
+
+# Ambos
+npm install -D husky lint-staged
+npx husky init
+```
+
+Configuración recomendada:
+- `@angular-eslint` con regla `@typescript-eslint/no-explicit-any: warn`
+- Prettier: `singleQuote: true`, `trailingComma: 'all'`, `printWidth: 100`
+- husky pre-commit: `lint-staged` (format + lint solo archivos cambiados)
+- husky pre-push: `tsc --noEmit` + `npm test`
+
+#### Prioridad 2: Unit tests backend (medio esfuerzo, alto impacto)
+
+```bash
+# Ya tiene jest + supertest instalados. Falta:
+# 1. Crear jest.config.ts con path aliases
+# 2. Escribir tests para servicios críticos
+```
+
+**Servicios a testear primero (por riesgo de negocio):**
+
+| Servicio | Tests mínimos | Por qué primero |
+|----------|--------------|-----------------|
+| `auth.service.ts` | Login exitoso, login fallido, lockout, horario | Seguridad — un bug aquí es crítico |
+| `ordenes.service.ts` | Crear orden, calcular totales, cambiar estado | Dinero — afecta facturación directamente |
+| `inventario.service.ts` | Movimiento stock, transferencia, ajuste | Integridad de datos — stock incorrecto = pérdidas |
+| `compras.service.ts` | Crear compra, actualizar stock post-compra | Cadena de suministro — errores se propagan |
+| sanitizar.ts | Strings con HTML/scripts | Seguridad — XSS prevention |
+
+**Patrón de test recomendado (backend):**
+
+```typescript
+// __tests__/auth.service.test.ts
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { prismaMock } from './helpers/prisma-mock';
+
+describe('AuthService.login', () => {
+  it('debe rechazar credenciales inválidas con mensaje genérico', async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue(null);
+    await expect(authService.login(dto, ip, ua))
+      .rejects.toThrow('Credenciales inválidas');
+  });
+
+  it('debe bloquear cuenta tras 5 intentos fallidos', async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({
+      ...mockUser, intentosFallidos: 4,
+    });
+    // ... verify bloqueadoHasta is set
+  });
+});
+```
+
+#### Prioridad 3: Tests de componente Angular (medio esfuerzo, medio impacto)
+
+```bash
+# Opción A: Karma + Jasmine (estándar Angular)
+ng generate config karma
+
+# Opción B: Jest (más rápido, sin browser)
+npm install -D jest @angular-builders/jest @types/jest
+```
+
+**Componentes a testear primero:**
+
+| Componente | Tests mínimos |
+|-----------|--------------|
+| `LoginComponent` | Validación form, submit, error display |
+| `PosComponent` | Agregar/eliminar líneas, computed totales |
+| `ConfirmDialogComponent` | Render, confirmar, cancelar |
+| `PageHeaderComponent` | Input binding, botón acción |
+| `MonedaPipe` | Formatos de moneda, edge cases |
+| `RolDirective` | Mostrar/ocultar según rol |
+
+**Patrón de test recomendado (Angular):**
+
+```typescript
+// login.component.spec.ts
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        { provide: AuthService, useValue: jasmine.createSpyObj('AuthService', ['login']) },
+        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(LoginComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('debe deshabilitar el botón si el formulario es inválido', () => {
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button[type="submit"]');
+    expect(button.disabled).toBeTrue();
+  });
+
+  it('debe mostrar error del servidor', () => {
+    // ...
+  });
+});
+```
+
+#### Prioridad 4: E2E con Playwright (alto esfuerzo, alto impacto)
+
+```bash
+# Frontend
+npm install -D @playwright/test
+npx playwright install
+```
+
+**Flujos E2E críticos:**
+
+| Flujo | Pasos | Criticidad |
+|-------|-------|-----------|
+| **Login** | Abrir → credenciales → dashboard | Alta |
+| **Venta POS** | Login → abrir turno → buscar producto → agregar → cobrar → ticket | Alta |
+| **CRUD producto** | Login → productos → crear → editar → eliminar | Media |
+| **Gestión orden** | Login → órdenes → crear → cambiar estado → ver detalle | Media |
+| **Auto-logout** | Login → esperar 30 min → verificar redirect a login | Media |
+
+#### Prioridad 5: CI/CD con GitHub Actions
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: cd Front_ERP-1 && npm ci
+      - run: cd Front_ERP-1 && npx ng lint
+      - run: cd Front_ERP-1 && npx ng build --configuration production
+      # - run: cd Front_ERP-1 && npx ng test --no-watch --code-coverage
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: cd Back_ERP && npm ci
+      - run: cd Back_ERP && npm run typecheck
+      - run: cd Back_ERP && npm test -- --coverage
+      - run: cd Back_ERP && npm run build
+```
+
+### 12.5 Scripts existentes en package.json
+
+**Frontend (`Front_ERP-1/package.json`):**
+
+| Script | Comando | Propósito |
+|--------|---------|-----------|
+| `start` | `ng serve` | Desarrollo local |
+| `build` | `ng build` | Build producción |
+| `watch` | `ng build --watch --configuration development` | Build en watch mode |
+
+**Backend (`Back_ERP/package.json`):**
+
+| Script | Comando | Propósito |
+|--------|---------|-----------|
+| `dev` | `tsx watch src/server.ts` | Desarrollo con hot reload |
+| `build` | `tsc` | Compilar a JS |
+| `start` | `node dist/server.js` | Producción |
+| `typecheck` | `tsc --noEmit` | Verificar tipos |
+| `test` | `jest --passWithNoTests` | ⚠️ Pasa sin tests |
+| `test:ci` | `jest --passWithNoTests --ci --coverage` | ⚠️ Pasa sin tests |
+| `test:e2e` | `bash test-flujo-completo.sh` | E2E manual con curl |
+| `ci` | `typecheck && test:ci && build` | ⚠️ Gate falso |
+| `lint` | `tsc --noEmit` | Solo typechecking (no es lint real) |
+
+### 12.6 Herramientas de calidad ya configuradas
+
+| Herramienta | Archivo | Efecto |
+|-------------|---------|--------|
+| **TypeScript strict** | `tsconfig.json` (ambos) | `strict: true`, `noImplicitAny`, `noUnusedLocals`, `strictNullChecks` |
+| **Angular strict** | `angular.json` | `strictTemplates`, `strictInjectionParameters`, `strictInputAccessModifiers` |
+| **Angular budgets** | `angular.json` | initial < 750kb warn, < 1.5MB error; component styles < 8kb/12kb |
+| **Prisma typed** | `schema.prisma` | Queries tipadas en tiempo de compilación |
+| **Winston logger** | `logger.ts` | Logging estructurado — JSON en prod, colorizado en dev |
+
+### 12.7 Checklist antes de commit (actualizada)
+
+#### Obligatorio (gates actuales)
+
+- [ ] `ng build --configuration development` sin errores (frontend)
+- [ ] `npm run typecheck` sin errores (backend)
+- [ ] No hay `console.log` nuevos (solo errores pre-logger en `env.ts` y `main.ts`)
 - [ ] Los componentes usan `standalone: true`
-- [ ] Los imports son mínimos (solo lo necesario)
-- [ ] No hay console.log (excepto en environment.ts dev)
+- [ ] Los imports son mínimos (solo lo necesario por componente)
+
+#### Patrones de código
+
+- [ ] Todos los `subscribe()` en páginas tienen `takeUntilDestroyed(this.destroyRef)`
+- [ ] Los dialogs NO usan `takeUntilDestroyed` (innecesario — ver §10.8)
+- [ ] Los diálogos de formulario tienen `disableClose: true`
+- [ ] Los botones de eliminación abren `ConfirmDialogComponent`
+- [ ] Las tablas tienen `<app-empty-state>` para 0 resultados
+- [ ] Los formularios muestran errores de validación visibles (`@if (field.errors?.['...'])`)
+- [ ] Signals para estado de UI (`cargando`, `guardando`), FormGroup para datos
+- [ ] Mutaciones inmutables con `.set()` (spread/map/filter, nunca push/splice)
+- [ ] Paginación con signals: `pagina = signal(0)`, `porPagina = signal(20)`
+
+#### Seguridad
+
+- [ ] Nuevas rutas tienen guard en frontend Y middleware en backend
+- [ ] Nuevos endpoints backend usan `validar(Schema)` antes del controller
+- [ ] Datos de entrada sanitizados con `sanitizarObjeto(dto)` antes de Prisma
+- [ ] Sin `[innerHTML]` ni `bypassSecurityTrust*`
+- [ ] Sin `any` nuevos (los 8 existentes del frontend se pueden refactorizar incrementalmente)
+
+#### Evitar
+
+- [ ] No introducir `BehaviorSubject` / stores externos — usar signals
+- [ ] No usar `.update()` en signals — usar `.set()` con lectura explícita
+- [ ] No usar `NgModule` — todo es standalone
+- [ ] No duplicar `appearance="outline"` en `mat-form-field` — ya es global vía `MAT_FORM_FIELD_DEFAULT_OPTIONS`
 
 ---
 
