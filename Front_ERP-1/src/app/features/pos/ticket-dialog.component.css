@@ -1,0 +1,9 @@
+.ticket-dialog {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ticket-lines {
+  max-height: 240px;
+  overflow-y: auto;
+}

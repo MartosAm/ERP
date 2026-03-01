@@ -1,0 +1,176 @@
+# Progreso de Desarrollo — Front ERP
+
+> Documento de seguimiento del avance por fases según la [GUIA_DESARROLLO.md](../GUIA_DESARROLLO.md).
+> Última actualización: 28 de febrero de 2026.
+
+---
+
+## Resumen general
+
+| Fase | Nombre | Estado | Progreso |
+|------|--------|--------|----------|
+| **1** | shared/ Infrastructure | ✅ Completada | 12/12 piezas |
+| **2** | Módulos CRUD simples | ✅ Completada | 5/5 módulos |
+| **3** | Módulos transaccionales | ✅ Completada | 5/5 módulos |
+| **4** | POS (Punto de Venta) | 🔨 En progreso | — |
+| **5** | Administración | ❌ Pendiente | 0/3 módulos |
+| **6** | Pulido y producción | ❌ Pendiente | 0/8 tareas |
+
+---
+
+## Fase 1 — shared/ Infrastructure ✅
+
+> Commit: `ebe51b3d` — "feat(front): fase 1 — componentes shared reutilizables"
+
+### Componentes creados (6)
+
+| # | Componente | Archivo | Descripción |
+|---|-----------|---------|-------------|
+| 1.1 | `ConfirmDialogComponent` | `shared/components/confirm-dialog/` | Diálogo genérico de confirmación con título, mensaje, textos y color configurables |
+| 1.2 | `PageHeaderComponent` | `shared/components/page-header/` | Encabezado de página (título, subtítulo, icono, slot para botones vía `<ng-content>`) |
+| 1.3 | `EmptyStateComponent` | `shared/components/empty-state/` | Estado vacío con icono, mensaje, submensaje y botón de acción opcional |
+| 1.4 | `EstadoBadgeComponent` | `shared/components/estado-badge/` | Badge coloreado para estados. Tipos: orden, entrega, activo, movimiento, compra, turno, pago |
+| 1.5 | `SearchInputComponent` | `shared/components/search-input/` | Input con debounce (300ms), botón clear, emit `(buscar)` |
+| 1.6 | `FormDialogComponent` | `shared/components/form-dialog/` | Wrapper de diálogo CRUD con header, body scrollable, footer con `<ng-content select="[acciones]">` |
+
+### Pipes creados (5)
+
+| # | Pipe | Selector | Ejemplo |
+|---|------|----------|---------|
+| 1.7 | `MonedaPipe` | `moneda` | `{{ 1234.5 \| moneda }}` → `$1,234.50` |
+| 1.8 | `FechaCortaPipe` | `fechaCorta` | `{{ iso \| fechaCorta }}` → `28/02/2026` |
+| 1.8b | `FechaHoraPipe` | `fechaHora` | `{{ iso \| fechaHora }}` → `28/02/2026 14:30` |
+| 1.9 | `TiempoRelativoPipe` | `tiempoRelativo` | `{{ iso \| tiempoRelativo }}` → `Hace 5 min` |
+| 1.10b | `EnumLabelPipe` | `enumLabel` | `{{ 'TARJETA_CREDITO' \| enumLabel }}` → `Tarjeta crédito` |
+
+### Directiva creada (1)
+
+| # | Directiva | Selector | Ejemplo |
+|---|-----------|----------|---------|
+| 1.10 | `RolDirective` | `*appRol` | `*appRol="'ADMIN'"` o `*appRol="['ADMIN','CAJERO']"` |
+
+---
+
+## Fase 2 — Módulos CRUD simples ✅
+
+> Commit: `a240a3f4` — "feat(front): fase 2 — módulos CRUD catálogos"
+
+### Módulos completados
+
+| # | Módulo | Archivos | Funcionalidades |
+|---|--------|----------|-----------------|
+| 2.1 | **Categorías** | 6 archivos (list + form-dialog × ts/html/css) | Listado paginado, búsqueda, crear/editar vía MatDialog, eliminar con confirmación |
+| 2.2 | **Proveedores** | 6 archivos | CRUD estándar completo con búsqueda, MatDialog crear/editar, eliminar |
+| 2.3 | **Almacenes** | 6 archivos | CRUD con toggle principal, MatDialog crear/editar, eliminar |
+| 2.4 | **Productos** (upgrade) | Upgraded a CRUD completo | Diálogo crear/editar con campos completos (SKU, categoría, proveedor, precios 1/2/3, impuesto, inventario), filtros avanzados |
+| 2.5 | **Clientes** (upgrade) | Upgraded a CRUD completo | Diálogo crear/editar (nombre, teléfono, email, dirección, RFC, crédito), vista detalle |
+
+### Rutas agregadas
+
+- `/categorias`, `/proveedores` (ADMIN), `/almacenes` (ADMIN)
+- Rutas de detalle: `/productos/:id`, `/clientes/:id`
+
+### Sidebar actualizado
+
+- Categorías, Proveedores (ADMIN), Almacenes (ADMIN)
+
+---
+
+## Fase 3 — Módulos transaccionales ✅
+
+> Commit: `632402b8` — "feat(front): fase 3 — módulos transaccionales completos"
+
+### Módulos completados
+
+| # | Módulo | Componentes | Funcionalidades clave |
+|---|--------|------------|----------------------|
+| 3.1 | **Órdenes** | `ordenes` (list), `orden-detalle`, `cancelar-orden-dialog`, `devolucion-dialog` | Filtros por estado (MatChips: COTIZACION→DEVUELTA), rango de fechas con MatDatepicker, búsqueda. Detalle con productos, pagos, entrega. Cancelar con motivo. Devolución parcial/total con selección de productos y cantidades |
+| 3.2 | **Compras** | `compras` (list), `compra-detalle`, `compra-form-dialog` | Filtro por proveedor (MatSelect), filtro recibida/pendiente. Detalle con "recibir mercancía" (selección de almacén + confirmación). Formulario de nueva compra con líneas dinámicas de productos |
+| 3.3 | **Inventario** (upgrade) | `inventario` (tabs), `ajuste-dialog`, `traslado-dialog` | Tabs: Existencias (tabla con stock bajo highlight) / Movimientos (tabla con tipo, cantidades anterior/posterior). Diálogo ajuste manual. Diálogo traslado entre almacenes (origen ≠ destino validado) |
+| 3.4 | **Entregas** | `entregas` (list), `entrega-detalle` | Filtros por estado con MatChips incluyendo "PENDIENTES" virtual. Detalle con transiciones de estado dinámicas: ASIGNADO→EN_RUTA, EN_RUTA→ENTREGADO/NO_ENTREGADO/REPROGRAMADO, etc. Formulario dinámico con motivo/fecha/notas según acción |
+| 3.5 | **Turnos de Caja** | `turnos-caja` (list), `turno-detalle`, `abrir-turno-dialog`, `cerrar-turno-dialog` | Banner de turno activo. List con filtro abierto/cerrado. Detalle con montos (apertura, esperado, cierre, diferencia con color coding). Abrir turno (caja + monto apertura). Cerrar turno (monto cierre + notas) |
+
+### Fixes aplicados
+
+- **inventario.service.ts**: Corregido `AJUSTE_MANUAL` → `AJUSTE` (coincide con enum backend Zod). Corregido traslado para mapear `almacenOrigenId` → `almacenId`
+- **estado-badge.component.ts**: Agregados 3 nuevos tipos de badge: `compra` (Recibida/Pendiente), `turno` (Abierto/Cerrado), `pago` (6 métodos de pago)
+
+### Rutas agregadas
+
+- `/ordenes`, `/ordenes/:id`
+- `/compras` (ADMIN), `/compras/:id` (ADMIN)
+- `/entregas`, `/entregas/:id`
+- `/turnos-caja` (ADMIN + CAJERO), `/turnos-caja/:id` (ADMIN + CAJERO)
+
+### Sidebar actualizado
+
+- Órdenes, Compras (ADMIN), Entregas, Turnos de Caja (ADMIN + CAJERO)
+
+---
+
+## Fase 4 — POS (Punto de Venta) 🔨
+
+> En progreso
+
+### Alcance planificado
+
+| Zona | Funcionalidad | Estado |
+|------|---------------|--------|
+| Barra superior | Búsqueda de producto (SKU/código/nombre), selector de precio (Lista 1/2/3) | ❌ |
+| Panel izquierdo | Grid de categorías rápidas → Grid de productos (imagen, nombre, precio) | ❌ |
+| Panel derecho | Carrito: líneas de venta con cantidad, precio, descuento, subtotal. Totales | ❌ |
+| Panel inferior | Métodos de pago, monto pagado, cálculo de cambio. Botón "Cobrar" | ❌ |
+| Diálogos | Selección de cliente, pago (mixto), ticket/comprobante | ❌ |
+| Requisito | Turno de caja abierto para poder vender | ❌ |
+
+---
+
+## Fase 5 — Administración ❌
+
+| # | Módulo | Estado | Notas |
+|---|--------|--------|-------|
+| 5.1 | **Usuarios** | ❌ Pendiente | Listado, editar datos, asignar horario, activar/desactivar. Solo ADMIN |
+| 5.2 | **Reportes** (upgrade) | ❌ Pendiente | Tabs: Ventas, Top productos, Métodos de pago, Inventario, Cajeros, Entregas. Chart.js |
+| 5.3 | **Configuración** (upgrade) | ❌ Pendiente | Tabs: Perfil, Empresa, Cajas registradoras. Cambiar PIN |
+
+---
+
+## Fase 6 — Pulido y producción ❌
+
+| Tarea | Estado |
+|-------|--------|
+| Responsive (mobile/tablet/desktop) | ❌ |
+| Dark mode | ❌ |
+| Impresión (tickets, reportes) | ❌ |
+| PWA (manifest, service worker) | ❌ |
+| Performance (lazy images, virtual scroll) | ❌ |
+| A11y (ARIA, focus trap, contraste WCAG AA) | ❌ |
+| Build producción (tree-shaking, CSP, Docker) | ❌ |
+| Bundle budgets optimización | ❌ |
+
+---
+
+## Infraestructura completada (pre-fases)
+
+| Componente | Estado |
+|-----------|--------|
+| `api.model.ts` (968 líneas, 55 endpoints tipados) | ✅ |
+| 18 servicios core | ✅ |
+| 3 utilidades (fecha, formato, tabla) | ✅ |
+| Guards (auth + role) | ✅ |
+| Interceptors (auth + error) | ✅ |
+| Layout (shell + header + sidebar) | ✅ |
+| Login + Dashboard | ✅ |
+| Tailwind v4 configuración CSS-first | ✅ |
+| Seguridad (CSP, XSS, auto-logout, token en memoria) | ✅ |
+
+---
+
+## Historial de commits
+
+| Commit | Fase | Descripción |
+|--------|------|-------------|
+| `ebe51b3d` | 1 | shared/ — 6 componentes, 5 pipes, 1 directiva |
+| `a240a3f4` | 2 | CRUD — categorías, proveedores, almacenes, productos upgrade, clientes upgrade |
+| `632402b8` | 3 | Transaccionales — órdenes, compras, inventario, entregas, turnos-caja |
+| — | 4 | POS (en progreso) |

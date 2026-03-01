@@ -1,0 +1,51 @@
+.cobrar-dialog {
+  min-width: 400px;
+}
+
+.pago-metodo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pago-metodo-btn:hover {
+  border-color: #a5b4fc;
+  background-color: #eef2ff;
+}
+
+.pago-metodo-btn--active {
+  border-color: #4f46e5;
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+
+.billete-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #f9fafb;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.billete-btn:hover {
+  background-color: #e0e7ff;
+  border-color: #818cf8;
+  color: #4338ca;
+}
+
+@media (max-width: 480px) {
+  .cobrar-dialog {
+    min-width: unset;
+  }
+}

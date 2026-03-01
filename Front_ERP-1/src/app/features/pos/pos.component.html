@@ -1,4 +1,235 @@
-<div class="page-container">
-  <h1 class="text-2xl font-bold mb-4">Punto de Venta</h1>
-  <p class="text-gray-500">Módulo POS en desarrollo...</p>
-</div>
+<!-- POS — Punto de Venta (full-screen optimizado) -->
+
+<!-- Sin turno activo → aviso -->
+@if (!turnoActivo()) {
+  <div class="flex h-full items-center justify-center bg-gray-50">
+    <div class="text-center p-8">
+      <mat-icon class="!text-6xl text-gray-300 mb-4">point_of_sale</mat-icon>
+      <h2 class="text-xl font-semibold text-gray-700 mb-2">No hay turno de caja abierto</h2>
+      <p class="text-gray-500 mb-4">Debes abrir un turno antes de realizar ventas.</p>
+      <p class="text-sm text-gray-400">Ve a <strong>Turnos de Caja</strong> para abrir uno.</p>
+    </div>
+  </div>
+} @else {
+  <div class="pos-layout">
+    <!-- ════════════ PANEL IZQUIERDO: Categorías + Productos ════════════ -->
+    <div class="pos-products">
+      <!-- Barra superior: búsqueda + precio -->
+      <div class="pos-toolbar">
+        <div class="flex items-center gap-3 flex-1">
+          <mat-icon class="text-gray-400">search</mat-icon>
+          <input
+            id="pos-busqueda"
+            class="pos-search-input"
+            type="text"
+            [ngModel]="terminoBusqueda"
+            (ngModelChange)="onBuscar($event)"
+            (keydown.enter)="buscarPorCodigo(terminoBusqueda)"
+            placeholder="Buscar producto o escanear código... (F4)"
+            autocomplete="off" />
+          @if (terminoBusqueda) {
+            <button mat-icon-button (click)="terminoBusqueda = ''; onBuscar('')" matTooltip="Limpiar">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button mat-button [matMenuTriggerFor]="menuPrecio" class="text-sm">
+            <mat-icon class="!text-base mr-1">sell</mat-icon>
+            Lista {{ listaPrecio() }}
+          </button>
+          <mat-menu #menuPrecio="matMenu">
+            <button mat-menu-item (click)="cambiarListaPrecio(1)">
+              <mat-icon>{{ listaPrecio() === 1 ? 'check' : '' }}</mat-icon> Lista 1 (Principal)
+            </button>
+            <button mat-menu-item (click)="cambiarListaPrecio(2)">
+              <mat-icon>{{ listaPrecio() === 2 ? 'check' : '' }}</mat-icon> Lista 2 (Mayoreo)
+            </button>
+            <button mat-menu-item (click)="cambiarListaPrecio(3)">
+              <mat-icon>{{ listaPrecio() === 3 ? 'check' : '' }}</mat-icon> Lista 3 (Especial)
+            </button>
+          </mat-menu>
+        </div>
+      </div>
+
+      <!-- Categorías rápidas -->
+      <div class="pos-categories">
+        <button
+          class="pos-cat-chip"
+          [class.pos-cat-chip--active]="categoriaSeleccionada() === null"
+          (click)="seleccionarCategoria(null)">
+          Todas
+        </button>
+        @for (cat of categorias(); track cat.id) {
+          <button
+            class="pos-cat-chip"
+            [class.pos-cat-chip--active]="categoriaSeleccionada() === cat.id"
+            (click)="seleccionarCategoria(cat.id)">
+            @if (cat.nombreIcono) {
+              <mat-icon class="!text-base">{{ cat.nombreIcono }}</mat-icon>
+            }
+            {{ cat.nombre }}
+          </button>
+        }
+      </div>
+
+      <!-- Grid de productos -->
+      @if (cargandoProductos()) {
+        <div class="flex justify-center items-center flex-1 py-12">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      } @else if (productos().length === 0) {
+        <div class="flex flex-col items-center justify-center flex-1 text-gray-400 py-12">
+          <mat-icon class="!text-5xl mb-2">inventory_2</mat-icon>
+          <p>Sin productos encontrados</p>
+        </div>
+      } @else {
+        <div class="pos-product-grid">
+          @for (p of productos(); track p.id) {
+            <button class="pos-product-card" (click)="agregarProducto(p)">
+              @if (p.imagenUrl) {
+                <img [src]="p.imagenUrl" [alt]="p.nombre" class="pos-product-img" />
+              } @else {
+                <div class="pos-product-img-placeholder">
+                  <mat-icon>inventory_2</mat-icon>
+                </div>
+              }
+              <div class="pos-product-info">
+                <span class="pos-product-name">{{ p.nombre }}</span>
+                <span class="pos-product-sku">{{ p.sku }}</span>
+                <span class="pos-product-price">{{ p.precioVenta1 | moneda }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ════════════ PANEL DERECHO: Carrito ════════════ -->
+    <div class="pos-cart">
+      <!-- Header del carrito -->
+      <div class="pos-cart-header">
+        <div class="flex items-center gap-2">
+          <mat-icon>shopping_cart</mat-icon>
+          <span class="font-semibold">Venta actual</span>
+          @if (totalItems() > 0) {
+            <span class="pos-item-count">{{ totalItems() }}</span>
+          }
+        </div>
+        <div class="flex items-center gap-1">
+          <button
+            mat-icon-button
+            matTooltip="Seleccionar cliente"
+            (click)="seleccionarCliente()">
+            <mat-icon>person_add</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            matTooltip="Limpiar carrito (Esc)"
+            [disabled]="lineas().length === 0"
+            (click)="limpiarCarrito()">
+            <mat-icon>delete_sweep</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cliente seleccionado -->
+      @if (clienteSeleccionado()) {
+        <div class="pos-cliente-banner">
+          <mat-icon class="!text-base">person</mat-icon>
+          <span class="flex-1 text-sm font-medium truncate">{{ clienteSeleccionado()!.nombre }}</span>
+          <button mat-icon-button class="!w-6 !h-6" (click)="quitarCliente()" matTooltip="Quitar cliente">
+            <mat-icon class="!text-base">close</mat-icon>
+          </button>
+        </div>
+      }
+
+      <!-- Líneas del carrito -->
+      <div class="pos-cart-lines">
+        @if (lineas().length === 0) {
+          <div class="flex flex-col items-center justify-center h-full text-gray-400">
+            <mat-icon class="!text-4xl mb-2">add_shopping_cart</mat-icon>
+            <p class="text-sm">Agrega productos para iniciar</p>
+            <p class="text-xs mt-1">Busca o haz clic en un producto</p>
+          </div>
+        } @else {
+          @for (linea of lineas(); track linea.productoId) {
+            <div class="pos-cart-line">
+              <div class="pos-cart-line-info">
+                <span class="pos-cart-line-name">{{ linea.nombre }}</span>
+                <span class="pos-cart-line-sku">{{ linea.sku }}</span>
+              </div>
+              <div class="pos-cart-line-controls">
+                <div class="pos-qty-control">
+                  <button
+                    class="pos-qty-btn"
+                    (click)="actualizarCantidad(linea.productoId, linea.cantidad - 1)">
+                    −
+                  </button>
+                  <input
+                    class="pos-qty-input"
+                    type="number"
+                    [ngModel]="linea.cantidad"
+                    (ngModelChange)="actualizarCantidad(linea.productoId, $event)"
+                    min="1"
+                    [max]="linea.stockDisponible ?? 9999" />
+                  <button
+                    class="pos-qty-btn"
+                    (click)="actualizarCantidad(linea.productoId, linea.cantidad + 1)">
+                    +
+                  </button>
+                </div>
+                <span class="pos-cart-line-price">
+                  {{ linea.precioUnitario | moneda }}
+                </span>
+                <span class="pos-cart-line-total">
+                  {{ (linea.precioUnitario - linea.descuento) * linea.cantidad | moneda }}
+                </span>
+                <button
+                  class="pos-remove-btn"
+                  (click)="eliminarLinea(linea.productoId)"
+                  matTooltip="Eliminar">
+                  <mat-icon class="!text-base">close</mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Totales -->
+      <div class="pos-cart-totals">
+        @if (totalDescuento() > 0) {
+          <div class="pos-total-row">
+            <span>Descuento</span>
+            <span class="text-red-500">-{{ totalDescuento() | moneda }}</span>
+          </div>
+        }
+        <div class="pos-total-row">
+          <span>Subtotal</span>
+          <span>{{ subtotal() - totalDescuento() | moneda }}</span>
+        </div>
+        <div class="pos-total-row text-xs text-gray-400">
+          <span>Impuesto incluido</span>
+          <span>{{ totalImpuesto() | moneda }}</span>
+        </div>
+        <mat-divider />
+        <div class="pos-total-row pos-total-final">
+          <span>TOTAL</span>
+          <span>{{ total() | moneda }}</span>
+        </div>
+      </div>
+
+      <!-- Botón Cobrar -->
+      <button
+        class="pos-cobrar-btn"
+        [disabled]="lineas().length === 0"
+        (click)="cobrar()">
+        <mat-icon>payments</mat-icon>
+        COBRAR {{ total() | moneda }}
+        <span class="text-xs opacity-75 ml-2">(F2)</span>
+      </button>
+    </div>
+  </div>
+}

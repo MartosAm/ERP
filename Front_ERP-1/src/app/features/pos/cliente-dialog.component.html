@@ -1,0 +1,51 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon class="text-indigo-600">person_search</mat-icon>
+  Seleccionar cliente
+</h2>
+
+<mat-dialog-content class="min-h-[280px]">
+  <!-- Búsqueda -->
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Buscar cliente</mat-label>
+    <mat-icon matPrefix class="ml-2 text-gray-400">search</mat-icon>
+    <input
+      matInput
+      [ngModel]="termino"
+      (ngModelChange)="termino = $event; onBuscar($event)"
+      placeholder="Nombre, RFC, teléfono..."
+      cdkFocusInitial />
+  </mat-form-field>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-6">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else if (clientes().length > 0) {
+    <mat-nav-list class="!-mx-6">
+      @for (cli of clientes(); track cli.id) {
+        <a mat-list-item (click)="seleccionar(cli)" class="cursor-pointer">
+          <mat-icon matListItemIcon class="text-gray-400">person</mat-icon>
+          <span matListItemTitle class="font-medium">{{ cli.nombre }}</span>
+          <span matListItemLine class="text-xs text-gray-500">
+            {{ cli.rfc || 'Sin RFC' }}
+            @if (cli.telefono) { · {{ cli.telefono }} }
+          </span>
+        </a>
+      }
+    </mat-nav-list>
+  } @else if (termino.length > 0 && !cargando()) {
+    <div class="text-center py-8 text-gray-400">
+      <mat-icon class="!text-4xl mb-2">person_off</mat-icon>
+      <p class="text-sm">No se encontraron clientes</p>
+    </div>
+  } @else {
+    <div class="text-center py-8 text-gray-400">
+      <mat-icon class="!text-4xl mb-2">search</mat-icon>
+      <p class="text-sm">Escribe para buscar un cliente</p>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+</mat-dialog-actions>

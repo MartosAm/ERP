@@ -1,0 +1,91 @@
+<div class="ticket-dialog">
+  <div class="text-center pt-4 pb-2 px-6">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-3">
+      <mat-icon class="!text-3xl text-green-600">check_circle</mat-icon>
+    </div>
+    <h2 class="text-lg font-bold text-gray-900">¡Venta completada!</h2>
+    <p class="text-2xl font-bold text-indigo-600 mt-1">{{ orden.numeroOrden }}</p>
+    <p class="text-xs text-gray-400 mt-1">{{ orden.creadoEn | date:'dd/MM/yyyy HH:mm' }}</p>
+  </div>
+
+  <mat-dialog-content>
+    <!-- Cliente -->
+    @if (orden.cliente) {
+      <div class="flex items-center gap-2 text-sm text-gray-600 mb-3 px-1">
+        <mat-icon class="!text-base text-gray-400">person</mat-icon>
+        <span>{{ orden.cliente.nombre }}</span>
+      </div>
+    }
+
+    <!-- Líneas -->
+    <div class="ticket-lines">
+      @for (d of orden.detalles; track d.id) {
+        <div class="flex justify-between items-start py-1.5 text-sm">
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-gray-800 truncate">{{ d.producto.nombre }}</p>
+            <p class="text-xs text-gray-400">
+              {{ d.cantidad }} × {{ d.precioUnitario | moneda }}
+              @if (d.descuento > 0) {
+                <span class="text-red-400 ml-1">-{{ d.descuento | moneda }}</span>
+              }
+            </p>
+          </div>
+          <span class="font-medium text-gray-900 ml-3">{{ d.subtotal | moneda }}</span>
+        </div>
+      }
+    </div>
+
+    <mat-divider class="my-2" />
+
+    <!-- Totales -->
+    <div class="flex flex-col gap-1 text-sm px-1">
+      @if (orden.montoDescuento > 0) {
+        <div class="flex justify-between text-red-500">
+          <span>Descuento</span>
+          <span>-{{ orden.montoDescuento | moneda }}</span>
+        </div>
+      }
+      <div class="flex justify-between text-gray-500">
+        <span>Subtotal</span>
+        <span>{{ orden.subtotal | moneda }}</span>
+      </div>
+      <div class="flex justify-between text-gray-500">
+        <span>Impuesto</span>
+        <span>{{ orden.montoImpuesto | moneda }}</span>
+      </div>
+      <div class="flex justify-between font-bold text-base text-gray-900 mt-1">
+        <span>TOTAL</span>
+        <span>{{ orden.total | moneda }}</span>
+      </div>
+    </div>
+
+    <mat-divider class="my-2" />
+
+    <!-- Pagos -->
+    <div class="flex flex-col gap-1 text-sm px-1">
+      @for (p of orden.pagos; track p.id) {
+        <div class="flex justify-between text-gray-600">
+          <span>{{ metodoLabel(p.metodo) }}</span>
+          <span>{{ p.monto | moneda }}</span>
+        </div>
+      }
+      @if (orden.cambio > 0) {
+        <div class="flex justify-between font-semibold text-green-600">
+          <span>Cambio</span>
+          <span>{{ orden.cambio | moneda }}</span>
+        </div>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="flex flex-col gap-2 p-4">
+    <button
+      mat-raised-button
+      color="primary"
+      class="w-full !bg-indigo-600"
+      (click)="nuevaVenta()">
+      <mat-icon>add_shopping_cart</mat-icon>
+      Nueva venta
+    </button>
+  </mat-dialog-actions>
+</div>

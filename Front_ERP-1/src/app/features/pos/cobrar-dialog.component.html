@@ -1,0 +1,137 @@
+<div class="cobrar-dialog">
+  <h2 mat-dialog-title class="flex items-center gap-2">
+    <mat-icon class="text-green-600">payments</mat-icon>
+    Cobrar venta
+  </h2>
+
+  <mat-dialog-content>
+    <!-- Total a cobrar -->
+    <div class="text-center py-3 mb-4 bg-gray-50 rounded-lg">
+      <p class="text-sm text-gray-500">Total a cobrar</p>
+      <p class="text-3xl font-bold text-gray-900">{{ data.total | moneda }}</p>
+    </div>
+
+    @if (pagoUnico()) {
+      <!-- PAGO ÚNICO -->
+      <form [formGroup]="form" class="flex flex-col gap-3">
+        <!-- Método de pago -->
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          @for (m of metodosPago; track m.value) {
+            <button
+              type="button"
+              class="pago-metodo-btn"
+              [class.pago-metodo-btn--active]="form.get('metodo')?.value === m.value"
+              (click)="form.patchValue({ metodo: m.value })">
+              <mat-icon class="!text-lg">{{ m.icon }}</mat-icon>
+              <span class="text-xs">{{ m.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Monto y referencia -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Monto recibido</mat-label>
+          <span matPrefix class="pl-3 text-gray-500">$&nbsp;</span>
+          <input matInput type="number" formControlName="monto" min="0" step="0.01"
+                 (focus)="$any($event.target).select()" />
+        </mat-form-field>
+
+        <!-- Atajos de billetes -->
+        @if (form.get('metodo')?.value === 'EFECTIVO') {
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="billete-btn" (click)="setMontoExacto()">Exacto</button>
+            <button type="button" class="billete-btn" (click)="setMontoBillete(50)">$50</button>
+            <button type="button" class="billete-btn" (click)="setMontoBillete(100)">$100</button>
+            <button type="button" class="billete-btn" (click)="setMontoBillete(200)">$200</button>
+            <button type="button" class="billete-btn" (click)="setMontoBillete(500)">$500</button>
+            <button type="button" class="billete-btn" (click)="setMontoBillete(1000)">$1000</button>
+          </div>
+        }
+
+        @if (form.get('metodo')?.value !== 'EFECTIVO') {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Referencia (opcional)</mat-label>
+            <input matInput formControlName="referencia" placeholder="No. autorización, folio...">
+          </mat-form-field>
+        }
+      </form>
+
+      <div class="mt-2 text-right">
+        <button mat-button class="text-xs" (click)="activarPagoMultiple()">
+          <mat-icon class="!text-base mr-1">add</mat-icon> Pago mixto
+        </button>
+      </div>
+    } @else {
+      <!-- PAGO MÚLTIPLE -->
+      <div class="flex flex-col gap-3">
+        @for (pago of pagosMultiples.controls; track $index) {
+          <div class="rounded-lg border p-3 relative" [formGroup]="getPagoGroup($index)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-600">Pago {{ $index + 1 }}</span>
+              @if (pagosMultiples.length > 1) {
+                <button mat-icon-button class="!w-6 !h-6" (click)="eliminarPago($index)">
+                  <mat-icon class="!text-base text-red-400">close</mat-icon>
+                </button>
+              }
+            </div>
+            <div class="flex gap-2">
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Método</mat-label>
+                <mat-select formControlName="metodo">
+                  @for (m of metodosPago; track m.value) {
+                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-32">
+                <mat-label>Monto</mat-label>
+                <span matPrefix class="pl-2 text-gray-500">$</span>
+                <input matInput type="number" formControlName="monto" min="0.01" step="0.01">
+              </mat-form-field>
+            </div>
+          </div>
+        }
+
+        <button mat-stroked-button (click)="agregarPago()" class="self-start">
+          <mat-icon>add</mat-icon> Agregar pago
+        </button>
+
+        <div class="text-right">
+          <button mat-button class="text-xs" (click)="activarPagoUnico()">
+            Volver a pago único
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Resumen -->
+    <mat-divider class="my-3" />
+    <div class="flex flex-col gap-1 text-sm">
+      @if (cambio > 0) {
+        <div class="flex justify-between text-green-600 font-semibold text-base">
+          <span>Cambio</span>
+          <span>{{ cambio | moneda }}</span>
+        </div>
+      }
+      @if (faltante > 0) {
+        <div class="flex justify-between text-red-500 font-semibold">
+          <span>Faltante</span>
+          <span>{{ faltante | moneda }}</span>
+        </div>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="gap-2 p-4">
+    <button mat-button mat-dialog-close>Cancelar</button>
+    <button
+      mat-raised-button
+      color="primary"
+      [disabled]="!puedeCobrar"
+      (click)="confirmar()"
+      class="!bg-green-600 !text-white">
+      <mat-icon>check</mat-icon>
+      Confirmar cobro
+    </button>
+  </mat-dialog-actions>
+</div>
