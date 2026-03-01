@@ -893,49 +893,73 @@ Clase `.no-print` disponible para ocultar elementos en impresión.
 
 ## 8. Angular Material — convenciones de uso
 
-### 8.1 Módulos más usados
+> **Versión**: Angular Material **17.3** — tema prebuilt `indigo-pink`.
+> Imports al estilo standalone (cada componente importa solo los módulos que necesita).
 
-| Módulo | Import | Uso principal |
-|--------|--------|---------------|
-| `MatTableModule` | Tablas de datos | Listados paginados |
-| `MatPaginatorModule` | Paginador | Debajo de tablas |
-| `MatDialogModule` | Diálogos modales | CRUD create/edit, confirmación |
-| `MatFormFieldModule` + `MatInputModule` | Campos de formulario | Todos los forms |
-| `MatSelectModule` | Select dropdown | Selección de categoría, proveedor, etc. |
-| `MatButtonModule` | Botones | Acciones |
-| `MatIconModule` | Iconos Material | En toda la app |
-| `MatSnackBarModule` | Notificaciones toast | Via NotificationService |
-| `MatChipsModule` | Chips / badges | Estados, tags |
-| `MatTabsModule` | Tabs | Reportes, configuración, inventario |
-| `MatMenuModule` | Menús contextuales | Acciones de fila en tablas |
-| `MatTooltipModule` | Tooltips | Botones de icono |
-| `MatProgressSpinnerModule` | Spinner de carga | Loading states |
-| `MatDatepickerModule` | Date picker | Filtros de reportes |
-| `MatAutocompleteModule` | Autocomplete | Búsqueda de productos en POS |
+### 8.1 Tema y configuración global
 
-### 8.2 Diálogos — patrón estándar
+```
+Tema prebuilt: @angular/material/prebuilt-themes/indigo-pink.css
+Tipografía:    @fontsource/roboto (300, 400, 500, 700)
+Iconos:        material-icons (iconfont)
+```
+
+**Proveedores globales** (`app.config.ts`):
 
 ```typescript
-// Desde el componente padre:
-crear(): void {
-  const ref = this.dialog.open(ProductoFormDialogComponent, {
-    width: '600px',
-    disableClose: true,
-    data: { modo: 'crear' },
-  });
+provideAnimationsAsync(),                           // Animaciones Material
+{ provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,           // appearance: outline en TODOS los form fields
+  useValue: { appearance: 'outline' } },
+```
 
-  ref.afterClosed()
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe(resultado => {
-      if (resultado) this.cargar();
-    });
-}
+> Con `MAT_FORM_FIELD_DEFAULT_OPTIONS` ya no es necesario repetir `appearance="outline"` en cada `<mat-form-field>`.
 
-editar(producto: Producto): void {
+### 8.2 Módulos usados (25 módulos)
+
+| Módulo | Import | Uso principal | Archivos |
+|--------|--------|---------------|----------|
+| `MatIconModule` | `@angular/material/icon` | Iconos en toda la app | ~30+ |
+| `MatButtonModule` | `@angular/material/button` | Botones (raised, icon, flat, stroked) | ~28+ |
+| `MatProgressSpinnerModule` | `@angular/material/progress-spinner` | Loading states `<mat-spinner>` | ~24+ |
+| `MatDialogModule` | `@angular/material/dialog` | Diálogos CRUD, confirmación, cobro | ~22+ |
+| `MatFormFieldModule` | `@angular/material/form-field` | Campos de formulario | ~18+ |
+| `MatInputModule` | `@angular/material/input` | Inputs text, number, email | ~17+ |
+| `MatSelectModule` | `@angular/material/select` | Dropdowns (categoría, proveedor, rol, etc.) | ~12 |
+| `MatTableModule` | `@angular/material/table` | Tablas de datos (11 módulos con tabla) | 11 |
+| `MatPaginatorModule` | `@angular/material/paginator` | Paginación debajo de tablas | 9 |
+| `MatMenuModule` | `@angular/material/menu` | Menú de acciones por fila (`more_vert`) | 9 |
+| `MatDividerModule` | `@angular/material/divider` | Separadores en detalles y diálogos | 8 |
+| `MatCardModule` | `@angular/material/card` | Cards en dashboard y detalles | 7 |
+| `MatChipsModule` | `@angular/material/chips` | Filtros por estado (chip-listbox + chip-option) | 5 |
+| `MatTabsModule` | `@angular/material/tabs` | Vistas multi-tab (reportes, config, inventario) | 4 |
+| `MatSlideToggleModule` | `@angular/material/slide-toggle` | Toggles booleanos (activo, impuesto incluido) | 3 |
+| `MatDatepickerModule` | `@angular/material/datepicker` | Filtros de fecha (órdenes, reportes) | 2 |
+| `MatNativeDateModule` | `@angular/material/core` | Adapter nativo para datepicker | 2 |
+| `MatTooltipModule` | `@angular/material/tooltip` | Tooltips en botones de icono | 2 |
+| `MatCheckboxModule` | `@angular/material/checkbox` | Checkboxes (devolución parcial) | 2 |
+| `MatAutocompleteModule` | `@angular/material/autocomplete` | Búsqueda de productos en compras | 1 |
+| `MatBadgeModule` | `@angular/material/badge` | Badge de conteo en POS (carrito) | 1 |
+| `MatSidenavModule` | `@angular/material/sidenav` | Layout principal (shell responsive) | 1 |
+| `MatToolbarModule` | `@angular/material/toolbar` | Header de la app | 1 |
+| `MatListModule` | `@angular/material/list` | Items de navegación en sidebar | 1 |
+| `MatSnackBar` | `@angular/material/snack-bar` | Toasts vía NotificationService | 1 |
+
+**CDK usado:**
+- `BreakpointObserver` / `Breakpoints` (`@angular/cdk/layout`) — detección responsive en shell
+- `cdkFocusInitial` — auto-focus en diálogos (confirm-dialog, cliente-dialog POS)
+
+### 8.3 Diálogos — patrones
+
+#### Patrón A: Diálogo con datos (crear/editar)
+
+Usado en: producto-form, categoria-form, almacen-form, cliente-form, devolucion, cerrar-turno, usuario-form, horario, confirm-dialog, cobrar-dialog.
+
+```typescript
+// Apertura desde el padre:
+editar(item: Producto): void {
   const ref = this.dialog.open(ProductoFormDialogComponent, {
-    width: '600px',
-    disableClose: true,
-    data: { modo: 'editar', producto },
+    width: '700px',
+    data: { modo: 'editar', producto: item },
   });
 
   ref.afterClosed()
@@ -946,67 +970,104 @@ editar(producto: Producto): void {
 }
 
 // Dentro del diálogo:
-@Component({ /* ... */ })
-export class ProductoFormDialogComponent {
-  readonly dialogRef = inject(MatDialogRef<ProductoFormDialogComponent>);
-  readonly data = inject<{ modo: 'crear' | 'editar'; producto?: Producto }>(MAT_DIALOG_DATA);
-  // ...
-  
-  guardar(): void {
-    const obs$ = this.data.modo === 'crear'
-      ? this.svc.crear(this.form.getRawValue())
-      : this.svc.actualizar(this.data.producto!.id, this.form.getRawValue());
-    
-    obs$.subscribe({
-      next: () => {
-        this.notify.exito(this.data.modo === 'crear' ? 'Creado' : 'Actualizado');
-        this.dialogRef.close(true);
-      },
-      error: () => this.notify.error('Error al guardar'),
-    });
-  }
+readonly dialogRef = inject(MatDialogRef<ProductoFormDialogComponent>);
+readonly data = inject<{ modo: 'crear' | 'editar'; producto?: Producto }>(MAT_DIALOG_DATA);
+
+guardar(): void {
+  const obs$ = this.data.modo === 'crear'
+    ? this.svc.crear(this.form.getRawValue())
+    : this.svc.actualizar(this.data.producto!.id, this.form.getRawValue());
+
+  obs$.subscribe({
+    next: () => {
+      this.notify.exito(this.data.modo === 'crear' ? 'Creado' : 'Actualizado');
+      this.dialogRef.close(true);
+    },
+    error: () => this.notify.error('Error al guardar'),
+  });
 }
 ```
 
-### 8.3 Tablas — patrón estándar
+#### Patrón B: Diálogo sin datos (crear-only / acciones)
+
+Usado en: compra-form, abrir-turno, ajuste, traslado, cancelar-orden, usuario-registro.
+
+```typescript
+readonly dialogRef = inject(MatDialogRef<CompraFormDialogComponent>);
+// Sin MAT_DIALOG_DATA — el diálogo solo crea, no necesita datos previos
+```
+
+#### Anchos de diálogo por complejidad
+
+| Ancho | Tipo de diálogo |
+|-------|-----------------|
+| `400px` | Ticket (POS recibo) |
+| `450px` | Confirmaciones, turno abrir/cerrar, cancelar orden |
+| `500px` | Formularios simples (categoría, almacén, ajuste, traslado) |
+| `550px` | Cobrar (POS) |
+| `600px` | Formularios medianos (cliente, proveedor) |
+| `700px` | Formularios completos (producto, devolución) |
+| `900px` | Formularios con tabla interna (compra con líneas) |
+| default | Confirm dialog (sin ancho fijo) |
+
+#### Opciones especiales
+
+| Opción | Cuándo usar |
+|--------|------------|
+| `disableClose: true` | Solo en flujos críticos (cobrar en POS) donde el cierre accidental causa pérdida de datos |
+| `data: { modo, item }` | Diálogos crear/editar que reutilizan el mismo componente |
+| `cdkFocusInitial` | En el botón de acción primaria para a11y |
+
+### 8.4 Tablas — patrón estándar
+
+Todas las tablas siguen el mismo patrón consistente (11 módulos con tabla):
 
 ```html
-<div class="card overflow-x-auto">
-  <table mat-table [dataSource]="items()">
-    <!-- Columnas -->
-    <ng-container matColumnDef="nombre">
-      <th mat-header-cell *matHeaderCellDef>Nombre</th>
-      <td mat-cell *matCellDef="let item">{{ item.nombre }}</td>
-    </ng-container>
+<!-- Loading state -->
+@if (cargando()) {
+  <div class="flex justify-center p-8">
+    <mat-spinner diameter="40" />
+  </div>
+}
 
-    <!-- Columna de acciones -->
-    <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef class="w-20">Acciones</th>
-      <td mat-cell *matCellDef="let item">
-        <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="editar(item)">
-            <mat-icon>edit</mat-icon> Editar
+@if (!cargando()) {
+  <div class="overflow-x-auto">
+    <table mat-table [dataSource]="items()" class="w-full">
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let item">{{ item.nombre }}</td>
+      </ng-container>
+
+      <!-- Columna de acciones con menú -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+        <td mat-cell *matCellDef="let item">
+          <button mat-icon-button [matMenuTriggerFor]="menu">
+            <mat-icon>more_vert</mat-icon>
           </button>
-          <button mat-menu-item (click)="eliminar(item)" class="text-red-600">
-            <mat-icon>delete</mat-icon> Eliminar
-          </button>
-        </mat-menu>
-      </td>
-    </ng-container>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="editar(item)">
+              <mat-icon>edit</mat-icon> Editar
+            </button>
+            <button mat-menu-item (click)="eliminar(item)" class="text-red-600">
+              <mat-icon>delete</mat-icon> Eliminar
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-    <tr mat-row *matRowDef="let row; columns: columnas"
-        class="hover:bg-gray-50 cursor-pointer"
-        (click)="verDetalle(row)"></tr>
-  </table>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+    </table>
+  </div>
 
+  <!-- Empty state -->
   @if (items().length === 0) {
     <app-empty-state icono="inbox" mensaje="Sin resultados" />
   }
 
+  <!-- Paginador -->
   @if (meta()) {
     <mat-paginator
       [length]="meta()!.total"
@@ -1016,8 +1077,116 @@ export class ProductoFormDialogComponent {
       (page)="onPage($event)"
       showFirstLastButtons />
   }
-</div>
+}
 ```
+
+**Reglas de tablas:**
+
+| Regla | Detalle |
+|-------|---------|
+| Data source = signal | `[dataSource]="items()"` — siempre un signal, nunca `MatTableDataSource` |
+| Sin MatSort | No se usa sorting en cliente; toda la ordenación es vía API |
+| Clase `w-full` | Siempre `class="w-full"` en la tabla |
+| Overflow | Wrapper con `class="overflow-x-auto"` para scroll horizontal en mobile |
+| Empty state | Usar `<app-empty-state>` de shared/ cuando la lista sea vacía |
+| Acciones | Menú contextual con `mat-icon-button` + `mat-menu` (icono `more_vert`) |
+| Paginador | `showFirstLastButtons`, opciones `[10, 20, 50]` |
+
+### 8.5 Notificaciones (MatSnackBar)
+
+`NotificationService` envuelve `MatSnackBar` con 3 métodos: 
+
+```typescript
+// notification.service.ts
+exito(msg)  → snack verde, 3s, acción "OK",     panelClass: ['snack-exito']
+error(msg)  → snack rojo,  5s, acción "Cerrar",  panelClass: ['snack-error']
+info(msg)   → snack default, 3s, acción "OK"
+```
+
+**Posición:** siempre `end` + `top` (esquina superior derecha).
+
+**Estilos** definidos en `globals.css`:
+
+```css
+.snack-exito .mdc-snackbar__surface { background-color: #2e7d32 !important; }
+.snack-exito .mdc-snackbar__label,
+.snack-exito .mat-mdc-snack-bar-action { color: #fff !important; }
+
+.snack-error .mdc-snackbar__surface { background-color: #c62828 !important; }
+.snack-error .mdc-snackbar__label,
+.snack-error .mat-mdc-snack-bar-action { color: #fff !important; }
+```
+
+### 8.6 Chips como filtros de estado
+
+Patrón usado en: órdenes, entregas, inventario, turnos-caja, usuarios.
+
+```html
+<mat-chip-listbox (change)="filtrarEstado($event.value)" [value]="estadoFiltro">
+  <mat-chip-option value="">Todos</mat-chip-option>
+  <mat-chip-option value="PENDIENTE">Pendiente</mat-chip-option>
+  <mat-chip-option value="COMPLETADA">Completada</mat-chip-option>
+  <mat-chip-option value="CANCELADA">Cancelada</mat-chip-option>
+</mat-chip-listbox>
+```
+
+### 8.7 Tabs para vistas multi-sección
+
+Patrón usado en: reportes (6 tabs), configuración (2 tabs), inventario (2 tabs).
+
+```html
+<mat-tab-group>
+  <mat-tab label="Existencias">
+    <!-- Contenido tab 1 -->
+  </mat-tab>
+  <mat-tab label="Movimientos">
+    <!-- Contenido tab 2 -->
+  </mat-tab>
+</mat-tab-group>
+```
+
+### 8.8 Form fields — convenciones
+
+| Convención | Detalle |
+|-----------|---------|
+| **Appearance** | `outline` global vía `MAT_FORM_FIELD_DEFAULT_OPTIONS` en `app.config.ts` |
+| **Ancho en diálogos** | `class="w-full"` para llenar el ancho del diálogo |
+| **Ancho en filtros** | Tailwind: `class="w-36"`, `w-40"`, `w-48"`, `w-64"` según contenido |
+| **Layout de filtros** | `class="flex flex-wrap items-end gap-3"` para fila de filtros |
+| **Density compacta** | `class="density-compact"` — reduce altura a 40px (p.ej. filtros de reportes) |
+| **Validación visual** | `@if (form.get('campo')?.hasError('required')) { <mat-error>...` |
+
+### 8.9 Dark mode — overrides Material
+
+Todos los overrides viven en `globals.css` dentro de `@media (prefers-color-scheme: dark)`.
+Usan las variables semánticas `--dm-*` con `!important`:
+
+| Componente Material | Variables usadas |
+|-------------------|-----------------|
+| Cards (`.mat-mdc-card`, `.mdc-card`) | `--dm-surface`, `--dm-text` |
+| Toolbar | `--dm-surface`, `--dm-text` |
+| Diálogos (`.mdc-dialog__surface`) | `--dm-surface`, `--dm-text` |
+| Tablas (header, cell, row hover) | `--dm-surface`, `--dm-text`, `--dm-text-secondary`, `--dm-border`, `--dm-hover` |
+| Form fields (outline, input, select) | `--dm-border`, `--dm-text` |
+| Menús | `--dm-surface`, `--dm-text` |
+| Tabs header | `--dm-surface` |
+| Paginator | `--dm-surface`, `--dm-text` |
+| Chips | `--dm-hover`, `--dm-text` |
+| Divider | `--dm-border` |
+| Snackbar | `#333` fijo |
+
+### 8.10 Reglas de uso Material
+
+| ✅ Hacer | ❌ No hacer |
+|---------|-----------|
+| Importar solo módulos usados en `imports[]` del componente | Importar módulos Material completos o crear barrel |
+| Usar `MatDialog.open()` con `width` explícito | Dejar diálogos sin ancho (se ven mal en mobile) |
+| Usar `takeUntilDestroyed()` en `afterClosed()` | Subscribirse a diálogos sin cleanup |
+| Usar `mat-icon-button` + `mat-menu` para acciones de tabla | Poner múltiples botones inline en cada fila |
+| Usar signals como data source `[dataSource]="items()"` | Usar `MatTableDataSource` (innecesario con paginación backend) |
+| Notificar con `NotificationService` (exito/error/info) | Usar `MatSnackBar` directamente |
+| Dark mode overrides en `globals.css` con `--dm-*` | Overrides en component.css (no se aplican globalmente) |
+| `cdkFocusInitial` en diálogos para a11y | Dejar el focus sin gestionar |
 
 ---
 

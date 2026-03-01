@@ -306,6 +306,23 @@ body {
   --mat-form-field-container-vertical-padding: 4px;
 }
 
+/* ── Snackbar panelClass styles ────────────────────────────────── */
+.snack-exito .mdc-snackbar__surface {
+  background-color: #2e7d32 !important;
+}
+.snack-exito .mdc-snackbar__label,
+.snack-exito .mat-mdc-snack-bar-action {
+  color: #fff !important;
+}
+
+.snack-error .mdc-snackbar__surface {
+  background-color: #c62828 !important;
+}
+.snack-error .mdc-snackbar__label,
+.snack-error .mat-mdc-snack-bar-action {
+  color: #fff !important;
+}
+
 /* ── Focus visible ring (A11y) ─────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid var(--color-primary);
