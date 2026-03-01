@@ -12,7 +12,7 @@
 | **1** | shared/ Infrastructure | ✅ Completada | 12/12 piezas |
 | **2** | Módulos CRUD simples | ✅ Completada | 5/5 módulos |
 | **3** | Módulos transaccionales | ✅ Completada | 5/5 módulos |
-| **4** | POS (Punto de Venta) | 🔨 En progreso | — |
+| **4** | POS (Punto de Venta) | ✅ Completada | 4/4 componentes |
 | **5** | Administración | ❌ Pendiente | 0/3 módulos |
 | **6** | Pulido y producción | ❌ Pendiente | 0/8 tareas |
 
@@ -108,20 +108,27 @@
 
 ---
 
-## Fase 4 — POS (Punto de Venta) 🔨
+## Fase 4 — POS (Punto de Venta) ✅
 
-> En progreso
+> Commit: `9b0f0d08` — "feat(front): fase 4 — módulo POS punto de venta completo"
 
-### Alcance planificado
+### Componentes
 
-| Zona | Funcionalidad | Estado |
-|------|---------------|--------|
-| Barra superior | Búsqueda de producto (SKU/código/nombre), selector de precio (Lista 1/2/3) | ❌ |
-| Panel izquierdo | Grid de categorías rápidas → Grid de productos (imagen, nombre, precio) | ❌ |
-| Panel derecho | Carrito: líneas de venta con cantidad, precio, descuento, subtotal. Totales | ❌ |
-| Panel inferior | Métodos de pago, monto pagado, cálculo de cambio. Botón "Cobrar" | ❌ |
-| Diálogos | Selección de cliente, pago (mixto), ticket/comprobante | ❌ |
-| Requisito | Turno de caja abierto para poder vender | ❌ |
+| # | Componente | Archivos | Descripción |
+|---|-----------|---------|-------------|
+| 4.1 | **PosComponent** | ts + html + css | Pantalla completa con grid de productos y panel de carrito. Búsqueda por código de barras/SKU (Enter), categorías con chips horizontales, grid de productos con cards, carrito con controles de cantidad/descuento/eliminar, selector de lista de precios (1/2/3), computed de totales (subtotal, descuento, impuesto, total). Atajos: F2=cobrar, F4=buscar, Esc=limpiar. Verificación de turno de caja activo |
+| 4.2 | **CobrarDialogComponent** | ts + html + css | Diálogo de cobro. Pago único (método + monto + referencia, atajos de billetes $50-$1000, monto exacto) y pago mixto (FormArray dinámico). Cálculo de cambio y faltante en tiempo real. Crédito cliente solo si hay clienteId |
+| 4.3 | **ClienteDialogComponent** | ts + html + css | Búsqueda de clientes con debounce (300ms). Listado con nombre, RFC, teléfono. Selección por click |
+| 4.4 | **TicketDialogComponent** | ts + html + css | Recibo post-venta con número de orden, fecha, cliente, detalle de líneas, totales, pagos y cambio. Botón "Nueva venta" |
+
+### Características técnicas
+
+- Layout CSS Grid custom (productos | 380px carrito), sin page-container
+- Estado del carrito con signals y computed (sin FormArray)
+- Validación de stock al agregar productos
+- Soporte multi-pago (pago mixto) con FormArray
+- Responsive: @1024px carrito=320px, @768px stacked
+- Barcode scanning via `buscarPorCodigo()` + ProductosService
 
 ---
 
@@ -173,4 +180,5 @@
 | `ebe51b3d` | 1 | shared/ — 6 componentes, 5 pipes, 1 directiva |
 | `a240a3f4` | 2 | CRUD — categorías, proveedores, almacenes, productos upgrade, clientes upgrade |
 | `632402b8` | 3 | Transaccionales — órdenes, compras, inventario, entregas, turnos-caja |
-| — | 4 | POS (en progreso) |
+| `9b0f0d08` | 4 | POS — punto de venta completo con cobro, cliente, ticket |
+| — | 5 | Administración (pendiente) |
