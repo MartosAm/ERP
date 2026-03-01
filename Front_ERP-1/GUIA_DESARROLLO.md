@@ -11,8 +11,8 @@
 1. [Estado actual del proyecto](#1-estado-actual-del-proyecto)
 2. [Arquitectura y estructura de carpetas](#2-arquitectura-y-estructura-de-carpetas)
 3. [Plan de desarrollo por fases](#3-plan-de-desarrollo-por-fases)
-4. [Componentes shared/ pendientes](#4-componentes-shared-pendientes)
-5. [Módulos feature/ por desarrollar](#5-módulos-feature-por-desarrollar)
+4. [Componentes shared/ ✅ (referencia)](#4-componentes-shared--referencia)
+5. [Módulos feature/ ✅ (referencia)](#5-módulos-feature--referencia)
 6. [Convenciones de código Angular](#6-convenciones-de-código-angular)
 7. [Guía de estilos con Tailwind CSS v4](#7-guía-de-estilos-con-tailwind-css-v4)
 8. [Angular Material — convenciones de uso](#8-angular-material--convenciones-de-uso)
@@ -535,7 +535,7 @@ export class ProductosComponent implements OnInit {
 
 | Regla | Detalle |
 |-------|---------|
-| **Sin `any`** | Prohibido. Usar tipos específicos o `unknown`. |
+| **Minimizar `any`** | Evitar `as any`. Actualmente quedan 8 en frontend (ver §12.2). Los nuevos desarrollos no deben agregar más. |
 | **Sin `subscribe` sin cleanup** | Usar `takeUntilDestroyed(this.destroyRef)` antes de `.subscribe()`. |
 | **Sin imports duplicados** | No importar módulos Angular Material completos, solo los módulos específicos. |
 | **Signals para estado local** | Preferir `signal()` sobre variables mutables para estado del componente. |
@@ -2691,24 +2691,65 @@ jobs:
 - [x] PWA: service worker, manifest, 8 iconos, offline awareness
 - [x] Build de producción sin errores
 - [x] Bundle size dentro de budgets (initial < 750kb warning, < 1.5MB error; component < 8kb/12kb)
-- [x] CSP headers configurados en Nginx + `index.html` meta tag
-- [x] Environment prod apuntando a `/api/v1`
+- [x] CSP headers configurados en Nginx + `index.html` meta tag (3 capas — ver §11.7)
+- [x] Environment prod apuntando a `/api/v1` (relativo, mismo origen)
 - [x] Docker multi-stage + Nginx con gzip + security headers
 - [x] Favicon, meta tags y manifest actualizados
 - [x] Tailwind CSS v4 con configuración CSS-first (sin `tailwind.config.js`)
+- [x] Snackbar panelClasses (`snack-exito`/`snack-error`) estilizados en `globals.css`
+- [x] `MAT_FORM_FIELD_DEFAULT_OPTIONS` con `appearance: 'outline'` global
+
+### Documentación ✅
+
+- [x] §1 — Estado actual del proyecto (dependencias, historial, resumen)
+- [x] §2 — Arquitectura y estructura de carpetas (árbol completo, principios)
+- [x] §3 — Plan de desarrollo por fases (6 fases completadas con detalle)
+- [x] §4 — Componentes shared/ — referencia de interfaces y uso
+- [x] §5 — Módulos feature/ — referencia de estructura, rutas, sidebar
+- [x] §6 — Convenciones de código Angular (naming, estructura, reglas)
+- [x] §7 — Tailwind CSS v4 (52 utility classes, tokens, dark mode, responsive)
+- [x] §8 — Angular Material (25 módulos, dialog patterns, theme, notifications)
+- [x] §9 — Patrón CRUD estándar (3 tipos de módulo, 12 subsecciones, código completo)
+- [x] §10 — Signals y estado (50+ signals, 9 computed, takeUntilDestroyed, 13 reglas)
+- [x] §11 — Seguridad (4 capas, RBAC, interceptors, CSP, sesiones) + `SEGURIDAD.md`
+- [x] §12 — Testing y calidad (auditoría real, plan priorizado, checklist actualizado)
+- [x] §13 — Checklist de lanzamiento (este archivo)
+
+### Pendientes de calidad (ver §12.4)
+
+- [ ] P1: Configurar ESLint (`@angular-eslint`) + Prettier + Husky pre-commit
+- [ ] P2: Unit tests backend (auth, órdenes, inventario, sanitizar)
+- [ ] P3: Tests de componente Angular (login, POS, pipes, directiva rol)
+- [ ] P4: E2E con Playwright (login, venta POS, CRUD producto)
+- [ ] P5: GitHub Actions CI/CD pipeline
+- [ ] Corregir `minLength(6)` a `minLength(8)` en `login.component.ts` (ver §11.9)
+- [ ] Agregar `sanitizarObjeto(dto)` en `auth.service.ts` backend (ver §11.9)
+- [ ] Agregar `USER nginx` en Dockerfile frontend (ver §11.9)
 
 ### Fases completadas
 
 | Fase | Commit | Contenido |
 |------|--------|-----------|
 | 1 — shared/ | `ebe51b3d` | 6 componentes + 5 pipes + 1 directiva |
-| 2 — CRUD | `a240a3f4` | categorías, proveedores, almacenes, productos y clientes upgrade |
+| 2 — CRUD | `a240a3f4` | categorías, proveedores, almacenes, productos, clientes |
 | 3 — Transaccional | `632402b8` | órdenes, compras, inventario, entregas, turnos-caja |
 | 4 — POS | `9b0f0d08` | punto de venta completo con cobro, cliente, ticket |
 | 5 — Administración | `f0272020` | usuarios, reportes con Chart.js, configuración |
 | 6 — Pulido | `f57350ec` | PWA, dark mode, a11y, responsive, Docker producción |
 
+### Commits de documentación
+
+| Commit | Sección | Contenido |
+|--------|---------|-----------|
+| `d7f61a32` | §1,2,3,7,13 | Estado actual, arquitectura, Tailwind v4, checklist |
+| `efee021e` | §8 | Angular Material — 25 módulos, dialogs, snackbar fix, form-field defaults |
+| `d22d3ff7` | §9 | Patrón CRUD — 3 tipos de módulo, 12 subsecciones (+575 líneas) |
+| `48582d5b` | §10 | Signals y estado — 12 subsecciones, inventario real (+411 líneas) |
+| `339fe03d` | §11 | Seguridad full-stack — 9 subsecciones + `SEGURIDAD.md` (+1070 líneas) |
+| `a96a4cea` | §12 | Testing y calidad — auditoría honesta, plan priorizado (+279 líneas) |
+
 ---
 
-> **Nota:** Este documento debe actualizarse conforme se completen las fases.
-> Cada módulo completado debe marcarse con ✅ en la tabla de estado.
+> **Documento completo.** Todas las secciones (1–13) han sido auditadas contra el código real y reescritas.  
+> Total: ~2700 líneas de documentación técnica verificada.  
+> Documento complementario: `SEGURIDAD.md` (909 líneas) — arquitectura de seguridad full-stack.
