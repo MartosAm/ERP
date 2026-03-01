@@ -133,6 +133,13 @@ export const routes: Routes = [
       },
 
       {
+        path: 'usuarios',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/usuarios/usuarios.component').then((m) => m.UsuariosComponent),
+      },
+
+      {
         path: 'reportes',
         canActivate: [roleGuard('ADMIN')],
         loadComponent: () =>

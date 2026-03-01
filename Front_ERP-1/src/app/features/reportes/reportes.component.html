@@ -1,4 +1,353 @@
 <div class="page-container">
-  <h1 class="text-2xl font-bold mb-4">Reportes</h1>
-  <p class="text-gray-500">Módulo de reportes en desarrollo...</p>
+  <app-page-header
+    titulo="Reportes"
+    subtitulo="Análisis y estadísticas del negocio"
+    icono="bar_chart">
+    <!-- Filtro de fechas -->
+    <form [formGroup]="rangoForm" class="flex items-center gap-2">
+      <mat-form-field appearance="outline" class="w-36 density-compact">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" formControlName="fechaDesde" />
+        <mat-datepicker-toggle matSuffix [for]="dpDesde" />
+        <mat-datepicker #dpDesde />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-36 density-compact">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" formControlName="fechaHasta" />
+        <mat-datepicker-toggle matSuffix [for]="dpHasta" />
+        <mat-datepicker #dpHasta />
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="aplicarFiltro()">
+        <mat-icon>refresh</mat-icon> Aplicar
+      </button>
+    </form>
+  </app-page-header>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12">
+      <mat-spinner diameter="40" />
+    </div>
+  }
+
+  <mat-tab-group
+    animationDuration="200ms"
+    (selectedIndexChange)="onTabChange($event)"
+    class="reportes-tabs">
+
+    <!-- TAB: Ventas -->
+    <mat-tab label="Ventas">
+      <div class="tab-content">
+        @if (ventas(); as v) {
+          <!-- KPIs -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="kpi-card">
+              <p class="kpi-label">Ventas brutas</p>
+              <p class="kpi-value">{{ v.totales.ventasBrutas | moneda }}</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Órdenes</p>
+              <p class="kpi-value">{{ v.totales.cantidadOrdenes }}</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Ticket promedio</p>
+              <p class="kpi-value">{{ v.totales.ticketPromedio | moneda }}</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Utilidad bruta</p>
+              <p class="kpi-value text-green-600">{{ v.utilidad.utilidadBruta | moneda }}
+                <span class="text-xs font-normal text-gray-400">({{ v.utilidad.margenPorcentaje }}%)</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Más KPIs fila 2 -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="kpi-card kpi-warn">
+              <p class="kpi-label">Descuentos</p>
+              <p class="kpi-value">{{ v.totales.descuentos | moneda }}</p>
+            </div>
+            <div class="kpi-card kpi-warn">
+              <p class="kpi-label">Cancelaciones</p>
+              <p class="kpi-value">{{ v.cancelaciones.cantidad }} ({{ v.cancelaciones.total | moneda }})</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Devoluciones</p>
+              <p class="kpi-value">{{ v.devoluciones.cantidad }} ({{ v.devoluciones.total | moneda }})</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Cotizaciones</p>
+              <p class="kpi-value">{{ v.cotizaciones.cantidad }} ({{ v.cotizaciones.total | moneda }})</p>
+            </div>
+          </div>
+
+          <!-- Gráfica ventas por día -->
+          <div class="card chart-container">
+            <h3 class="text-sm font-semibold text-gray-600 mb-2">Ventas por día</h3>
+            <canvas id="chartVentas"></canvas>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Top productos -->
+    <mat-tab label="Top productos">
+      <div class="tab-content">
+        @if (topProductos(); as tp) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Por cantidad -->
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">
+                <mat-icon class="!text-base align-text-bottom mr-1">trending_up</mat-icon>
+                Por cantidad vendida
+              </h3>
+              <table mat-table [dataSource]="tp.porCantidad" class="w-full">
+                <ng-container matColumnDef="nombre">
+                  <th mat-header-cell *matHeaderCellDef>Producto</th>
+                  <td mat-cell *matCellDef="let p">
+                    <p class="font-medium text-sm">{{ p.nombre }}</p>
+                    <p class="text-xs text-gray-400">{{ p.sku }}</p>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="cantidad">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Qty</th>
+                  <td mat-cell *matCellDef="let p" class="text-right font-semibold">{{ p.cantidadVendida }}</td>
+                </ng-container>
+                <ng-container matColumnDef="ingresos">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Ingresos</th>
+                  <td mat-cell *matCellDef="let p" class="text-right text-sm">{{ p.ingresos | moneda }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['nombre', 'cantidad', 'ingresos']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['nombre', 'cantidad', 'ingresos']"></tr>
+              </table>
+            </div>
+
+            <!-- Por ingresos -->
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">
+                <mat-icon class="!text-base align-text-bottom mr-1">attach_money</mat-icon>
+                Por ingresos
+              </h3>
+              <table mat-table [dataSource]="tp.porIngresos" class="w-full">
+                <ng-container matColumnDef="nombre">
+                  <th mat-header-cell *matHeaderCellDef>Producto</th>
+                  <td mat-cell *matCellDef="let p">
+                    <p class="font-medium text-sm">{{ p.nombre }}</p>
+                    <p class="text-xs text-gray-400">{{ p.sku }}</p>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="cantidad">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Qty</th>
+                  <td mat-cell *matCellDef="let p" class="text-right text-sm">{{ p.cantidadVendida }}</td>
+                </ng-container>
+                <ng-container matColumnDef="ingresos">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Ingresos</th>
+                  <td mat-cell *matCellDef="let p" class="text-right font-semibold">{{ p.ingresos | moneda }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['nombre', 'cantidad', 'ingresos']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['nombre', 'cantidad', 'ingresos']"></tr>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Métodos de pago -->
+    <mat-tab label="Métodos de pago">
+      <div class="tab-content">
+        @if (metodosPago(); as mp) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card chart-container">
+              <h3 class="text-sm font-semibold text-gray-600 mb-2">Distribución por método</h3>
+              <canvas id="chartMetodos"></canvas>
+            </div>
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">Desglose</h3>
+              <table mat-table [dataSource]="mp.desglose" class="w-full">
+                <ng-container matColumnDef="metodo">
+                  <th mat-header-cell *matHeaderCellDef>Método</th>
+                  <td mat-cell *matCellDef="let m" class="font-medium text-sm">{{ metodoLabel(m.metodo) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="cantidad">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Transacciones</th>
+                  <td mat-cell *matCellDef="let m" class="text-right">{{ m.cantidad }}</td>
+                </ng-container>
+                <ng-container matColumnDef="total">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Total</th>
+                  <td mat-cell *matCellDef="let m" class="text-right font-semibold">{{ m.total | moneda }}</td>
+                </ng-container>
+                <ng-container matColumnDef="porcentaje">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">%</th>
+                  <td mat-cell *matCellDef="let m" class="text-right text-sm text-gray-500">{{ m.porcentaje }}%</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['metodo', 'cantidad', 'total', 'porcentaje']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['metodo', 'cantidad', 'total', 'porcentaje']"></tr>
+              </table>
+              <div class="mt-3 text-right text-sm font-semibold text-gray-700">
+                Total general: {{ mp.totalGeneral | moneda }}
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Inventario -->
+    <mat-tab label="Inventario">
+      <div class="tab-content">
+        @if (inventario(); as inv) {
+          <div class="kpi-card mb-4 inline-block">
+            <p class="kpi-label">Valor total del inventario</p>
+            <p class="kpi-value text-indigo-600">{{ inv.valorTotalGlobal | moneda }}</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Por almacén -->
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">Por almacén</h3>
+              <table mat-table [dataSource]="inv.porAlmacen" class="w-full">
+                <ng-container matColumnDef="almacen">
+                  <th mat-header-cell *matHeaderCellDef>Almacén</th>
+                  <td mat-cell *matCellDef="let a" class="font-medium text-sm">{{ a.almacen }}</td>
+                </ng-container>
+                <ng-container matColumnDef="productos">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Productos</th>
+                  <td mat-cell *matCellDef="let a" class="text-right">{{ a.totalProductos }}</td>
+                </ng-container>
+                <ng-container matColumnDef="unidades">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Unidades</th>
+                  <td mat-cell *matCellDef="let a" class="text-right">{{ a.totalUnidades }}</td>
+                </ng-container>
+                <ng-container matColumnDef="valor">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Valor</th>
+                  <td mat-cell *matCellDef="let a" class="text-right font-semibold">{{ a.valorTotal | moneda }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['almacen', 'productos', 'unidades', 'valor']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['almacen', 'productos', 'unidades', 'valor']"></tr>
+              </table>
+            </div>
+
+            <!-- Por categoría -->
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">Por categoría</h3>
+              <table mat-table [dataSource]="inv.porCategoria" class="w-full">
+                <ng-container matColumnDef="categoria">
+                  <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                  <td mat-cell *matCellDef="let c" class="font-medium text-sm">{{ c.categoria }}</td>
+                </ng-container>
+                <ng-container matColumnDef="productos">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Productos</th>
+                  <td mat-cell *matCellDef="let c" class="text-right">{{ c.totalProductos }}</td>
+                </ng-container>
+                <ng-container matColumnDef="unidades">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Unidades</th>
+                  <td mat-cell *matCellDef="let c" class="text-right">{{ c.totalUnidades }}</td>
+                </ng-container>
+                <ng-container matColumnDef="valor">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Valor</th>
+                  <td mat-cell *matCellDef="let c" class="text-right font-semibold">{{ c.valorTotal | moneda }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['categoria', 'productos', 'unidades', 'valor']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['categoria', 'productos', 'unidades', 'valor']"></tr>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Cajeros -->
+    <mat-tab label="Cajeros">
+      <div class="tab-content">
+        @if (cajeros(); as caj) {
+          <div class="card chart-container mb-6">
+            <h3 class="text-sm font-semibold text-gray-600 mb-2">Rendimiento por cajero</h3>
+            <canvas id="chartCajeros"></canvas>
+          </div>
+
+          <div class="card overflow-x-auto">
+            <table mat-table [dataSource]="caj.cajeros" class="w-full">
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef>Cajero</th>
+                <td mat-cell *matCellDef="let c" class="font-medium">{{ c.nombre }}</td>
+              </ng-container>
+              <ng-container matColumnDef="ordenes">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Órdenes</th>
+                <td mat-cell *matCellDef="let c" class="text-right">{{ c.totalOrdenes }}</td>
+              </ng-container>
+              <ng-container matColumnDef="vendido">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Vendido</th>
+                <td mat-cell *matCellDef="let c" class="text-right font-semibold">{{ c.totalVendido | moneda }}</td>
+              </ng-container>
+              <ng-container matColumnDef="ticket">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Ticket prom.</th>
+                <td mat-cell *matCellDef="let c" class="text-right text-sm">{{ c.ticketPromedio | moneda }}</td>
+              </ng-container>
+              <ng-container matColumnDef="cancelaciones">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Cancelaciones</th>
+                <td mat-cell *matCellDef="let c" class="text-right text-sm"
+                  [class.text-red-500]="c.cancelaciones > 0">
+                  {{ c.cancelaciones }}
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['nombre', 'ordenes', 'vendido', 'ticket', 'cancelaciones']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['nombre', 'ordenes', 'vendido', 'ticket', 'cancelaciones']"></tr>
+            </table>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Entregas -->
+    <mat-tab label="Entregas">
+      <div class="tab-content">
+        @if (entregas(); as ent) {
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div class="kpi-card">
+              <p class="kpi-label">Total entregas</p>
+              <p class="kpi-value">{{ ent.totalEntregas }}</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Tasa de éxito</p>
+              <p class="kpi-value" [class.text-green-600]="ent.tasaExitoGlobal >= 80"
+                [class.text-red-500]="ent.tasaExitoGlobal < 80">
+                {{ ent.tasaExitoGlobal }}%
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card chart-container">
+              <h3 class="text-sm font-semibold text-gray-600 mb-2">Por estado</h3>
+              <canvas id="chartEntregas"></canvas>
+            </div>
+
+            <div class="card">
+              <h3 class="text-sm font-semibold text-gray-600 mb-3">Por repartidor</h3>
+              <table mat-table [dataSource]="ent.porRepartidor" class="w-full">
+                <ng-container matColumnDef="nombre">
+                  <th mat-header-cell *matHeaderCellDef>Repartidor</th>
+                  <td mat-cell *matCellDef="let r" class="font-medium text-sm">{{ r.nombre }}</td>
+                </ng-container>
+                <ng-container matColumnDef="entregadas">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Entregadas</th>
+                  <td mat-cell *matCellDef="let r" class="text-right text-green-600">{{ r.entregadas }}</td>
+                </ng-container>
+                <ng-container matColumnDef="fallidas">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">Fallidas</th>
+                  <td mat-cell *matCellDef="let r" class="text-right text-red-500">{{ r.noEntregadas }}</td>
+                </ng-container>
+                <ng-container matColumnDef="tasa">
+                  <th mat-header-cell *matHeaderCellDef class="text-right">% Éxito</th>
+                  <td mat-cell *matCellDef="let r" class="text-right font-semibold">{{ r.tasaExito }}%</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['nombre', 'entregadas', 'fallidas', 'tasa']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['nombre', 'entregadas', 'fallidas', 'tasa']"></tr>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>

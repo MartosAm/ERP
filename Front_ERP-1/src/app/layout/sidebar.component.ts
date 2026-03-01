@@ -37,6 +37,7 @@ export class SidebarComponent {
     { label: 'Turnos de Caja', icon: 'point_of_sale', route: '/turnos-caja', roles: ['ADMIN', 'CAJERO'] },
     { label: 'Proveedores', icon: 'handshake', route: '/proveedores', roles: ['ADMIN'] },
     { label: 'Almacenes', icon: 'store', route: '/almacenes', roles: ['ADMIN'] },
+    { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios', roles: ['ADMIN'] },
     { label: 'Reportes', icon: 'bar_chart', route: '/reportes', roles: ['ADMIN'] },
     { label: 'Configuración', icon: 'settings', route: '/configuracion', roles: ['ADMIN'] },
   ];

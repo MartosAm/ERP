@@ -1,1 +1,47 @@
-/* reportes.component.css */
+.tab-content {
+  padding: 1.5rem 0;
+}
+
+.kpi-card {
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-card.kpi-warn {
+  border-left: 3px solid #f44336;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.kpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+}
+
+.chart-container canvas {
+  max-height: 260px;
+}
+
+.density-compact {
+  --mat-form-field-container-height: 40px;
+  --mat-form-field-container-vertical-padding: 4px;
+}
+
+.reportes-tabs {
+  margin-top: 1rem;
+}

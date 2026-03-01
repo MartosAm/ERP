@@ -1,4 +1,148 @@
 <div class="page-container">
-  <h1 class="text-2xl font-bold mb-4">Configuración</h1>
-  <p class="text-gray-500">Módulo de configuración en desarrollo...</p>
+  <app-page-header
+    titulo="Configuración"
+    subtitulo="Perfil y ajustes del sistema"
+    icono="settings">
+  </app-page-header>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12">
+      <mat-spinner diameter="40" />
+    </div>
+  }
+
+  <mat-tab-group animationDuration="200ms">
+
+    <!-- TAB: Perfil -->
+    <mat-tab label="Mi perfil">
+      <div class="tab-content">
+        @if (perfil(); as p) {
+          <div class="card max-w-2xl">
+            <!-- Header del perfil -->
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold">
+                {{ p.nombre.charAt(0).toUpperCase() }}
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">{{ p.nombre }}</h3>
+                <p class="text-sm text-gray-500">{{ p.correo }}</p>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1"
+                  [class]="p.rol === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
+                           p.rol === 'CAJERO' ? 'bg-blue-100 text-blue-800' :
+                           'bg-amber-100 text-amber-800'">
+                  {{ p.rol }}
+                </span>
+              </div>
+            </div>
+
+            <mat-divider class="mb-4" />
+
+            <!-- Info grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="info-item">
+                <p class="info-label">Teléfono</p>
+                <p class="info-value">{{ p.telefono || 'No registrado' }}</p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Empresa</p>
+                <p class="info-value">{{ p.empresa.nombre }}</p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Moneda</p>
+                <p class="info-value">{{ p.empresa.moneda }}</p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Tasa de impuesto</p>
+                <p class="info-value">{{ p.empresa.tasaImpuesto * 100 }}%</p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Horario</p>
+                <p class="info-value">
+                  @if (p.horarioInicio && p.horarioFin) {
+                    {{ p.horarioInicio }} - {{ p.horarioFin }}
+                  } @else {
+                    No asignado
+                  }
+                </p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Días laborales</p>
+                <p class="info-value">{{ getDiasLabel(p.diasLaborales) }}</p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Último login</p>
+                <p class="info-value">
+                  @if (p.ultimoLoginEn) {
+                    {{ p.ultimoLoginEn | fechaHora }}
+                  } @else {
+                    —
+                  }
+                </p>
+              </div>
+              <div class="info-item">
+                <p class="info-label">Miembro desde</p>
+                <p class="info-value">{{ p.creadoEn | fechaHora }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TAB: Seguridad (solo ADMIN) -->
+    @if (esAdmin()) {
+      <mat-tab label="Seguridad">
+        <div class="tab-content">
+          <div class="card max-w-md">
+            <h3 class="text-base font-semibold text-gray-800 mb-1">
+              <mat-icon class="!text-lg align-text-bottom mr-1">lock</mat-icon>
+              Cambiar PIN de usuario
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Asigna un nuevo PIN de acceso rápido a un usuario del sistema.
+            </p>
+
+            <form [formGroup]="pinForm" (ngSubmit)="cambiarPin()" class="flex flex-col gap-1">
+              <mat-form-field appearance="outline">
+                <mat-label>Usuario</mat-label>
+                <mat-select formControlName="usuarioId">
+                  @for (u of usuarios(); track u.id) {
+                    <mat-option [value]="u.id">
+                      {{ u.nombre }} ({{ u.rol }})
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nuevo PIN</mat-label>
+                <input matInput formControlName="nuevoPin" type="password"
+                       maxlength="6" placeholder="4-6 dígitos" />
+                @if (pinForm.get('nuevoPin')?.hasError('pattern') && pinForm.get('nuevoPin')?.touched) {
+                  <mat-error>El PIN debe ser de 4 a 6 dígitos numéricos</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Confirmar PIN</mat-label>
+                <input matInput formControlName="confirmarPin" type="password"
+                       maxlength="6" placeholder="Repite el PIN" />
+              </mat-form-field>
+
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="pinForm.invalid || guardandoPin"
+                class="self-start">
+                <mat-icon>lock_reset</mat-icon>
+                Cambiar PIN
+              </button>
+            </form>
+          </div>
+        </div>
+      </mat-tab>
+    }
+
+  </mat-tab-group>
 </div>

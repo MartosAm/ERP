@@ -37,7 +37,7 @@ export class ReportesService {
   }
 
   ventas(filtro: FiltroFechas): Observable<VentasResumen> {
-    return this.api.get<VentasResumen>('reportes/ventas', filtro);
+    return this.api.get<VentasResumen>('reportes/ventas', { ...filtro });
   }
 
   topProductos(filtro: FiltroFechas & { limite?: number }): Observable<TopProductosReporte> {
@@ -45,7 +45,7 @@ export class ReportesService {
   }
 
   metodosPago(filtro: FiltroFechas): Observable<MetodosPagoReporte> {
-    return this.api.get<MetodosPagoReporte>('reportes/metodos-pago', filtro);
+    return this.api.get<MetodosPagoReporte>('reportes/metodos-pago', { ...filtro });
   }
 
   inventario(): Observable<InventarioValorizadoReporte> {
@@ -53,10 +53,10 @@ export class ReportesService {
   }
 
   cajeros(filtro: FiltroFechas): Observable<CajerosReporte> {
-    return this.api.get<CajerosReporte>('reportes/cajeros', filtro);
+    return this.api.get<CajerosReporte>('reportes/cajeros', { ...filtro });
   }
 
   entregas(filtro: FiltroFechas): Observable<EntregasReporte> {
-    return this.api.get<EntregasReporte>('reportes/entregas', filtro);
+    return this.api.get<EntregasReporte>('reportes/entregas', { ...filtro });
   }
 }

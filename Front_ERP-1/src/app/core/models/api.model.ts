@@ -163,6 +163,12 @@ export interface RegistroUsuarioDto {
   diasLaborales?: number[];
 }
 
+/** Payload de POST /auth/cambiar-pin (solo ADMIN) */
+export interface CambiarPinDto {
+  usuarioId: string;
+  nuevoPin: string;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  CATEGORIAS
 // ═══════════════════════════════════════════════════════════════════

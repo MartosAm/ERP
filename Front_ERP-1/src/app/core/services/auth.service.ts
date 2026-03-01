@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { TokenService } from './token.service';
-import type { LoginRequest, LoginResponse, Usuario } from '../models/api.model';
+import type { LoginRequest, LoginResponse, Usuario, PerfilUsuario, CambiarPinDto } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -81,6 +81,21 @@ export class AuthService {
         return of(false);
       }),
     );
+  }
+
+  /** Obtener perfil completo del usuario actual */
+  obtenerPerfil(): Observable<PerfilUsuario> {
+    return this.api.get<PerfilUsuario>('auth/perfil');
+  }
+
+  /** Cambiar PIN de un usuario (solo ADMIN) */
+  cambiarPin(data: CambiarPinDto): Observable<{ mensaje: string }> {
+    return this.api.post<{ mensaje: string }>('auth/cambiar-pin', data);
+  }
+
+  /** Registrar nuevo usuario (solo ADMIN) */
+  registrar(data: import('../models/api.model').RegistroUsuarioDto): Observable<Usuario> {
+    return this.api.post<Usuario>('auth/registro', data);
   }
 
   /** Limpia estado sin redirigir (para APP_INITIALIZER) */

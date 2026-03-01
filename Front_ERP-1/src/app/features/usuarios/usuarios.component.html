@@ -1,0 +1,157 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Usuarios"
+    subtitulo="Gestión de usuarios del sistema"
+    icono="manage_accounts">
+    <button mat-raised-button color="primary" (click)="registrar()">
+      <mat-icon>person_add</mat-icon> Nuevo usuario
+    </button>
+  </app-page-header>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <app-search-input
+        placeholder="Buscar por nombre o correo..."
+        (buscar)="onBuscar($event)"
+        class="flex-1 min-w-[200px]" />
+
+      <!-- Chips de rol -->
+      <mat-chip-listbox
+        aria-label="Filtrar por rol"
+        [value]="filtroRol"
+        (change)="filtrarRol($event.value)">
+        @for (r of roles; track r.value) {
+          <mat-chip-option [value]="r.value">{{ r.label }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+
+      <!-- Filtro activo/inactivo -->
+      <mat-form-field appearance="outline" class="w-36 density-compact">
+        <mat-label>Estado</mat-label>
+        <mat-select [(ngModel)]="filtroActivo" (selectionChange)="filtrarActivo($event.value)">
+          <mat-option [value]="''">Todos</mat-option>
+          <mat-option [value]="true">Activos</mat-option>
+          <mat-option [value]="false">Inactivos</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  @if (items().length > 0) {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+        <!-- Nombre -->
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let u" class="font-medium">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">
+                {{ u.nombre.charAt(0).toUpperCase() }}
+              </div>
+              <div>
+                <p class="font-medium">{{ u.nombre }}</p>
+                @if (u.telefono) {
+                  <p class="text-xs text-gray-400">{{ u.telefono }}</p>
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Correo -->
+        <ng-container matColumnDef="correo">
+          <th mat-header-cell *matHeaderCellDef>Correo</th>
+          <td mat-cell *matCellDef="let u" class="text-sm text-gray-600">{{ u.correo }}</td>
+        </ng-container>
+
+        <!-- Rol -->
+        <ng-container matColumnDef="rol">
+          <th mat-header-cell *matHeaderCellDef>Rol</th>
+          <td mat-cell *matCellDef="let u">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [class]="getRolClass(u.rol)">
+              {{ u.rol }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Activo -->
+        <ng-container matColumnDef="activo">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let u">
+            <app-estado-badge [estado]="u.activo ? 'activo' : 'inactivo'" tipo="activo" />
+          </td>
+        </ng-container>
+
+        <!-- Último login -->
+        <ng-container matColumnDef="ultimoLogin">
+          <th mat-header-cell *matHeaderCellDef>Último login</th>
+          <td mat-cell *matCellDef="let u" class="text-sm text-gray-500">
+            @if (u.ultimoLoginEn) {
+              {{ u.ultimoLoginEn | tiempoRelativo }}
+            } @else {
+              <span class="text-gray-300">Nunca</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Órdenes -->
+        <ng-container matColumnDef="ordenes">
+          <th mat-header-cell *matHeaderCellDef>Órdenes</th>
+          <td mat-cell *matCellDef="let u" class="text-sm text-center">
+            {{ u._count.ordenesCreadas }}
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let u">
+            <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="editar(u)">
+                <mat-icon>edit</mat-icon> Editar datos
+              </button>
+              <button mat-menu-item (click)="editarHorario(u)">
+                <mat-icon>schedule</mat-icon> Asignar horario
+              </button>
+              <mat-divider />
+              <button mat-menu-item (click)="toggleEstado(u)">
+                <mat-icon>{{ u.activo ? 'block' : 'check_circle' }}</mat-icon>
+                {{ u.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              @if (u._count.sesiones > 0) {
+                <button mat-menu-item (click)="cerrarSesiones(u)" class="text-red-500">
+                  <mat-icon class="text-red-500">logout</mat-icon>
+                  Cerrar sesiones ({{ u._count.sesiones }})
+                </button>
+              }
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50"></tr>
+      </table>
+
+      <mat-paginator
+        [length]="meta()?.total || 0"
+        [pageSize]="limite"
+        [pageIndex]="pagina - 1"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        showFirstLastButtons />
+    </div>
+  } @else if (!cargando()) {
+    <app-empty-state
+      icono="manage_accounts"
+      mensaje="No se encontraron usuarios"
+      submensaje="Intenta con otros filtros de búsqueda"
+      textoAccion="Registrar usuario"
+      (accion)="registrar()" />
+  }
+</div>
