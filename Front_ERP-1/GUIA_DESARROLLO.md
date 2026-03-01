@@ -1799,48 +1799,431 @@ El template filtra con `@if (!item.roles || tieneRol(item.roles))` y usa `router
 
 ## 10. Manejo de estado y signals
 
-### 10.1 Estado local del componente
+**Filosofía:** este proyecto usa **Angular Signals** como mecanismo primario de reactividad. No existe ningún `BehaviorSubject`, `ReplaySubject` ni store externo (NgRx/Elf). RxJS se reserva exclusivamente para streams HTTP y debounced search.
+
+### 10.1 Primitivas utilizadas — inventario real
+
+| Primitiva | Importar de | Instancias | Dónde |
+|-----------|-------------|------------|-------|
+| `signal()` | `@angular/core` | **50+** | Todos los componentes y 2 servicios |
+| `computed()` | `@angular/core` | **9** | `AuthService`(3), `PosComponent`(5), `CobrarDialogComponent`(1) |
+| `effect()` | `@angular/core` | **1** | `RolDirective` |
+| `toSignal()` | `@angular/core/rxjs-interop` | **1** | `ShellComponent` (BreakpointObserver) |
+| `.asReadonly()` | (método de WritableSignal) | **1** | `AuthService` |
+| `.set()` | (método de WritableSignal) | **~80** | Universal — es el ÚNICO método de mutación |
+| `.update()` | (método de WritableSignal) | **0** | No se usa en ningún lugar |
+
+### 10.2 Estado global — servicios con signals
+
+Solo **dos** servicios manejan estado reactivo vía signals. El resto (`TokenService`, `InactividadService`, `ApiService`, etc.) son stateless o usan propiedades plain.
+
+#### Patrón A: private → asReadonly + computed (AuthService)
 
 ```typescript
-// ✅ Correcto: signals para estado reactivo
-readonly items = signal<Producto[]>([]);
-readonly cargando = signal(false);
-readonly seleccionado = signal<Producto | null>(null);
+// auth.service.ts — PATRÓN GOLD STANDARD
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  /** Signal privado — solo el servicio puede mutar */
+  private readonly _usuario = signal<Usuario | null>(
+    this.tokenService.getUsuarioGuardado(),
+  );
 
-// ✅ Correcto: computed para valores derivados
-readonly totalItems = computed(() => this.items().length);
-readonly tieneSeleccion = computed(() => this.seleccionado() !== null);
+  /** Exposición de solo lectura — componentes leen, no escriben */
+  readonly usuario = this._usuario.asReadonly();
+
+  /** Computed derivados del signal base */
+  readonly estaAutenticado = computed(
+    () => !!this._usuario() && !this.tokenService.estaExpirado(),
+  );
+  readonly esAdmin = computed(() => this._usuario()?.rol === 'ADMIN');
+  readonly esCajero = computed(() => this._usuario()?.rol === 'CAJERO');
+
+  /** Solo métodos del servicio mutan el signal */
+  login(creds: LoginRequest): Observable<LoginResponse> {
+    return this.api.post<LoginResponse>('auth/login', creds).pipe(
+      tap((res) => {
+        this.tokenService.guardar(res.token, res.usuario);
+        this._usuario.set(res.usuario);     // ← mutación controlada
+      }),
+    );
+  }
+
+  logout(): void {
+    this.tokenService.limpiar();
+    this._usuario.set(null);               // ← mutación controlada
+    this.router.navigate(['/auth/login']);
+  }
+}
 ```
 
-### 10.2 Estado global (servicios)
+**Por qué este patrón:** encapsula la mutación. Ningún componente puede hacer `auth._usuario.set(...)` porque es `private`. Los `computed` derivan automáticamente — no hay que notificar manualmente.
+
+#### Patrón B: signal público (TurnosService)
 
 ```typescript
-// En TurnosService — signal global del turno activo
-readonly turnoActivo = signal<TurnoCaja | null>(null);
+// turnos.service.ts — signal público, mutado por tap()
+@Injectable({ providedIn: 'root' })
+export class TurnosService {
+  readonly turnoActivo = signal<TurnoCaja | null>(null);
 
-// En AuthService — signal global del usuario
-private readonly _usuario = signal<Usuario | null>(null);
-readonly usuario = this._usuario.asReadonly();
-readonly esAdmin = computed(() => this._usuario()?.rol === 'ADMIN');
+  obtenerActivo(): Observable<TurnoCaja | null> {
+    return this.api.get<TurnoCaja>('turnos-caja/activo').pipe(
+      tap((turno) => this.turnoActivo.set(turno)),  // ← sincroniza signal
+    );
+  }
+
+  abrir(dto: AbrirTurnoDto): Observable<TurnoCaja> {
+    return this.api.post<TurnoCaja>('turnos-caja/abrir', dto).pipe(
+      tap((turno) => this.turnoActivo.set(turno)),
+    );
+  }
+
+  cerrar(id: string, dto: CerrarTurnoDto): Observable<TurnoCaja> {
+    return this.api.post<TurnoCaja>(`turnos-caja/${id}/cerrar`, dto).pipe(
+      tap(() => this.turnoActivo.set(null)),
+    );
+  }
+}
 ```
 
-### 10.3 Subscripciones seguras
+**Nota:** `turnoActivo` es un `WritableSignal` público. `PosComponent` lo referencia directamente: `readonly turnoActivo = this.turnosSvc.turnoActivo;`. Funciona porque solo el servicio muta vía `tap()`, pero idealmente debería usar `asReadonly()` como `AuthService`.
+
+#### Servicios sin signals
+
+| Servicio | Estrategia | Por qué |
+|----------|-----------|---------|
+| `TokenService` | `tokenEnMemoria` (plain string) + `sessionStorage` | No necesita reactividad — se lee sincrónicamente en interceptors |
+| `InactividadService` | `ultimaActividad` (plain number) + `setInterval` | Corre fuera de zona Angular (`zone.runOutsideAngular`) para no disparar change detection |
+| `ApiService` | Stateless | Solo envuelve `HttpClient` con prefijo de URL |
+| `NotificationService` | Stateless | Solo abre `MatSnackBar` |
+
+### 10.3 Estado local — patrones por tipo de componente
+
+#### Tipo 1: Lista CRUD (productos, clientes, almacenes, proveedores, categorías)
 
 ```typescript
-// ✅ SIEMPRE usar takeUntilDestroyed
-private readonly destroyRef = inject(DestroyRef);
+// Patrón estándar — 5-6 signals
+export class ProductosComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
 
-this.svc.listar(params)
-  .pipe(takeUntilDestroyed(this.destroyRef))
-  .subscribe({
-    next: (res) => { ... },
-    error: () => { ... },
-  });
+  readonly productos = signal<Producto[]>([]);
+  readonly total = signal(0);
+  readonly cargando = signal(false);
+  readonly busqueda = signal('');
+  readonly pagina = signal(0);        // ← 0-based para MatPaginator
+  readonly porPagina = signal(20);
 
-// ✅ ALTERNATIVA: async pipe en template (sin subscribe manual)
-readonly items$ = this.svc.listar(params);
-// En template: @for (item of items$ | async; track item.id)
+  cargar(): void {
+    this.cargando.set(true);
+    const params = {
+      pagina: this.pagina() + 1,      // ← API es 1-based
+      porPagina: this.porPagina(),
+    };
+    if (this.busqueda()) params['buscar'] = this.busqueda();
+
+    this.svc.listar(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.productos.set(res.datos);
+          this.total.set(res.meta.total);
+          this.cargando.set(false);
+        },
+        error: () => this.cargando.set(false),
+      });
+  }
+}
 ```
+
+#### Tipo 2: Componente complejo (PosComponent)
+
+```typescript
+// POS — 9 signals + 5 computed
+export class PosComponent implements OnInit {
+  // ─── Estado referenciado de servicio ───
+  readonly turnoActivo = this.turnosSvc.turnoActivo;
+
+  // ─── Signals de UI ─────────────────────
+  readonly categorias = signal<CategoriaArbol[]>([]);
+  readonly categoriaSeleccionada = signal<string | null>(null);
+  readonly productos = signal<Producto[]>([]);
+  readonly cargandoProductos = signal(false);
+
+  // ─── Carrito (state puro) ──────────────
+  readonly lineas = signal<LineaCarrito[]>([]);
+  readonly clienteSeleccionado = signal<Cliente | null>(null);
+  readonly listaPrecio = signal<ListaPrecio>(1);
+  readonly notas = signal('');
+
+  // ─── Computed (5 derivaciones) ─────────
+  readonly subtotal = computed(() =>
+    this.lineas().reduce((sum, l) => sum + l.precioUnitario * l.cantidad, 0),
+  );
+  readonly totalDescuento = computed(() => /* reduce sobre lineas */ );
+  readonly totalImpuesto = computed(() => /* reduce con cálculo de IVA */ );
+  readonly total = computed(() => /* subtotal - descuento + impuesto */ );
+  readonly totalItems = computed(() =>
+    this.lineas().reduce((sum, l) => sum + l.cantidad, 0),
+  );
+}
+```
+
+#### Tipo 3: Dialog con formulario
+
+```typescript
+// Patrón dialog — signals solo para UI, FormGroup para datos
+export class ProductoFormDialogComponent {
+  readonly guardando = signal(false);
+  readonly categorias = signal<Categoria[]>([]);   // datos para selects
+  readonly form = this.fb.nonNullable.group({ ... });
+
+  guardar(): void {
+    if (this.form.invalid) return;
+    this.guardando.set(true);
+    // ... HTTP call ...
+  }
+}
+```
+
+**Regla:** los dialogs usan `signal()` para estado de UI (`guardando`, `cargando`, datos de selects) pero `FormGroup` para los datos del formulario. Nunca signals para campos de formulario.
+
+### 10.4 computed() — cuándo y dónde
+
+`computed()` solo se usa en **9 ocasiones**, concentradas en dos archivos:
+
+| Ubicación | Señal derivada | Depende de |
+|-----------|---------------|-----------|
+| `AuthService` | `estaAutenticado` | `_usuario()` + `tokenService.estaExpirado()` |
+| `AuthService` | `esAdmin` | `_usuario()?.rol` |
+| `AuthService` | `esCajero` | `_usuario()?.rol` |
+| `PosComponent` | `subtotal` | `lineas()` |
+| `PosComponent` | `totalDescuento` | `lineas()` |
+| `PosComponent` | `totalImpuesto` | `lineas()` |
+| `PosComponent` | `total` | `lineas()` |
+| `PosComponent` | `totalItems` | `lineas()` |
+| `CobrarDialog` | `montoPagado` | `pagoUnico()` + form values |
+
+**Cuándo usar `computed()`:**
+- El valor se deriva **puramente** de otros signals (sin side effects)
+- Se lee en el template o en otros computed
+- En el POS, los 5 computed evitan recalcular totales manualmente en cada mutación del carrito
+
+**Cuándo NO se usa (y está bien):**
+- Los componentes lista no tienen computed porque no derivan valores — muestran el array directo
+- Los dialogs usan `get` de TypeScript para cálculos simples sobre FormGroup (como `cambio`, `faltante` en `CobrarDialog`)
+
+### 10.5 effect() — uso mínimo y controlado
+
+Solo existe **1 effect** en toda la aplicación:
+
+```typescript
+// rol.directive.ts — directiva estructural *appRol
+@Directive({ selector: '[appRol]', standalone: true })
+export class RolDirective {
+  private readonly auth = inject(AuthService);
+
+  constructor() {
+    // effect() en constructor → injection context automático
+    effect(() => {
+      this.auth.usuario();     // ← se suscribe al signal
+      this.actualizar();       // ← muestra/oculta elemento del DOM
+    });
+  }
+
+  private actualizar(): void {
+    const usuario = this.auth.usuario();
+    const tieneRol = !!usuario && this.rolesPermitidos.includes(usuario.rol);
+    if (tieneRol && !this.mostrado) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+      this.mostrado = true;
+    } else if (!tieneRol && this.mostrado) {
+      this.viewContainer.clear();
+      this.mostrado = false;
+    }
+  }
+}
+```
+
+**Por qué `effect()` aquí:** la directiva necesita ejecutar un side effect (manipular el DOM vía `ViewContainerRef`) cada vez que cambia el usuario. No hay valor derivado que devolver → `computed()` no aplica.
+
+**Regla:** evitar `effect()` excepto para side effects genuinos que no pueden modelarse como `computed()`.
+
+### 10.6 toSignal() — puente Observable → Signal
+
+Solo existe **1 instancia**:
+
+```typescript
+// shell.component.ts — convierte BreakpointObserver a signal
+export class ShellComponent implements OnInit, OnDestroy {
+  private readonly bp = inject(BreakpointObserver);
+
+  readonly isMobile = toSignal(
+    this.bp.observe([Breakpoints.Handset, Breakpoints.TabletPortrait]).pipe(
+      map((result) => result.matches),
+    ),
+    { initialValue: false },
+  );
+}
+```
+
+**Por qué `toSignal()` aquí:** `BreakpointObserver` emite un Observable perpetuo. `toSignal()` lo convierte para leer en el template como `@if (isMobile())` sin `| async`. El `{ initialValue: false }` evita `undefined`.
+
+**Cuándo usar `toSignal()`:**
+- Observable de larga vida (breakpoints, WebSocket, route params)
+- Siempre proveer `initialValue` para evitar `Signal<T | undefined>`
+
+**Cuándo NO:**
+- Para HTTP requests puntuales → usar `.subscribe()` + `signal.set()` es más claro
+- Este proyecto no usa `toSignal()` para HTTP porque necesita control fino de cargando/error
+
+### 10.7 Mutaciones inmutables — .set() exclusivamente
+
+El proyecto usa **exclusivamente `.set()`** para mutar signals. `.update()` no se usa nunca.
+
+```typescript
+// ─── Agregar al carrito ──────
+this.lineas.set([
+  ...lineasActuales,
+  { productoId: producto.id, nombre: producto.nombre, cantidad: 1, ... },
+]);
+
+// ─── Modificar cantidad ──────
+this.lineas.set(
+  this.lineas().map((l) =>
+    l.productoId === productoId ? { ...l, cantidad } : l,
+  ),
+);
+
+// ─── Eliminar línea ──────────
+this.lineas.set(
+  this.lineas().filter((l) => l.productoId !== productoId),
+);
+
+// ─── Reset ───────────────────
+this.lineas.set([]);
+```
+
+**Patrón común:** leer el valor actual con `this.signal()`, transformar inmutablemente con `map`/`filter`/spread, y pasar el nuevo array a `.set()`.
+
+**¿Por qué no `.update()`?** Con `.set()` el código es más explícito y legible. `.update(prev => ...)` es equivalente pero el equipo prefiere separar la lectura de la escritura.
+
+### 10.8 takeUntilDestroyed — suscripciones seguras
+
+**Componentes de página (21+):** SIEMPRE usan `takeUntilDestroyed`:
+
+```typescript
+export class ProductosComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
+  cargar(): void {
+    this.svc.listar(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ ... });
+  }
+
+  eliminar(id: string): void {
+    this.svc.eliminar(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ ... });
+  }
+}
+```
+
+**Dialogs (modales):** NO necesitan `takeUntilDestroyed` porque:
+- Se destruyen al cerrar → la suscripción se completa con el HTTP response
+- Son modales sincrónicos — no persisten en background
+
+```typescript
+// ✅ Correcto en dialogs — sin takeUntilDestroyed
+guardar(): void {
+  this.svc.crear(this.form.getRawValue())
+    .subscribe({
+      next: (res) => this.dialogRef.close(res),
+      error: () => this.guardando.set(false),
+    });
+}
+```
+
+**Regla:** usar `takeUntilDestroyed(this.destroyRef)` en todo `.subscribe()` de componentes que viven en rutas. Omitir en dialogs.
+
+### 10.9 Subject para debounced search — único uso de RxJS para estado
+
+Solo **2 instancias** de `Subject` existen, ambas para búsqueda con debounce:
+
+```typescript
+// pos.component.ts y cliente-dialog.component.ts
+readonly busqueda$ = new Subject<string>();
+
+ngOnInit(): void {
+  this.busqueda$
+    .pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+    )
+    .subscribe((term) => {
+      this.terminoBusqueda = term;
+      this.cargarProductos();
+    });
+}
+```
+
+**Por qué `Subject` aquí:** los operadores `debounceTime` y `distinctUntilChanged` no tienen equivalente nativo en Signals. Este es el caso legítimo para RxJS.
+
+**En el resto de componentes:** la búsqueda se maneja con un signal simple (`busqueda = signal('')`) y recargas explícitas, sin debounce.
+
+### 10.10 FormGroup + signals — coexistencia
+
+| Responsabilidad | Mecanismo | Ejemplo |
+|----------------|-----------|---------|
+| Datos del formulario | `FormGroup` (ReactiveFormsModule) | `form.get('nombre')?.value` |
+| Estado de UI | `signal()` | `guardando = signal(false)` |
+| Datos para selects | `signal()` | `categorias = signal<Cat[]>([])` |
+| Validación | `FormGroup` validators | `Validators.required`, `Validators.min` |
+| Valores derivados del form | TypeScript `get` | `get cambio(): number { ... }` |
+| Valores derivados de signals | `computed()` | `montoPagado = computed(() => ...)` |
+
+**Regla:** nunca crear un `signal()` para representar un campo de formulario. Los signals gestionan el **estado de UI** (cargando, guardando, listas de opciones), mientras que `FormGroup` gestiona los **datos ingresados por el usuario**.
+
+```typescript
+// ✅ CORRECTO — signals para UI, FormGroup para datos
+readonly guardando = signal(false);
+readonly proveedores = signal<Proveedor[]>([]);
+readonly form = this.fb.nonNullable.group({
+  nombre: ['', Validators.required],
+  proveedorId: ['', Validators.required],
+});
+
+// ❌ INCORRECTO — nunca hacer esto
+readonly nombre = signal('');
+readonly proveedorId = signal('');
+```
+
+### 10.11 Inconsistencias conocidas
+
+| Caso | Detalle | Impacto |
+|------|---------|---------|
+| **Paginación mixta** | `productos`, `clientes`, `almacenes` usan `pagina = signal(0)` + `porPagina = signal(20)`; `ordenes`, `inventario`, `entregas` usan `pagina = 1` (plain field) | Funcional pero inconsistente. Los nuevos módulos deben usar signals. |
+| **TurnosService público** | `turnoActivo` es `WritableSignal` público (cualquier componente puede mutar). Debería usar `private + asReadonly()` como `AuthService`. | Bajo riesgo porque solo el servicio muta vía `tap()`. |
+| **ShellComponent sin takeUntilDestroyed** | `router.events.subscribe()` en `ngOnInit` sin unsubscribe. | Sin impacto real — ShellComponent vive toda la sesión. Pero inconsistente con el patrón del resto. |
+
+### 10.12 Reglas para nuevos desarrollos
+
+| # | Regla |
+|---|-------|
+| 1 | **Signals para todo estado local** — `signal()` para datos, `cargando`, `busqueda`, `pagina`, etc. |
+| 2 | **`computed()` solo para derivaciones puras** — totales, filtros, transformaciones sin side effects |
+| 3 | **`effect()` solo como último recurso** — si necesitas side effects DOM. Preferir `computed()` + template binding |
+| 4 | **`toSignal()` para observables perpetuos** — breakpoints, WebSocket. Siempre con `{ initialValue }` |
+| 5 | **`.set()` siempre** — no usar `.update()`. Leer → transformar → `.set()` |
+| 6 | **Mutaciones inmutables** — nunca `push()`, `splice()` en arrays de signals. Usar spread, `map`, `filter` |
+| 7 | **`takeUntilDestroyed` en páginas** — en todo `.subscribe()` de componentes de ruta |
+| 8 | **Sin takeUntilDestroyed en dialogs** — los modales se destruyen al cerrar, no persisten |
+| 9 | **Servicios: private → asReadonly** — para signals globales, seguir patrón AuthService |
+| 10 | **FormGroup para datos de formulario** — signals solo para estado de UI asociado |
+| 11 | **Sin BehaviorSubject/stores** — no introducir NgRx, Elf, ni RxJS subjects para estado |
+| 12 | **Subject solo para debounce** — si necesitas `debounceTime`/`distinctUntilChanged`, es válido |
+| 13 | **Paginación siempre con signals** — `pagina = signal(0)`, `porPagina = signal(20)` |
 
 ---
 
