@@ -73,12 +73,12 @@ export class DevolucionDialogComponent {
 
     this.guardando.set(true);
     const raw = this.form.getRawValue();
-    const items = raw.items
-      .filter((i: { seleccionado: boolean }) => i.seleccionado)
-      .map((i: { productoId: string; cantidad: number; motivo: string }) => ({
-        productoId: i.productoId,
-        cantidad: i.cantidad,
-        motivo: i.motivo || raw.motivo,
+    const items = (raw.items as any[])
+      .filter((i) => i.seleccionado)
+      .map((i) => ({
+        productoId: i.productoId as string,
+        cantidad: i.cantidad as number,
+        motivo: (i.motivo as string) || raw.motivo,
       }));
 
     this.svc.devolver(this.data.orden.id, { motivo: raw.motivo, items }).subscribe({

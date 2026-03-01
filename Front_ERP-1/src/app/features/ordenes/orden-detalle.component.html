@@ -3,9 +3,9 @@
     <div class="flex justify-center py-16">
       <mat-spinner diameter="48" />
     </div>
-  } @else if (orden(); as o) {
+  } @else if (orden()) {
     <app-page-header
-      [titulo]="'Orden ' + o.numeroOrden"
+      [titulo]="'Orden ' + orden()!.numeroOrden"
       subtitulo="Detalle de la orden"
       icono="receipt_long">
       <button mat-button (click)="volver()">
@@ -28,16 +28,16 @@
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Estado</p>
-          <app-estado-badge [estado]="o.estado" tipo="orden" />
+          <app-estado-badge [estado]="orden()!.estado" tipo="orden" />
         </mat-card-content>
       </mat-card>
 
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Cliente</p>
-          <p class="font-medium">{{ o.cliente?.nombre || 'Público general' }}</p>
-          @if (o.cliente?.telefono) {
-            <p class="text-sm text-gray-400">{{ o.cliente.telefono }}</p>
+          <p class="font-medium">{{ orden()!.cliente?.nombre || 'Público general' }}</p>
+          @if (orden()!.cliente?.telefono) {
+            <p class="text-sm text-gray-400">{{ orden()!.cliente?.telefono }}</p>
           }
         </mat-card-content>
       </mat-card>
@@ -45,8 +45,8 @@
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Creado por</p>
-          <p class="font-medium">{{ o.creadoPor.nombre }}</p>
-          <p class="text-sm text-gray-400">{{ o.creadoEn | fechaHora }}</p>
+          <p class="font-medium">{{ orden()!.creadoPor.nombre }}</p>
+          <p class="text-sm text-gray-400">{{ orden()!.creadoEn | fechaHora }}</p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -56,25 +56,25 @@
       <mat-card>
         <mat-card-content class="p-4 text-center">
           <p class="text-sm text-gray-500">Subtotal</p>
-          <p class="text-lg font-semibold">{{ o.subtotal | moneda }}</p>
+          <p class="text-lg font-semibold">{{ orden()!.subtotal | moneda }}</p>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="p-4 text-center">
           <p class="text-sm text-gray-500">Impuesto</p>
-          <p class="text-lg font-semibold">{{ o.montoImpuesto | moneda }}</p>
+          <p class="text-lg font-semibold">{{ orden()!.montoImpuesto | moneda }}</p>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="p-4 text-center">
           <p class="text-sm text-gray-500">Descuento</p>
-          <p class="text-lg font-semibold text-red-600">-{{ o.montoDescuento | moneda }}</p>
+          <p class="text-lg font-semibold text-red-600">-{{ orden()!.montoDescuento | moneda }}</p>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="p-4 text-center">
           <p class="text-sm text-gray-500">Total</p>
-          <p class="text-2xl font-bold text-indigo-600">{{ o.total | moneda }}</p>
+          <p class="text-2xl font-bold text-indigo-600">{{ orden()!.total | moneda }}</p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -82,7 +82,7 @@
     <!-- Detalles de productos -->
     <div class="card mb-6">
       <h3 class="text-base font-semibold mb-3">Productos</h3>
-      <table mat-table [dataSource]="o.detalles" class="w-full">
+      <table mat-table [dataSource]="orden()!.detalles" class="w-full">
         <ng-container matColumnDef="producto">
           <th mat-header-cell *matHeaderCellDef>Producto</th>
           <td mat-cell *matCellDef="let d">
@@ -117,10 +117,10 @@
     </div>
 
     <!-- Pagos -->
-    @if (o.pagos.length > 0) {
+    @if (orden()!.pagos.length > 0) {
       <div class="card mb-6">
         <h3 class="text-base font-semibold mb-3">Pagos</h3>
-        <table mat-table [dataSource]="o.pagos" class="w-full">
+        <table mat-table [dataSource]="orden()!.pagos" class="w-full">
           <ng-container matColumnDef="metodo">
             <th mat-header-cell *matHeaderCellDef>Método</th>
             <td mat-cell *matCellDef="let p">
@@ -150,7 +150,7 @@
     }
 
     <!-- Entrega -->
-    @if (o.entrega; as e) {
+    @if (orden()!.entrega; as e) {
       <div class="card mb-6">
         <h3 class="text-base font-semibold mb-3">Entrega</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -177,18 +177,18 @@
     }
 
     <!-- Notas / Motivo cancelación -->
-    @if (o.notas || o.motivoCancelacion) {
+    @if (orden()!.notas || orden()!.motivoCancelacion) {
       <div class="card">
-        @if (o.notas) {
+        @if (orden()!.notas) {
           <div class="mb-3">
             <p class="text-sm text-gray-500 mb-1">Notas</p>
-            <p class="text-sm">{{ o.notas }}</p>
+            <p class="text-sm">{{ orden()!.notas }}</p>
           </div>
         }
-        @if (o.motivoCancelacion) {
+        @if (orden()!.motivoCancelacion) {
           <div>
             <p class="text-sm text-red-500 mb-1">Motivo de cancelación</p>
-            <p class="text-sm text-red-700">{{ o.motivoCancelacion }}</p>
+            <p class="text-sm text-red-700">{{ orden()!.motivoCancelacion }}</p>
           </div>
         }
       </div>

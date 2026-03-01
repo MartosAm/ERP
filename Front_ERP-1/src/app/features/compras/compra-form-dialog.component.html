@@ -34,8 +34,8 @@
       </div>
 
       <div class="divide-y">
-        @for (linea of detallesArray.controls; track $index; let i = $index) {
-          <div class="px-4 py-3 flex items-center gap-3" [formGroup]="getLinea(i)">
+        @for (linea of detallesArray.controls; track $index) {
+          <div class="px-4 py-3 flex items-center gap-3" [formGroup]="getLinea($index)">
             <mat-form-field appearance="outline" class="flex-1">
               <mat-label>Producto</mat-label>
               <mat-select formControlName="productoId">
@@ -57,10 +57,10 @@
             </mat-form-field>
 
             <span class="w-28 text-right font-medium text-sm">
-              {{ (getLinea(i).get('cantidad')?.value || 0) * (getLinea(i).get('costoUnitario')?.value || 0) | moneda }}
+              {{ (getLinea($index).get('cantidad')?.value || 0) * (getLinea($index).get('costoUnitario')?.value || 0) | moneda }}
             </span>
 
-            <button mat-icon-button color="warn" (click)="eliminarLinea(i)" type="button"
+            <button mat-icon-button color="warn" (click)="eliminarLinea($index)" type="button"
                     [disabled]="detallesArray.length <= 1">
               <mat-icon>delete</mat-icon>
             </button>

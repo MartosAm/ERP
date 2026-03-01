@@ -99,10 +99,10 @@ export class CompraFormDialogComponent implements OnInit {
     const raw = this.form.getRawValue();
     const payload: Record<string, unknown> = {
       proveedorId: raw.proveedorId,
-      detalles: raw.detalles.map((d: { productoId: string; cantidad: number; costoUnitario: number }) => ({
-        productoId: d.productoId,
-        cantidad: d.cantidad,
-        costoUnitario: d.costoUnitario,
+      detalles: (raw.detalles as any[]).map((d) => ({
+        productoId: d.productoId as string,
+        cantidad: d.cantidad as number,
+        costoUnitario: d.costoUnitario as number,
       })),
     };
     if (raw.numeroFactura) payload['numeroFactura'] = raw.numeroFactura;

@@ -3,10 +3,10 @@
     <div class="flex justify-center py-16">
       <mat-spinner diameter="48" />
     </div>
-  } @else if (entrega(); as e) {
+  } @else if (entrega()) {
     <app-page-header
       titulo="Detalle de entrega"
-      [subtitulo]="'Orden ' + e.orden.numeroOrden"
+      [subtitulo]="'Orden ' + entrega()!.orden.numeroOrden"
       icono="local_shipping">
       <button mat-button (click)="volver()">
         <mat-icon>arrow_back</mat-icon> Volver
@@ -18,9 +18,9 @@
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Estado</p>
-          <app-estado-badge [estado]="e.estado" tipo="entrega" />
-          @if (e.entregadaEn) {
-            <p class="text-xs text-gray-400 mt-1">{{ e.entregadaEn | fechaHora }}</p>
+          <app-estado-badge [estado]="entrega()!.estado" tipo="entrega" />
+          @if (entrega()!.entregadaEn) {
+            <p class="text-xs text-gray-400 mt-1">{{ entrega()!.entregadaEn | fechaHora }}</p>
           }
         </mat-card-content>
       </mat-card>
@@ -28,15 +28,15 @@
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Orden</p>
-          <p class="font-medium">{{ e.orden.numeroOrden }}</p>
-          <p class="text-sm text-indigo-600 font-semibold">{{ e.orden.total | moneda }}</p>
+          <p class="font-medium">{{ entrega()!.orden.numeroOrden }}</p>
+          <p class="text-sm text-indigo-600 font-semibold">{{ entrega()!.orden.total | moneda }}</p>
         </mat-card-content>
       </mat-card>
 
       <mat-card>
         <mat-card-content class="p-4">
           <p class="text-sm text-gray-500 mb-1">Repartidor</p>
-          <p class="font-medium">{{ e.asignadoA?.nombre || 'Sin asignar' }}</p>
+          <p class="font-medium">{{ entrega()!.asignadoA?.nombre || 'Sin asignar' }}</p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -48,13 +48,13 @@
           <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
             <mat-icon class="!text-lg">person</mat-icon> Cliente
           </h3>
-          @if (e.cliente) {
-            <p class="font-medium">{{ e.cliente.nombre }}</p>
-            @if (e.cliente.telefono) {
-              <p class="text-sm text-gray-500">{{ e.cliente.telefono }}</p>
+          @if (entrega()!.cliente) {
+            <p class="font-medium">{{ entrega()!.cliente?.nombre }}</p>
+            @if (entrega()!.cliente?.telefono) {
+              <p class="text-sm text-gray-500">{{ entrega()!.cliente?.telefono }}</p>
             }
-            @if (e.cliente.direccion) {
-              <p class="text-sm text-gray-400 mt-1">{{ e.cliente.direccion }}</p>
+            @if (entrega()!.cliente?.direccion) {
+              <p class="text-sm text-gray-400 mt-1">{{ entrega()!.cliente?.direccion }}</p>
             }
           } @else {
             <p class="text-gray-400">Sin cliente asignado</p>
@@ -67,11 +67,11 @@
           <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
             <mat-icon class="!text-lg">place</mat-icon> Dirección de entrega
           </h3>
-          <p class="text-sm">{{ e.direccionEntrega }}</p>
-          @if (e.programadaEn) {
+          <p class="text-sm">{{ entrega()!.direccionEntrega }}</p>
+          @if (entrega()!.programadaEn) {
             <p class="text-sm text-gray-500 mt-2">
               <mat-icon class="!text-base align-middle mr-1">schedule</mat-icon>
-              Programada: {{ e.programadaEn | fechaHora }}
+              Programada: {{ entrega()!.programadaEn | fechaHora }}
             </p>
           }
         </mat-card-content>
@@ -130,18 +130,18 @@
     }
 
     <!-- Info adicional -->
-    @if (e.notas || e.motivoFallo) {
+    @if (entrega()!.notas || entrega()!.motivoFallo) {
       <div class="card">
-        @if (e.motivoFallo) {
+        @if (entrega()!.motivoFallo) {
           <div class="mb-3">
             <p class="text-sm text-red-500 mb-1">Motivo de fallo</p>
-            <p class="text-sm text-red-700">{{ e.motivoFallo }}</p>
+            <p class="text-sm text-red-700">{{ entrega()!.motivoFallo }}</p>
           </div>
         }
-        @if (e.notas) {
+        @if (entrega()!.notas) {
           <div>
             <p class="text-sm text-gray-500 mb-1">Notas</p>
-            <p class="text-sm">{{ e.notas }}</p>
+            <p class="text-sm">{{ entrega()!.notas }}</p>
           </div>
         }
       </div>

@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Cerrar Turno de Caja</h2>
+
+<mat-dialog-content>
+  <div class="mb-4 rounded-lg bg-gray-50 p-4">
+    <p class="text-sm text-gray-600">Caja: <strong>{{ data.turno.cajaRegistradora.nombre }}</strong></p>
+    <p class="text-sm text-gray-600">Monto apertura: <strong>{{ data.turno.montoApertura | moneda }}</strong></p>
+  </div>
+
+  <form [formGroup]="form" class="flex flex-col gap-4">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Monto de cierre</mat-label>
+      <input matInput type="number" formControlName="montoCierre" min="0" step="0.01">
+      <span matPrefix class="pl-3 text-gray-500">$&nbsp;</span>
+      @if (form.controls.montoCierre.hasError('required')) {
+        <mat-error>Campo obligatorio</mat-error>
+      }
+      @if (form.controls.montoCierre.hasError('min')) {
+        <mat-error>Monto debe ser mayor o igual a 0</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Notas (opcional)</mat-label>
+      <textarea matInput formControlName="notas" rows="3" maxlength="500"></textarea>
+      <mat-hint align="end">{{ form.controls.notas.value.length || 0 }}/500</mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
+  <button mat-flat-button color="warn" (click)="guardar()" [disabled]="guardando()">
+    @if (guardando()) {
+      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+    }
+    Cerrar Turno
+  </button>
+</mat-dialog-actions>

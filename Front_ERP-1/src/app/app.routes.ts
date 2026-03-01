@@ -65,6 +65,58 @@ export const routes: Routes = [
           import('./features/categorias/categorias.component').then((m) => m.CategoriasComponent),
       },
 
+      // --- Órdenes ---
+      {
+        path: 'ordenes',
+        loadComponent: () =>
+          import('./features/ordenes/ordenes.component').then((m) => m.OrdenesComponent),
+      },
+      {
+        path: 'ordenes/:id',
+        loadComponent: () =>
+          import('./features/ordenes/orden-detalle.component').then((m) => m.OrdenDetalleComponent),
+      },
+
+      // --- Compras (solo ADMIN) ---
+      {
+        path: 'compras',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/compras/compras.component').then((m) => m.ComprasComponent),
+      },
+      {
+        path: 'compras/:id',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/compras/compra-detalle.component').then((m) => m.CompraDetalleComponent),
+      },
+
+      // --- Entregas ---
+      {
+        path: 'entregas',
+        loadComponent: () =>
+          import('./features/entregas/entregas.component').then((m) => m.EntregasComponent),
+      },
+      {
+        path: 'entregas/:id',
+        loadComponent: () =>
+          import('./features/entregas/entrega-detalle.component').then((m) => m.EntregaDetalleComponent),
+      },
+
+      // --- Turnos de caja ---
+      {
+        path: 'turnos-caja',
+        canActivate: [roleGuard('ADMIN', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/turnos-caja/turnos-caja.component').then((m) => m.TurnosCajaComponent),
+      },
+      {
+        path: 'turnos-caja/:id',
+        canActivate: [roleGuard('ADMIN', 'CAJERO')],
+        loadComponent: () =>
+          import('./features/turnos-caja/turno-detalle.component').then((m) => m.TurnoDetalleComponent),
+      },
+
       // --- Solo ADMIN ---
       {
         path: 'proveedores',

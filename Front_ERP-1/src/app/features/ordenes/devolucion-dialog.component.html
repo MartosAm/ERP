@@ -20,17 +20,17 @@
     <p class="text-sm text-gray-600">Selecciona los productos a devolver:</p>
 
     <div class="border rounded-lg divide-y">
-      @for (item of itemsArray.controls; track $index; let i = $index) {
-        <div class="p-3 flex items-center gap-3" [formGroup]="getItemGroup(i)">
+      @for (item of itemsArray.controls; track $index) {
+        <div class="p-3 flex items-center gap-3" [formGroup]="getItemGroup($index)">
           <mat-checkbox formControlName="seleccionado" />
           <div class="flex-1">
-            <p class="font-medium text-sm">{{ getItemGroup(i).get('productoNombre')?.value }}</p>
-            <p class="text-xs text-gray-400">Máx: {{ getItemGroup(i).get('cantidadMax')?.value }}</p>
+            <p class="font-medium text-sm">{{ getItemGroup($index).get('productoNombre')?.value }}</p>
+            <p class="text-xs text-gray-400">Máx: {{ getItemGroup($index).get('cantidadMax')?.value }}</p>
           </div>
           <mat-form-field appearance="outline" class="w-24">
             <mat-label>Cant.</mat-label>
             <input matInput type="number" formControlName="cantidad"
-                   [max]="getItemGroup(i).get('cantidadMax')?.value" min="1">
+                   [max]="getItemGroup($index).get('cantidadMax')?.value" min="1">
           </mat-form-field>
           <mat-form-field appearance="outline" class="w-48">
             <mat-label>Motivo (opcional)</mat-label>
