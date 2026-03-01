@@ -151,7 +151,7 @@ export interface PerfilUsuario {
   };
 }
 
-/** Payload de POST /auth/registro */
+/** Payload de POST /auth/registro (solo ADMIN, usuario interno) */
 export interface RegistroUsuarioDto {
   nombre: string;
   correo: string;
@@ -161,6 +161,15 @@ export interface RegistroUsuarioDto {
   horarioInicio?: string;
   horarioFin?: string;
   diasLaborales?: number[];
+}
+
+/** Payload de POST /auth/registro-publico (auto-registro con empresa nueva) */
+export interface RegistroPublicoDto {
+  nombre: string;
+  correo: string;
+  contrasena: string;
+  nombreEmpresa: string;
+  telefono?: string;
 }
 
 /** Payload de POST /auth/cambiar-pin (solo ADMIN) */

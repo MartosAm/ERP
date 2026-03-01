@@ -18,6 +18,20 @@ import { AuthService } from './auth.service';
 export const AuthController = {
 
   /**
+   * POST /api/v1/auth/registro-publico
+   * Auto-registro publico: crea empresa + primer usuario ADMIN.
+   * No requiere autenticacion. Retorna token + usuario (auto-login).
+   */
+  registroPublico: async (req: Request, res: Response): Promise<void> => {
+    const ip = req.ip ?? req.socket.remoteAddress;
+    const agenteUsuario = req.headers['user-agent'];
+
+    const resultado = await AuthService.registroPublico(req.body, ip, agenteUsuario);
+
+    res.status(201).json(ApiResponse.ok(resultado, 'Cuenta creada exitosamente'));
+  },
+
+  /**
    * POST /api/v1/auth/registro
    * Registra un nuevo usuario en la empresa.
    * Solo ADMIN. Hashea la contrasena con bcrypt antes de guardar.

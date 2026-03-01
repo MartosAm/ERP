@@ -66,6 +66,44 @@ export const RegistroSchema = z.object({
 });
 
 // ------------------------------------------------------------------
+// Schema de registro publico (auto-registro con empresa nueva)
+// ------------------------------------------------------------------
+
+/**
+ * Valida los datos para el auto-registro publico.
+ * Crea una empresa nueva y su primer usuario ADMIN.
+ * No requiere autenticacion. Accesible desde la pantalla de login.
+ */
+export const RegistroPublicoSchema = z.object({
+  nombre: z
+    .string({ required_error: 'El nombre es obligatorio' })
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres')
+    .trim(),
+  correo: z
+    .string({ required_error: 'El correo es obligatorio' })
+    .email('Formato de correo invalido')
+    .trim()
+    .toLowerCase(),
+  contrasena: z
+    .string({ required_error: 'La contrasena es obligatoria' })
+    .min(8, 'La contrasena debe tener al menos 8 caracteres')
+    .regex(/[A-Z]/, 'Debe contener al menos una letra mayuscula')
+    .regex(/[a-z]/, 'Debe contener al menos una letra minuscula')
+    .regex(/[0-9]/, 'Debe contener al menos un numero'),
+  nombreEmpresa: z
+    .string({ required_error: 'El nombre de la empresa es obligatorio' })
+    .min(2, 'El nombre de la empresa debe tener al menos 2 caracteres')
+    .max(150, 'El nombre de la empresa no puede exceder 150 caracteres')
+    .trim(),
+  telefono: z
+    .string()
+    .min(7, 'Telefono debe tener al menos 7 caracteres')
+    .max(20, 'Telefono no puede exceder 20 caracteres')
+    .optional(),
+});
+
+// ------------------------------------------------------------------
 // Schema de login
 // ------------------------------------------------------------------
 
@@ -110,8 +148,11 @@ export const CambiarPinSchema = z.object({
 /** Datos validados para iniciar sesion */
 export type LoginDto = z.infer<typeof LoginSchema>;
 
-/** Datos validados para registrar un usuario */
+/** Datos validados para registrar un usuario (ADMIN-only, usuario interno) */
 export type RegistroDto = z.infer<typeof RegistroSchema>;
+
+/** Datos validados para auto-registro publico (empresa + primer usuario) */
+export type RegistroPublicoDto = z.infer<typeof RegistroPublicoSchema>;
 
 /** Datos validados para cambiar el PIN de un usuario */
 export type CambiarPinDto = z.infer<typeof CambiarPinSchema>;

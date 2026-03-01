@@ -30,7 +30,7 @@ import {
   ErrorNoEncontrado,
   ErrorConflicto,
 } from '../../compartido/errores';
-import type { LoginDto, RegistroDto, CambiarPinDto } from './auth.schema';
+import type { LoginDto, RegistroDto, RegistroPublicoDto, CambiarPinDto } from './auth.schema';
 import type { JwtPayload } from '../../tipos/express';
 
 // Mensaje generico de error de login.
@@ -112,6 +112,122 @@ export const AuthService = {
     });
 
     return usuario;
+  },
+
+  // ================================================================
+  // REGISTRO PUBLICO
+  // Crear empresa + primer usuario ADMIN (auto-registro desde login)
+  // ================================================================
+
+  /**
+   * Auto-registro publico: crea una empresa nueva y su primer usuario ADMIN.
+   * No requiere autenticacion. Accesible desde la pantalla de login.
+   *
+   * Flujo:
+   * 1. Verificar que no exista un usuario con ese correo
+   * 2. Hashear la contrasena con bcrypt
+   * 3. Crear empresa + usuario ADMIN en una transaccion atomica
+   * 4. Crear sesion y generar JWT (auto-login)
+   * 5. Retornar token + datos del usuario
+   *
+   * @param dto - Datos validados por RegistroPublicoSchema
+   * @param ip - Direccion IP del cliente
+   * @param agenteUsuario - User-Agent del navegador
+   * @returns Token JWT y datos del usuario (misma estructura que login)
+   */
+  async registroPublico(dto: RegistroPublicoDto, ip?: string, agenteUsuario?: string) {
+    // 1. Verificar unicidad del correo
+    const existente = await prisma.usuario.findUnique({
+      where: { correo: dto.correo },
+    });
+
+    if (existente) {
+      throw new ErrorConflicto('Ya existe un usuario con ese correo');
+    }
+
+    // 2. Hashear la contrasena
+    const hashContrasena = await bcrypt.hash(dto.contrasena, env.BCRYPT_SALT_ROUNDS);
+
+    // 3. Transaccion atomica: empresa + usuario
+    const { empresa, usuario } = await prisma.$transaction(async (tx) => {
+      const nuevaEmpresa = await tx.empresa.create({
+        data: {
+          nombre: dto.nombreEmpresa,
+          telefono: dto.telefono ?? null,
+        },
+      });
+
+      const nuevoUsuario = await tx.usuario.create({
+        data: {
+          empresaId: nuevaEmpresa.id,
+          nombre: dto.nombre,
+          correo: dto.correo,
+          hashContrasena,
+          rol: 'ADMIN',
+          telefono: dto.telefono ?? null,
+          ultimoLoginEn: new Date(),
+        },
+      });
+
+      return { empresa: nuevaEmpresa, usuario: nuevoUsuario };
+    });
+
+    // 4. Crear sesion y generar JWT (auto-login)
+    const expiracion = this.calcularExpiracionJWT(env.JWT_EXPIRES_IN);
+
+    const sesion = await prisma.sesion.create({
+      data: {
+        usuarioId: usuario.id,
+        token: '',
+        direccionIp: ip ?? null,
+        agenteUsuario: agenteUsuario ?? null,
+        activo: true,
+        expiraEn: expiracion,
+      },
+    });
+
+    const payload: JwtPayload = {
+      usuarioId: usuario.id,
+      empresaId: empresa.id,
+      rol: usuario.rol,
+      sesionId: sesion.id,
+    };
+
+    const token = jwt.sign(payload, env.JWT_SECRET, {
+      expiresIn: env.JWT_EXPIRES_IN as string & { __brand: 'StringValue' },
+    } as jwt.SignOptions);
+
+    const { createHash } = await import('crypto');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    await prisma.sesion.update({
+      where: { id: sesion.id },
+      data: { token: tokenHash },
+    });
+
+    logger.info({
+      mensaje: 'Registro publico exitoso',
+      usuarioId: usuario.id,
+      correo: usuario.correo,
+      empresa: empresa.nombre,
+      empresaId: empresa.id,
+    });
+
+    // 5. Retornar misma estructura que login
+    return {
+      token,
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        rol: usuario.rol,
+        avatarUrl: usuario.avatarUrl,
+        empresa: {
+          id: empresa.id,
+          nombre: empresa.nombre,
+        },
+      },
+    };
   },
 
   // ================================================================

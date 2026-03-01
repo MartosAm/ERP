@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { TokenService } from './token.service';
-import type { LoginRequest, LoginResponse, Usuario, PerfilUsuario, CambiarPinDto } from '../models/api.model';
+import type { LoginRequest, LoginResponse, Usuario, PerfilUsuario, CambiarPinDto, RegistroPublicoDto } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -96,6 +96,19 @@ export class AuthService {
   /** Registrar nuevo usuario (solo ADMIN) */
   registrar(data: import('../models/api.model').RegistroUsuarioDto): Observable<Usuario> {
     return this.api.post<Usuario>('auth/registro', data);
+  }
+
+  /**
+   * Auto-registro publico: crea empresa + primer usuario ADMIN.
+   * Guarda token y redirige al dashboard automáticamente.
+   */
+  registroPublico(data: RegistroPublicoDto): Observable<LoginResponse> {
+    return this.api.post<LoginResponse>('auth/registro-publico', data).pipe(
+      tap((res) => {
+        this.tokenService.guardar(res.token, res.usuario);
+        this._usuario.set(res.usuario);
+      }),
+    );
   }
 
   /** Limpia estado sin redirigir (para APP_INITIALIZER) */

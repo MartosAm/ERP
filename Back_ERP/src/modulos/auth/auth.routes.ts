@@ -20,7 +20,7 @@ import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
 import { limitarLogin } from '../../middlewares/limitarRates';
 import { AuthController } from './auth.controller';
-import { LoginSchema, RegistroSchema, CambiarPinSchema } from './auth.schema';
+import { LoginSchema, RegistroSchema, RegistroPublicoSchema, CambiarPinSchema } from './auth.schema';
 
 const router = Router();
 
@@ -69,6 +69,58 @@ router.post(
   limitarLogin,
   validar(LoginSchema),
   asyncHandler(AuthController.login),
+);
+
+/**
+ * @openapi
+ * /auth/registro-publico:
+ *   post:
+ *     summary: Auto-registro publico (crear empresa + usuario ADMIN)
+ *     description: |
+ *       Crea una empresa nueva y su primer usuario administrador.
+ *       No requiere autenticacion. Retorna un token JWT para auto-login.
+ *       Rate-limited para prevenir abuso.
+ *     tags: [Autenticacion]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nombre, correo, contrasena, nombreEmpresa]
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 example: Juan Lopez
+ *               correo:
+ *                 type: string
+ *                 format: email
+ *                 example: juan@empresa.com
+ *               contrasena:
+ *                 type: string
+ *                 minLength: 8
+ *                 example: MiContrasena123
+ *               nombreEmpresa:
+ *                 type: string
+ *                 example: Mi Tienda S.A.
+ *               telefono:
+ *                 type: string
+ *                 example: "5512345678"
+ *     responses:
+ *       201:
+ *         description: Cuenta creada. Retorna token y datos del usuario.
+ *       400:
+ *         description: Datos de entrada invalidos.
+ *       409:
+ *         description: Ya existe un usuario con ese correo.
+ *       429:
+ *         description: Demasiados intentos. Rate limit alcanzado.
+ */
+router.post(
+  '/registro-publico',
+  limitarLogin,
+  validar(RegistroPublicoSchema),
+  asyncHandler(AuthController.registroPublico),
 );
 
 // ------------------------------------------------------------------

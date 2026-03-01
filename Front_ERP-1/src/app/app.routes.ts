@@ -19,6 +19,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
+  {
+    path: 'auth/registro',
+    loadComponent: () =>
+      import('./features/auth/registro.component').then((m) => m.RegistroComponent),
+  },
 
   // --- Rutas protegidas (con layout shell) ---
   {

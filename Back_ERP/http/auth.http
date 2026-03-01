@@ -8,6 +8,21 @@
 @contentType = application/json
 
 ### ============================================================
+### 0. REGISTRO PUBLICO - Crear empresa + primer usuario ADMIN
+### ============================================================
+# @name registroPublico
+POST {{baseUrl}}/auth/registro-publico
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Carlos Prueba",
+  "correo": "carlos@nuevaempresa.com",
+  "contrasena": "MiPass123",
+  "nombreEmpresa": "Nueva Empresa S.A.",
+  "telefono": "5512345678"
+}
+
+### ============================================================
 ### 1. LOGIN - Obtener token JWT (admin)
 ### ============================================================
 # @name login

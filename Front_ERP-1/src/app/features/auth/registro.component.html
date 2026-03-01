@@ -1,0 +1,145 @@
+<!-- registro.component.html — Pantalla de auto-registro público -->
+<div class="registro-wrapper">
+  <mat-card class="registro-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="text-indigo-500 text-4xl">store</mat-icon>
+      <mat-card-title>Crear cuenta</mat-card-title>
+      <mat-card-subtitle>Registra tu empresa y comienza a usar ERP POS</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onRegistro()" class="flex flex-col gap-3 mt-6">
+
+        <!-- Sección: Datos de la empresa -->
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+          Datos de la empresa
+        </p>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre de la empresa</mat-label>
+          <input matInput formControlName="nombreEmpresa" autocomplete="organization" />
+          <mat-icon matSuffix>business</mat-icon>
+          @if (f.nombreEmpresa.hasError('required') && f.nombreEmpresa.touched) {
+            <mat-error>El nombre de la empresa es obligatorio</mat-error>
+          }
+          @if (f.nombreEmpresa.hasError('minlength') && f.nombreEmpresa.touched) {
+            <mat-error>Mínimo 2 caracteres</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono (opcional)</mat-label>
+          <input matInput formControlName="telefono" type="tel" autocomplete="tel" />
+          <mat-icon matSuffix>phone</mat-icon>
+        </mat-form-field>
+
+        <!-- Sección: Datos del administrador -->
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 mt-2">
+          Datos del administrador
+        </p>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre completo</mat-label>
+          <input matInput formControlName="nombre" autocomplete="name" />
+          <mat-icon matSuffix>person</mat-icon>
+          @if (f.nombre.hasError('required') && f.nombre.touched) {
+            <mat-error>El nombre es obligatorio</mat-error>
+          }
+          @if (f.nombre.hasError('minlength') && f.nombre.touched) {
+            <mat-error>Mínimo 2 caracteres</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput formControlName="correo" type="email" autocomplete="email" />
+          <mat-icon matSuffix>mail</mat-icon>
+          @if (f.correo.hasError('required') && f.correo.touched) {
+            <mat-error>El correo es obligatorio</mat-error>
+          }
+          @if (f.correo.hasError('email') && f.correo.touched) {
+            <mat-error>Correo inválido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input matInput formControlName="contrasena"
+                 [type]="ocultarPass() ? 'password' : 'text'"
+                 autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button"
+                  aria-label="Mostrar u ocultar contraseña"
+                  (click)="ocultarPass.set(!ocultarPass())">
+            <mat-icon>{{ ocultarPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (f.contrasena.hasError('required') && f.contrasena.touched) {
+            <mat-error>La contraseña es obligatoria</mat-error>
+          } @else if (f.contrasena.hasError('minlength') && f.contrasena.touched) {
+            <mat-error>Mínimo 8 caracteres</mat-error>
+          } @else if (f.contrasena.hasError('sinMayuscula') && f.contrasena.touched) {
+            <mat-error>Debe contener al menos una mayúscula</mat-error>
+          } @else if (f.contrasena.hasError('sinMinuscula') && f.contrasena.touched) {
+            <mat-error>Debe contener al menos una minúscula</mat-error>
+          } @else if (f.contrasena.hasError('sinNumero') && f.contrasena.touched) {
+            <mat-error>Debe contener al menos un número</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Indicador visual de fuerza de contraseña -->
+        @if (f.contrasena.value) {
+          <div class="flex gap-1 -mt-2 mb-1 px-1">
+            <div class="h-1 flex-1 rounded"
+                 [class]="f.contrasena.value.length >= 8 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
+            <div class="h-1 flex-1 rounded"
+                 [class]="!f.contrasena.hasError('sinMayuscula') && !f.contrasena.hasError('sinMinuscula') ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
+            <div class="h-1 flex-1 rounded"
+                 [class]="!f.contrasena.hasError('sinNumero') ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
+          </div>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmar contraseña</mat-label>
+          <input matInput formControlName="confirmarContrasena"
+                 [type]="ocultarConfirmar() ? 'password' : 'text'"
+                 autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button"
+                  aria-label="Mostrar u ocultar contraseña"
+                  (click)="ocultarConfirmar.set(!ocultarConfirmar())">
+            <mat-icon>{{ ocultarConfirmar() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (f.confirmarContrasena.hasError('required') && f.confirmarContrasena.touched) {
+            <mat-error>Debe confirmar su contraseña</mat-error>
+          }
+          @if (form.hasError('contrasenasNoCoinciden') && f.confirmarContrasena.touched) {
+            <mat-error>Las contraseñas no coinciden</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Error del servidor -->
+        @if (errorRegistro()) {
+          <p class="text-red-600 text-sm text-center" role="alert">{{ errorRegistro() }}</p>
+        }
+
+        <!-- Botón de registro -->
+        <button mat-raised-button color="primary" type="submit"
+                [disabled]="cargando()"
+                class="h-12 mt-1">
+          @if (cargando()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Crear cuenta
+          }
+        </button>
+
+        <!-- Link a login -->
+        <p class="text-center text-sm mt-2 text-gray-600 dark:text-gray-400">
+          ¿Ya tienes cuenta?
+          <a routerLink="/auth/login"
+             class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+            Inicia sesión
+          </a>
+        </p>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
