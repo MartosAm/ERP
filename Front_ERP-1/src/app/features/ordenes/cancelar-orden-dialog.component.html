@@ -1,0 +1,30 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon class="text-red-500">cancel</mat-icon>
+  Cancelar orden
+</h2>
+
+<mat-dialog-content class="pt-2 min-w-[380px]">
+  <p class="text-sm text-gray-600 mb-4">
+    Esta acción no se puede deshacer. Ingresa el motivo de la cancelación.
+  </p>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Motivo de cancelación</mat-label>
+      <textarea matInput formControlName="motivo" rows="3"
+                placeholder="Describe el motivo (mínimo 5 caracteres)"></textarea>
+      @if (form.controls.motivo.hasError('required')) {
+        <mat-error>El motivo es obligatorio</mat-error>
+      }
+      @if (form.controls.motivo.hasError('minlength')) {
+        <mat-error>Mínimo 5 caracteres</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="gap-2">
+  <button mat-button mat-dialog-close>Volver</button>
+  <button mat-raised-button color="warn" (click)="confirmar()">
+    Cancelar orden
+  </button>
+</mat-dialog-actions>

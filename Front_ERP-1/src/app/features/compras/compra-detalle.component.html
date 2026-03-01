@@ -1,0 +1,145 @@
+<div class="page-container">
+  @if (cargando()) {
+    <div class="flex justify-center py-16">
+      <mat-spinner diameter="48" />
+    </div>
+  } @else if (compra(); as c) {
+    <app-page-header
+      [titulo]="'Compra ' + c.numeroCompra"
+      subtitulo="Detalle de la orden de compra"
+      icono="shopping_cart">
+      <button mat-button (click)="volver()">
+        <mat-icon>arrow_back</mat-icon> Volver
+      </button>
+    </app-page-header>
+
+    <!-- Info general -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Estado</p>
+          <app-estado-badge [estado]="!!c.recibidaEn" tipo="compra" />
+          @if (c.recibidaEn) {
+            <p class="text-xs text-gray-400 mt-1">{{ c.recibidaEn | fechaHora }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Proveedor</p>
+          <p class="font-medium">{{ c.proveedor.nombre }}</p>
+          @if (c.proveedor.nombreContacto) {
+            <p class="text-sm text-gray-400">{{ c.proveedor.nombreContacto }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Factura</p>
+          <p class="font-medium">{{ c.numeroFactura || 'Sin factura' }}</p>
+          <p class="text-xs text-gray-400">Creada: {{ c.creadoEn | fechaHora }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Totales -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="p-4 text-center">
+          <p class="text-sm text-gray-500">Subtotal</p>
+          <p class="text-lg font-semibold">{{ c.subtotal | moneda }}</p>
+        </mat-card-content>
+      </mat-card>
+      <mat-card>
+        <mat-card-content class="p-4 text-center">
+          <p class="text-sm text-gray-500">Impuesto</p>
+          <p class="text-lg font-semibold">{{ c.montoImpuesto | moneda }}</p>
+        </mat-card-content>
+      </mat-card>
+      <mat-card>
+        <mat-card-content class="p-4 text-center">
+          <p class="text-sm text-gray-500">Total</p>
+          <p class="text-2xl font-bold text-indigo-600">{{ c.total | moneda }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Recibir mercancía -->
+    @if (esPendiente) {
+      <div class="card mb-6 border-l-4 border-l-amber-500">
+        <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
+          <mat-icon class="text-amber-500">local_shipping</mat-icon>
+          Recibir mercancía
+        </h3>
+        <p class="text-sm text-gray-600 mb-3">
+          Selecciona el almacén donde se registrará el inventario al recibir esta compra.
+        </p>
+        <div class="flex items-end gap-3">
+          <mat-form-field appearance="outline" class="w-64">
+            <mat-label>Almacén destino</mat-label>
+            <mat-select [(value)]="almacenSeleccionado">
+              @for (a of almacenes(); track a.id) {
+                <mat-option [value]="a.id">
+                  {{ a.nombre }}
+                  @if (a.esPrincipal) { <span class="text-xs text-gray-400">(Principal)</span> }
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!almacenSeleccionado || recibiendo()"
+            (click)="recibirMercancia()">
+            @if (recibiendo()) {
+              <mat-spinner diameter="20" class="inline-block mr-2" />
+            }
+            <mat-icon>inventory</mat-icon> Recibir mercancía
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Detalles de productos -->
+    <div class="card mb-6">
+      <h3 class="text-base font-semibold mb-3">Productos</h3>
+      <table mat-table [dataSource]="c.detalles" class="w-full">
+        <ng-container matColumnDef="producto">
+          <th mat-header-cell *matHeaderCellDef>Producto</th>
+          <td mat-cell *matCellDef="let d">
+            <span class="font-medium">{{ d.producto.nombre }}</span>
+            <span class="text-xs text-gray-400 ml-2">{{ d.producto.sku }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cantidad">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Cantidad</th>
+          <td mat-cell *matCellDef="let d" class="text-center">{{ d.cantidad }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="costoUnitario">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Costo unit.</th>
+          <td mat-cell *matCellDef="let d" class="text-right">{{ d.costoUnitario | moneda }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="subtotal">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Subtotal</th>
+          <td mat-cell *matCellDef="let d" class="text-right font-medium">{{ d.subtotal | moneda }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colDetalles"></tr>
+        <tr mat-row *matRowDef="let row; columns: colDetalles"></tr>
+      </table>
+    </div>
+
+    <!-- Notas -->
+    @if (c.notas) {
+      <div class="card">
+        <p class="text-sm text-gray-500 mb-1">Notas</p>
+        <p class="text-sm">{{ c.notas }}</p>
+      </div>
+    }
+  }
+</div>

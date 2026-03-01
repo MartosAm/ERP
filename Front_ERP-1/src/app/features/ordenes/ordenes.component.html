@@ -1,0 +1,136 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Órdenes"
+    subtitulo="Ventas, cotizaciones y devoluciones"
+    icono="receipt_long">
+  </app-page-header>
+
+  <!-- Filtros de estado -->
+  <div class="card mb-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <mat-chip-listbox aria-label="Filtrar por estado" class="flex-1">
+        @for (e of estados; track e.value) {
+          <mat-chip-option
+            [selected]="estadoFiltro === e.value"
+            (click)="filtrarEstado(e.value)">
+            {{ e.label }}
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-3 mt-3">
+      <app-search-input
+        class="flex-1 min-w-[200px]"
+        placeholder="Buscar por número, cliente..."
+        (buscar)="onBuscar($event)" />
+
+      <mat-form-field appearance="outline" class="w-40">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" [(ngModel)]="fechaDesde" (dateChange)="filtrarFechas()">
+        <mat-datepicker-toggle matIconSuffix [for]="dpDesde" />
+        <mat-datepicker #dpDesde />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-40">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" [(ngModel)]="fechaHasta" (dateChange)="filtrarFechas()">
+        <mat-datepicker-toggle matIconSuffix [for]="dpHasta" />
+        <mat-datepicker #dpHasta />
+      </mat-form-field>
+
+      @if (fechaDesde || fechaHasta) {
+        <button mat-icon-button color="warn" (click)="limpiarFechas()" matTooltip="Limpiar fechas">
+          <mat-icon>clear</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+
+        <ng-container matColumnDef="numeroOrden">
+          <th mat-header-cell *matHeaderCellDef>N° Orden</th>
+          <td mat-cell *matCellDef="let o">
+            <span class="font-medium text-indigo-600 cursor-pointer hover:underline"
+                  (click)="verDetalle(o)">
+              {{ o.numeroOrden }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cliente">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let o">{{ o.cliente?.nombre || 'Público general' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let o">
+            <app-estado-badge [estado]="o.estado" tipo="orden" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Total</th>
+          <td mat-cell *matCellDef="let o" class="text-right font-medium">
+            {{ o.total | moneda }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="metodoPago">
+          <th mat-header-cell *matHeaderCellDef>Pago</th>
+          <td mat-cell *matCellDef="let o">
+            <app-estado-badge [estado]="o.metodoPago" tipo="pago" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let o">{{ o.creadoEn | fechaCorta }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let o">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="verDetalle(o)">
+                <mat-icon>visibility</mat-icon> Ver detalle
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"
+            (click)="verDetalle(row)"></tr>
+      </table>
+
+      @if (items().length === 0) {
+        <app-empty-state
+          icono="receipt_long"
+          mensaje="No se encontraron órdenes"
+          submensaje="Ajusta los filtros o realiza una venta desde el POS" />
+      }
+
+      @if (meta()) {
+        <mat-paginator
+          [length]="meta()!.total"
+          [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          showFirstLastButtons />
+      }
+    </div>
+  }
+</div>

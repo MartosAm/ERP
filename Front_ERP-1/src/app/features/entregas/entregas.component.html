@@ -1,0 +1,105 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Entregas"
+    subtitulo="Seguimiento y gestión de entregas"
+    icono="local_shipping">
+  </app-page-header>
+
+  <!-- Filtros de estado -->
+  <div class="card mb-4">
+    <mat-chip-listbox aria-label="Filtrar por estado">
+      @for (e of estados; track e.value) {
+        <mat-chip-option
+          [selected]="estadoFiltro === e.value"
+          (click)="filtrarEstado(e.value)">
+          {{ e.label }}
+        </mat-chip-option>
+      }
+    </mat-chip-listbox>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+
+        <ng-container matColumnDef="orden">
+          <th mat-header-cell *matHeaderCellDef>Orden</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="font-medium">{{ e.orden.numeroOrden }}</span>
+            <span class="text-xs text-gray-400 ml-1">{{ e.orden.total | moneda }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cliente">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let e">{{ e.cliente?.nombre || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="repartidor">
+          <th mat-header-cell *matHeaderCellDef>Repartidor</th>
+          <td mat-cell *matCellDef="let e">{{ e.asignadoA?.nombre || 'Sin asignar' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let e">
+            <app-estado-badge [estado]="e.estado" tipo="entrega" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="direccion">
+          <th mat-header-cell *matHeaderCellDef>Dirección</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="text-sm truncate max-w-[200px] inline-block">{{ e.direccionEntrega }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="programada">
+          <th mat-header-cell *matHeaderCellDef>Programada</th>
+          <td mat-cell *matCellDef="let e">
+            {{ e.programadaEn ? (e.programadaEn | fechaHora) : '—' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let e">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="verDetalle(e)">
+                <mat-icon>visibility</mat-icon> Ver detalle
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"
+            (click)="verDetalle(row)"></tr>
+      </table>
+
+      @if (items().length === 0) {
+        <app-empty-state
+          icono="local_shipping"
+          mensaje="No se encontraron entregas"
+          submensaje="Ajusta los filtros de búsqueda" />
+      }
+
+      @if (meta()) {
+        <mat-paginator
+          [length]="meta()!.total"
+          [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          showFirstLastButtons />
+      }
+    </div>
+  }
+</div>

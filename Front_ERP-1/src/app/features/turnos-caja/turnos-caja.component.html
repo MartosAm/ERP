@@ -1,0 +1,144 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Turnos de Caja"
+    subtitulo="Apertura, cierre e historial de turnos"
+    icono="point_of_sale">
+    @if (turnoActivo()) {
+      <button mat-raised-button color="warn" (click)="cerrarTurno()">
+        <mat-icon>lock</mat-icon> Cerrar turno
+      </button>
+    } @else {
+      <button mat-raised-button color="primary" (click)="abrirTurno()">
+        <mat-icon>lock_open</mat-icon> Abrir turno
+      </button>
+    }
+  </app-page-header>
+
+  <!-- Turno activo banner -->
+  @if (turnoActivo(); as ta) {
+    <div class="card mb-4 border-l-4 border-l-green-500 bg-green-50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <mat-icon class="text-green-600">check_circle</mat-icon>
+          <div>
+            <p class="font-semibold text-green-800">Turno activo</p>
+            <p class="text-sm text-green-600">
+              {{ ta.cajaRegistradora.nombre }} — Apertura: {{ ta.montoApertura | moneda }}
+              — Desde {{ ta.abiertaEn | fechaHora }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <mat-chip-listbox aria-label="Filtrar turnos">
+      <mat-chip-option [selected]="filtroAbierto === ''" (click)="filtrarEstado('')">
+        Todos
+      </mat-chip-option>
+      <mat-chip-option [selected]="filtroAbierto === 'true'" (click)="filtrarEstado('true')">
+        Abiertos
+      </mat-chip-option>
+      <mat-chip-option [selected]="filtroAbierto === 'false'" (click)="filtrarEstado('false')">
+        Cerrados
+      </mat-chip-option>
+    </mat-chip-listbox>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+
+        <ng-container matColumnDef="caja">
+          <th mat-header-cell *matHeaderCellDef>Caja</th>
+          <td mat-cell *matCellDef="let t">
+            <span class="font-medium">{{ t.cajaRegistradora.nombre }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="usuario">
+          <th mat-header-cell *matHeaderCellDef>Usuario</th>
+          <td mat-cell *matCellDef="let t">{{ t.usuario.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let t">
+            <app-estado-badge [estado]="!t.cerradaEn" tipo="turno" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="apertura">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Apertura</th>
+          <td mat-cell *matCellDef="let t" class="text-right">{{ t.montoApertura | moneda }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cierre">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Cierre</th>
+          <td mat-cell *matCellDef="let t" class="text-right">
+            {{ t.montoCierre !== null ? (t.montoCierre | moneda) : '—' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="diferencia">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Diferencia</th>
+          <td mat-cell *matCellDef="let t" class="text-right"
+              [class.text-red-600]="t.diferencia !== null && t.diferencia < 0"
+              [class.text-green-600]="t.diferencia !== null && t.diferencia > 0">
+            @if (t.diferencia !== null) {
+              {{ t.diferencia >= 0 ? '+' : '' }}{{ t.diferencia | moneda }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ordenes">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Órdenes</th>
+          <td mat-cell *matCellDef="let t" class="text-center">{{ t._count?.ordenes ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let t">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="verDetalle(t)">
+                <mat-icon>visibility</mat-icon> Ver detalle
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"
+            (click)="verDetalle(row)"></tr>
+      </table>
+
+      @if (items().length === 0) {
+        <app-empty-state
+          icono="point_of_sale"
+          mensaje="No se encontraron turnos"
+          submensaje="Abre un turno para empezar a vender" />
+      }
+
+      @if (meta()) {
+        <mat-paginator
+          [length]="meta()!.total"
+          [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          showFirstLastButtons />
+      }
+    </div>
+  }
+</div>

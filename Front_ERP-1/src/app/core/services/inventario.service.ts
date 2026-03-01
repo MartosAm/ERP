@@ -34,15 +34,22 @@ export class InventarioService {
 
   ajusteManual(data: AjusteManualDto): Observable<MovimientoInventario> {
     return this.api.post<MovimientoInventario>('inventario/movimientos', {
-      tipoMovimiento: 'AJUSTE_MANUAL',
-      ...data,
+      tipoMovimiento: 'AJUSTE',
+      productoId: data.productoId,
+      almacenId: data.almacenId,
+      cantidad: data.cantidad,
+      motivo: data.motivo,
     });
   }
 
   trasladar(data: TrasladoDto): Observable<MovimientoInventario> {
     return this.api.post<MovimientoInventario>('inventario/movimientos', {
       tipoMovimiento: 'TRASLADO',
-      ...data,
+      productoId: data.productoId,
+      almacenId: data.almacenOrigenId,
+      almacenDestinoId: data.almacenDestinoId,
+      cantidad: data.cantidad,
+      motivo: data.motivo,
     });
   }
 }

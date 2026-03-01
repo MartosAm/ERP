@@ -1,0 +1,123 @@
+<div class="page-container">
+  <app-page-header
+    titulo="Compras"
+    subtitulo="Órdenes de compra a proveedores"
+    icono="shopping_cart">
+    <button mat-raised-button color="primary" (click)="crear()">
+      <mat-icon>add</mat-icon> Nueva compra
+    </button>
+  </app-page-header>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="flex flex-wrap items-end gap-3">
+      <app-search-input
+        class="flex-1 min-w-[200px]"
+        placeholder="Buscar por número, factura..."
+        (buscar)="onBuscar($event)" />
+
+      <mat-form-field appearance="outline" class="w-52">
+        <mat-label>Proveedor</mat-label>
+        <mat-select (selectionChange)="filtrarProveedor($event.value)" [value]="proveedorId">
+          <mat-option value="">Todos</mat-option>
+          @for (p of proveedores(); track p.id) {
+            <mat-option [value]="p.id">{{ p.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-40">
+        <mat-label>Estado</mat-label>
+        <mat-select (selectionChange)="filtrarRecibida($event.value)" [value]="recibida">
+          <mat-option value="">Todas</mat-option>
+          <mat-option value="false">Pendientes</mat-option>
+          <mat-option value="true">Recibidas</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex justify-center py-10">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="card overflow-x-auto">
+      <table mat-table [dataSource]="items()" class="w-full">
+
+        <ng-container matColumnDef="numeroCompra">
+          <th mat-header-cell *matHeaderCellDef>N° Compra</th>
+          <td mat-cell *matCellDef="let c">
+            <span class="font-medium text-indigo-600 cursor-pointer hover:underline"
+                  (click)="verDetalle(c)">
+              {{ c.numeroCompra }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="proveedor">
+          <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+          <td mat-cell *matCellDef="let c">{{ c.proveedor.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Total</th>
+          <td mat-cell *matCellDef="let c" class="text-right font-medium">{{ c.total | moneda }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="recibida">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let c">
+            <app-estado-badge [estado]="!!c.recibidaEn" tipo="compra" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroFactura">
+          <th mat-header-cell *matHeaderCellDef>Factura</th>
+          <td mat-cell *matCellDef="let c">{{ c.numeroFactura || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let c">{{ c.creadoEn | fechaCorta }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="w-16"></th>
+          <td mat-cell *matCellDef="let c">
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Acciones">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="verDetalle(c)">
+                <mat-icon>visibility</mat-icon> Ver detalle
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="hover:bg-gray-50 cursor-pointer"
+            (click)="verDetalle(row)"></tr>
+      </table>
+
+      @if (items().length === 0) {
+        <app-empty-state
+          icono="shopping_cart"
+          mensaje="No se encontraron compras"
+          textoAccion="Nueva compra"
+          (accion)="crear()" />
+      }
+
+      @if (meta()) {
+        <mat-paginator
+          [length]="meta()!.total"
+          [pageSize]="meta()!.limite"
+          [pageIndex]="meta()!.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          showFirstLastButtons />
+      }
+    </div>
+  }
+</div>

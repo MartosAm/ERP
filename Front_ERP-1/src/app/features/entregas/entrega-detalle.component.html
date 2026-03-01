@@ -1,0 +1,150 @@
+<div class="page-container">
+  @if (cargando()) {
+    <div class="flex justify-center py-16">
+      <mat-spinner diameter="48" />
+    </div>
+  } @else if (entrega(); as e) {
+    <app-page-header
+      titulo="Detalle de entrega"
+      [subtitulo]="'Orden ' + e.orden.numeroOrden"
+      icono="local_shipping">
+      <button mat-button (click)="volver()">
+        <mat-icon>arrow_back</mat-icon> Volver
+      </button>
+    </app-page-header>
+
+    <!-- Info general -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Estado</p>
+          <app-estado-badge [estado]="e.estado" tipo="entrega" />
+          @if (e.entregadaEn) {
+            <p class="text-xs text-gray-400 mt-1">{{ e.entregadaEn | fechaHora }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Orden</p>
+          <p class="font-medium">{{ e.orden.numeroOrden }}</p>
+          <p class="text-sm text-indigo-600 font-semibold">{{ e.orden.total | moneda }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="p-4">
+          <p class="text-sm text-gray-500 mb-1">Repartidor</p>
+          <p class="font-medium">{{ e.asignadoA?.nombre || 'Sin asignar' }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Cliente y dirección -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="p-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <mat-icon class="!text-lg">person</mat-icon> Cliente
+          </h3>
+          @if (e.cliente) {
+            <p class="font-medium">{{ e.cliente.nombre }}</p>
+            @if (e.cliente.telefono) {
+              <p class="text-sm text-gray-500">{{ e.cliente.telefono }}</p>
+            }
+            @if (e.cliente.direccion) {
+              <p class="text-sm text-gray-400 mt-1">{{ e.cliente.direccion }}</p>
+            }
+          } @else {
+            <p class="text-gray-400">Sin cliente asignado</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="p-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <mat-icon class="!text-lg">place</mat-icon> Dirección de entrega
+          </h3>
+          <p class="text-sm">{{ e.direccionEntrega }}</p>
+          @if (e.programadaEn) {
+            <p class="text-sm text-gray-500 mt-2">
+              <mat-icon class="!text-base align-middle mr-1">schedule</mat-icon>
+              Programada: {{ e.programadaEn | fechaHora }}
+            </p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Transiciones de estado -->
+    @if (puedeActualizar) {
+      <div class="card mb-6 border-l-4 border-l-indigo-500">
+        <h3 class="text-base font-semibold mb-3">Actualizar estado</h3>
+
+        @if (!mostrarFormEstado()) {
+          <div class="flex flex-wrap gap-2">
+            @for (t of transicionesDisponibles; track t.value) {
+              <button mat-raised-button [color]="t.color" (click)="seleccionarTransicion(t)">
+                <mat-icon>{{ t.icon }}</mat-icon> {{ t.label }}
+              </button>
+            }
+          </div>
+        } @else {
+          <form [formGroup]="estadoForm" class="flex flex-col gap-3 mt-2">
+            @if (requiereMotivo) {
+              <mat-form-field appearance="outline">
+                <mat-label>Motivo de no entrega</mat-label>
+                <textarea matInput formControlName="motivoFallo" rows="2"
+                          placeholder="¿Por qué no se pudo entregar?"></textarea>
+              </mat-form-field>
+            }
+
+            @if (requiereFecha) {
+              <mat-form-field appearance="outline" class="w-64">
+                <mat-label>Nueva fecha programada</mat-label>
+                <input matInput type="datetime-local" formControlName="programadaEn" />
+              </mat-form-field>
+            }
+
+            <mat-form-field appearance="outline">
+              <mat-label>Notas (opcional)</mat-label>
+              <input matInput formControlName="notas" placeholder="Observaciones adicionales" />
+            </mat-form-field>
+
+            <div class="flex gap-2">
+              <button mat-raised-button color="primary"
+                      [disabled]="actualizando()"
+                      (click)="actualizarEstado()">
+                @if (actualizando()) {
+                  <mat-spinner diameter="20" class="inline-block mr-2" />
+                }
+                Confirmar
+              </button>
+              <button mat-button (click)="mostrarFormEstado.set(false)">Cancelar</button>
+            </div>
+          </form>
+        }
+      </div>
+    }
+
+    <!-- Info adicional -->
+    @if (e.notas || e.motivoFallo) {
+      <div class="card">
+        @if (e.motivoFallo) {
+          <div class="mb-3">
+            <p class="text-sm text-red-500 mb-1">Motivo de fallo</p>
+            <p class="text-sm text-red-700">{{ e.motivoFallo }}</p>
+          </div>
+        }
+        @if (e.notas) {
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Notas</p>
+            <p class="text-sm">{{ e.notas }}</p>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
