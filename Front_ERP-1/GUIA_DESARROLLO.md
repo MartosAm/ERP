@@ -2229,16 +2229,167 @@ readonly proveedorId = signal('');
 
 ## 11. Seguridad y buenas prácticas
 
-| Práctica | Implementación |
-|----------|---------------|
-| **Token en memoria** | JWT se almacena en variable, sessionStorage solo como fallback |
-| **CSP** | Content-Security-Policy en `index.html` meta tag |
-| **XSS** | Angular sanitiza por defecto. No usar `[innerHTML]` sin sanitizar |
-| **Auto-logout** | `InactividadService` cierra sesión tras 30 min sin actividad |
-| **Token expirado** | `errorInterceptor` redirige a login en 401 |
-| **RBAC** | `roleGuard` en rutas + `*appRol` en templates |
-| **Retry idempotente** | `errorInterceptor` reintenta GET en errores transitorios (502, 503, 504) |
-| **Sin secrets en frontend** | Solo `environment.apiUrl` como configuración |
+> **Documento detallado:** ver `SEGURIDAD.md` en la raíz del proyecto para la explicación exhaustiva full-stack con justificación de cada decisión, flujos completos, diagramas y inventario de archivos de ambos proyectos (frontend + backend).
+
+### 11.1 Arquitectura de seguridad — 4 capas
+
+| Capa | Dónde | Qué protege |
+|------|-------|-------------|
+| **1. Nginx** | `Back_ERP/nginx/nginx.conf` + `Front_ERP-1/docker/nginx.conf` | Rate limiting por zona, security headers (CSP, HSTS, X-Frame-Options), bloqueo `/api-docs` en producción |
+| **2. Express middleware** | `Back_ERP/src/middlewares/seguridad.ts` + `Back_ERP/src/app.ts` | Helmet, CORS restrictivo, HPP, Content-Type validation, ocultar tecnología, JSON body limit 10MB |
+| **3. Lógica de negocio** | `Back_ERP/src/modulos/auth/` + `Back_ERP/src/middlewares/` | JWT verify + sesión DB por request, bcrypt 12 rounds, lockout 5 intentos, Zod validation, XSS sanitization |
+| **4. Angular** | `Front_ERP-1/src/app/core/` | Token en memoria, guards, interceptors, auto-logout 30 min, APP_INITIALIZER, sanitización HTML automática |
+
+### 11.2 Autenticación — resumen del flujo
+
+```
+Login → limitarLogin(5/15min) → Zod validate → bcrypt compare → lockout check
+      → JWT sign(8h) → sesión en DB (SHA-256 del token) → response {token, usuario}
+      → TokenService.guardar(memoria + sessionStorage) → _usuario.set()
+```
+
+**Archivos clave del flujo:**
+
+| Rol | Archivo |
+|-----|---------|
+| Login UI | `src/app/features/auth/login.component.ts` |
+| HTTP + estado | `src/app/core/services/auth.service.ts` |
+| Token storage | `src/app/core/services/token.service.ts` |
+| Inyectar Bearer | `src/app/core/interceptors/auth.interceptor.ts` |
+| Backend auth | `Back_ERP/src/modulos/auth/auth.service.ts` |
+| JWT verificar | `Back_ERP/src/middlewares/autenticar.ts` |
+
+### 11.3 Almacenamiento del token
+
+| Mecanismo | Ubicación | Propósito |
+|-----------|-----------|-----------|
+| `tokenEnMemoria` (variable privada) | `token.service.ts` | Almacenamiento primario — no accesible vía DOM |
+| `sessionStorage['erp_tkn']` | `token.service.ts` | Fallback para recarga F5 — se limpia al cerrar pestaña |
+| `sessionStorage['erp_usr']` | `token.service.ts` | Rehidratación de datos del usuario post-recarga |
+
+**Expiración:** `estaExpirado()` decodifica el JWT client-side y devuelve `true` si `now >= exp - 60s` (margen de seguridad).
+
+**Interceptor:** solo envía token a URLs que empiezan con `environment.apiUrl` — nunca a terceros.
+
+### 11.4 Autorización RBAC — frontend
+
+```typescript
+// app.routes.ts — guards en rutas
+{
+  path: 'compras',
+  canActivate: [roleGuard('ADMIN')],
+  loadComponent: () => import('./features/compras/compras.component'),
+},
+{
+  path: 'turnos-caja',
+  canActivate: [roleGuard('ADMIN', 'CAJERO')],
+  loadComponent: () => import('./features/turnos/turnos.component'),
+},
+```
+
+```html
+<!-- Template — directiva *appRol -->
+<button *appRol="'ADMIN'">Solo Admin</button>
+<mat-nav-list>
+  <a *appRol="['ADMIN', 'CAJERO']" mat-list-item routerLink="/turnos-caja">
+    Turnos de Caja
+  </a>
+</mat-nav-list>
+```
+
+**Mapa de protección:**
+
+| Ruta | Guard | Roles permitidos |
+|------|-------|-----------------|
+| `/auth/login` | Ninguno | Pública |
+| `/dashboard`, `/pos`, `/productos`, `/clientes`, `/categorias` | `authGuard` | Todos |
+| `/ordenes`, `/inventario`, `/entregas` | `authGuard` | Todos |
+| `/compras` | `roleGuard('ADMIN')` | Solo ADMIN |
+| `/proveedores`, `/almacenes`, `/usuarios`, `/reportes`, `/configuracion` | `roleGuard('ADMIN')` | Solo ADMIN |
+| `/turnos-caja` | `roleGuard('ADMIN', 'CAJERO')` | ADMIN o CAJERO |
+
+### 11.5 Interceptors
+
+#### Auth Interceptor (`auth.interceptor.ts`)
+
+```typescript
+// Solo inyecta token para requests al propio backend
+if (!req.url.startsWith(environment.apiUrl)) return next(req);
+if (tokenService.estaExpirado()) return next(req);  // no enviar token expirado
+
+const authReq = req.clone({
+  setHeaders: { Authorization: `Bearer ${token}` },
+});
+return next(authReq);
+```
+
+#### Error Interceptor (`error.interceptor.ts`)
+
+| Status | Acción | Retry |
+|--------|--------|-------|
+| `0` | "Error de conexión. Verifica tu red." | No |
+| `401` | Limpiar token → login → "Sesión expirada" | No |
+| `403` | "No tienes permisos…" | No |
+| `429` | "Demasiadas solicitudes…" | No |
+| `502, 503, 504` | Reintenta (solo GET/HEAD/OPTIONS) | 2 reintentos, backoff 1s→2s |
+| Otro | `err.error?.mensaje \|\| 'Error inesperado'` | No |
+
+### 11.6 Gestión de sesiones
+
+| Mecanismo | Archivo | Detalle |
+|-----------|---------|---------|
+| **Inactividad** | `inactividad.service.ts` | 30 min timeout, verifica cada 60s, throttle 2s. Corre fuera de NgZone. |
+| **APP_INITIALIZER** | `app.config.ts` | `GET /auth/perfil` al arrancar → valida sesión contra backend |
+| **Token expirado** | `token.service.ts` | `estaExpirado()` revisa `exp - 60s` |
+| **Sesión en DB** | `Back_ERP/src/middlewares/autenticar.ts` | Cada request valida `sesion.activo && usuario.activo` en Prisma |
+| **Revocación instant** | Backend | Admin desactiva sesión en DB → siguiente request falla |
+
+### 11.7 Content Security Policy
+
+CSP configurada en **3 capas** (defense in depth):
+
+1. **Meta tag** en `src/index.html` — funciona sin servidor
+2. **Frontend nginx** en `docker/nginx.conf` — header HTTP
+3. **Backend Helmet** en `Back_ERP/src/app.ts` — header HTTP
+
+```
+default-src 'self';
+script-src  'self';
+style-src   'self' 'unsafe-inline';   ← requerido por Angular Material
+font-src    'self' data:;
+img-src     'self' data: blob:;
+connect-src 'self';
+object-src  'none';
+frame-src   'none';
+base-uri    'self';
+form-action 'self';
+worker-src  'self';
+```
+
+### 11.8 Reglas de seguridad para nuevos desarrollos
+
+| # | Regla |
+|---|-------|
+| 1 | **Nunca `[innerHTML]`** — Angular sanitiza por defecto; no usar `bypassSecurityTrust*` |
+| 2 | **Bearer en header** — nunca enviar token como query param ni en cookies |
+| 3 | **Token solo al propio API** — el auth interceptor ya filtra por `environment.apiUrl` |
+| 4 | **Guards en ambas capas** — toda ruta protegida en frontend (`roleGuard`) Y backend (`requerirRol`) |
+| 5 | **Validar en el backend** — la validación frontend es UX, no seguridad. Zod es la puerta real |
+| 6 | **Mensajes genéricos en auth** — nunca "usuario no encontrado" vs "contraseña incorrecta" |
+| 7 | **`takeUntilDestroyed` en subscribes** — evitar memory leaks (ya documentado en §10.8) |
+| 8 | **No `console.log` en producción** — solo permitido en `environment.ts` dev |
+| 9 | **`environment.apiUrl` relativo en prod** — `/api/v1` (same-origin, sin CORS en producción) |
+| 10 | **Sanitizar input en backend** — usar `sanitizarObjeto(dto)` antes de Prisma create/update |
+
+### 11.9 Hallazgos y mejoras pendientes
+
+| Severidad | Hallazgo | Acción |
+|-----------|----------|--------|
+| **MEDIA** | `auth.service.ts` (backend) no sanitiza `dto.nombre` en registro | Agregar `sanitizarObjeto(dto)` |
+| **BAJA** | Frontend valida contraseña `minLength(6)`, backend exige `min(8)` | Sincronizar a `minLength(8)` |
+| **BAJA** | Dockerfile frontend sin `USER nginx` explícito | Agregar `USER nginx` |
+| **INFO** | `'unsafe-inline'` en style-src (requerido por Material) | Aceptado — limitación de Material |
+| **INFO** | Sin refresh tokens (JWT 8h + inactividad 30min) | Aceptado — cubre turno laboral |
 
 ---
 
