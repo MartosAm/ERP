@@ -13,7 +13,7 @@ npm install  # Si ejecuta en una máquina nueva
 # Crear archivo .env con las variables necesarias
 cp .env.example .env
 ```
-
+a
 ### Variables de Entorno
 
 Editar `.env`:

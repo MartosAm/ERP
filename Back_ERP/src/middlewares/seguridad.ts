@@ -16,9 +16,9 @@
  * ------------------------------------------------------------------
  */
 
+import { randomUUID } from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import hpp from 'hpp';
-import { v4 as uuidv4 } from 'uuid';
 import { ApiResponse } from '../compartido/respuesta';
 
 // ------------------------------------------------------------------
@@ -58,7 +58,7 @@ export function asignarRequestId(
   res: Response,
   next: NextFunction,
 ): void {
-  const requestId = (req.headers['x-request-id'] as string) || uuidv4();
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
 
   // Disponible para loggers y otros middlewares
   req.headers['x-request-id'] = requestId;

@@ -193,7 +193,6 @@ router.patch(
  *     summary: Desactivar categoria (solo ADMIN)
  *     security:
  *       - bearerAuth: []
- *     parameters:github.copilot.chat.mcpServersP
  *       - in: path
  *         name: id
  *         required: true
