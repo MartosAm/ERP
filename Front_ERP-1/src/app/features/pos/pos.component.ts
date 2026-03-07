@@ -393,22 +393,22 @@ export class PosComponent implements OnInit {
   private getPrecio(p: Producto): number {
     switch (this.listaPrecio()) {
       case 2:
-        return p.precioVenta2 ?? p.precioVenta1;
+        return Number(p.precioVenta2 ?? p.precioVenta1);
       case 3:
-        return p.precioVenta3 ?? p.precioVenta1;
+        return Number(p.precioVenta3 ?? p.precioVenta1);
       default:
-        return p.precioVenta1;
+        return Number(p.precioVenta1);
     }
   }
 
   private getPrecioPOS(p: ProductoPOS): number {
     switch (this.listaPrecio()) {
       case 2:
-        return p.precioVenta2 ?? p.precioVenta1;
+        return Number(p.precioVenta2 ?? p.precioVenta1);
       case 3:
-        return p.precioVenta3 ?? p.precioVenta1;
+        return Number(p.precioVenta3 ?? p.precioVenta1);
       default:
-        return p.precioVenta1;
+        return Number(p.precioVenta1);
     }
   }
 

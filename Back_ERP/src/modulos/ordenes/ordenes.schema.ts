@@ -21,13 +21,13 @@ import { z } from 'zod';
  */
 const DetalleOrdenSchema = z.object({
   productoId: z.string({ required_error: 'productoId es obligatorio' }).min(1),
-  cantidad: z
+  cantidad: z.coerce
     .number({ required_error: 'La cantidad es obligatoria' })
     .positive('La cantidad debe ser mayor a 0'),
-  precioUnitario: z
+  precioUnitario: z.coerce
     .number({ required_error: 'El precio es obligatorio' })
     .min(0, 'El precio no puede ser negativo'),
-  descuento: z.number().min(0).default(0),
+  descuento: z.coerce.number().min(0).default(0),
 });
 
 /**
@@ -38,7 +38,7 @@ const PagoSchema = z.object({
     ['EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA', 'CREDITO_CLIENTE'],
     { errorMap: () => ({ message: 'Metodo de pago invalido' }) },
   ),
-  monto: z
+  monto: z.coerce
     .number({ required_error: 'El monto del pago es obligatorio' })
     .positive('El monto debe ser mayor a 0'),
   referencia: z.string().optional(),
@@ -97,7 +97,7 @@ export const CancelarOrdenSchema = z.object({
  */
 const ItemDevolucionSchema = z.object({
   productoId: z.string({ required_error: 'productoId es obligatorio' }).min(1),
-  cantidad: z
+  cantidad: z.coerce
     .number({ required_error: 'La cantidad a devolver es obligatoria' })
     .positive('La cantidad debe ser mayor a 0'),
   motivo: z.string().max(500).optional(),

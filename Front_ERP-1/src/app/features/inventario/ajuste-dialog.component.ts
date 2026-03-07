@@ -44,7 +44,7 @@ export class AjusteDialogComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.productosSvc.listar({ limite: 200, activo: true })
+    this.productosSvc.listar({ limite: 100, activo: true })
       .subscribe((res) => this.productos.set(res.datos));
     this.almacenesSvc.listar({ limite: 100, activo: true })
       .subscribe((res) => this.almacenes.set(res.datos));

@@ -51,7 +51,7 @@ export class CompraFormDialogComponent implements OnInit {
   ngOnInit(): void {
     this.proveedoresSvc.listar({ limite: 100, activo: true })
       .subscribe((res) => this.proveedores.set(res.datos));
-    this.productosSvc.listar({ limite: 200, activo: true })
+    this.productosSvc.listar({ limite: 100, activo: true })
       .subscribe((res) => this.productos.set(res.datos));
 
     // Add initial empty row

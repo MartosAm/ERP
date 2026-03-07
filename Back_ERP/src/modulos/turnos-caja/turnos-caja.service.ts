@@ -99,14 +99,17 @@ export const TurnosCajaService = {
       include: {
         ordenes: {
           where: { pagado: true },
-          select: { id: true, total: true, cambio: true, metodoPago: true },
-          include: {
+          select: {
+            id: true,
+            total: true,
+            cambio: true,
+            metodoPago: true,
             pagos: {
               where: { metodo: 'EFECTIVO' },
               select: { monto: true },
             },
           },
-        } as any,
+        },
       },
     });
 
