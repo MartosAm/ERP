@@ -68,6 +68,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       TRUST_PROXY: 2
       REDIS_URL: redis://redis:6379
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
     networks:
       - backend
     # NO exponer puerto al host; Nginx lo hace

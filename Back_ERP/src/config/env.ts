@@ -65,6 +65,12 @@ const EnvSchema = z.object({
 
   /** URL de Redis para rate limiting distribuido y cache compartido. */
   REDIS_URL: z.string().url().optional(),
+
+  /** Habilita endpoint /api/metrics para scraping (Prometheus). */
+  METRICS_ENABLED: z.coerce.boolean().default(false),
+
+  /** Token Bearer opcional para proteger /api/metrics. */
+  METRICS_TOKEN: z.string().min(16).optional(),
 });
 
 // Validar las variables de entorno al importar este modulo
@@ -86,6 +92,17 @@ if (datosValidados.NODE_ENV === 'production' && datosValidados.CORS_ORIGIN === '
   console.error(
     'ERROR: CORS_ORIGIN debe configurarse con la URL real del frontend en produccion. ' +
     'No se permite usar localhost como origen en produccion.',
+  );
+  process.exit(1);
+}
+
+if (
+  datosValidados.NODE_ENV === 'production' &&
+  datosValidados.METRICS_ENABLED &&
+  !datosValidados.METRICS_TOKEN
+) {
+  console.error(
+    'ERROR: METRICS_TOKEN es obligatorio cuando METRICS_ENABLED=true en produccion.',
   );
   process.exit(1);
 }

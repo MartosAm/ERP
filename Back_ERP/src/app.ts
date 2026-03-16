@@ -29,6 +29,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { env, corsOrigins } from './config/env';
 import { swaggerSpec, swaggerUiOptions, swaggerHabilitado } from './config/swagger';
+import { autorizarMetricas, medirMetricasHttp, metricsHandler, metricsHabilitadas } from './config/metrics';
 import { limitarGeneral } from './middlewares/limitarRates';
 import { manejarErrores } from './middlewares/manejarErrores';
 import { ApiResponse } from './compartido/respuesta';
@@ -163,6 +164,9 @@ if (env.NODE_ENV !== 'test') {
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
+// Metricas HTTP para observabilidad (prometheus)
+app.use(medirMetricasHttp);
+
 // ------------------------------------------------------------------
 // 6. Rate limiting general (100 req/min por IP)
 // ------------------------------------------------------------------
@@ -211,6 +215,13 @@ app.use('/api/v1/compras', comprasRoutes);
 app.use('/api/v1/entregas', entregasRoutes);
 app.use('/api/v1/usuarios', usuariosRoutes);
 app.use('/api/v1/reportes', reportesRoutes);
+
+// Endpoint de metricas (opcional, controlado por env)
+if (metricsHabilitadas) {
+  app.get('/api/metrics', autorizarMetricas, (req, res, next) => {
+    metricsHandler(req, res).catch(next);
+  });
+}
 
 // ------------------------------------------------------------------
 // 9. Documentacion Swagger (OpenAPI) - deshabilitada en produccion
