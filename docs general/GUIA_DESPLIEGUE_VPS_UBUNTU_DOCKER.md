@@ -98,6 +98,9 @@ La configuracion base ya expone 80/443. Para HTTPS real:
 
 2. Activar bloque SSL en `Back_ERP/nginx/nginx.conf` (descomentar seccion TLS).
 
+Nota: el `docker-compose.prod.yml` ya usa `Back_ERP/nginx/nginx.prod.conf`
+con HTTPS activo por defecto (redireccion 80 -> 443).
+
 3. Reiniciar Nginx:
 
 ```bash
