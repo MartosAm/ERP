@@ -39,13 +39,13 @@ Incluye:
 ## Deploy VPS
 
 Script:
-- `Back_ERP/scripts/deploy_vps.sh`
+- `Back_ERP/deploy/scripts/deploy_vps.sh`
 
 Uso:
 
 ```bash
 cd Back_ERP
-./scripts/deploy_vps.sh
+./deploy/scripts/deploy_vps.sh
 ```
 
 Requiere:
@@ -57,13 +57,13 @@ Requiere:
 ## Rollback VPS
 
 Script:
-- `Back_ERP/scripts/rollback_vps.sh`
+- `Back_ERP/deploy/scripts/rollback_vps.sh`
 
 Uso:
 
 ```bash
 cd Back_ERP
-./scripts/rollback_vps.sh <commit_sha_estable>
+./deploy/scripts/rollback_vps.sh <commit_sha_estable>
 ```
 
 Realiza:

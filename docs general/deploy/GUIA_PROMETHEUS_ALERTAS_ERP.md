@@ -15,8 +15,8 @@ Objetivo: activar monitoreo basico en VPS Ubuntu para API ERP.
 
 ## 2. Archivos base incluidos
 
-- `Back_ERP/ops/prometheus/prometheus.yml`
-- `Back_ERP/ops/prometheus/alerts.yml`
+- `Back_ERP/deploy/prometheus/prometheus.yml`
+- `Back_ERP/deploy/prometheus/alerts.yml`
 
 Ajustar en `prometheus.yml`:
 - `tu-dominio.com`
@@ -31,8 +31,8 @@ Ejemplo rapido:
 ```bash
 docker run -d --name prometheus \
   -p 9090:9090 \
-  -v /opt/erp/Back_ERP/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
-  -v /opt/erp/Back_ERP/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro \
+  -v /opt/erp/Back_ERP/deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
+  -v /opt/erp/Back_ERP/deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro \
   prom/prometheus:latest
 ```
 

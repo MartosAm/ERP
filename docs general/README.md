@@ -66,7 +66,7 @@ npm start
 
 ## Documentación Detallada
 - [📊 Prisma (Base de Datos)](README_Prisma.md)
-- [🐳 Docker (Contenedores)](README_Docker.md)
+- [🐳 Docker (Contenedores)](deploy/README_Docker.md)
 - [🚀 Backend (API)](README_Backend.md)
 - [💻 Frontend (Angular)](README_Frontend.md)
 

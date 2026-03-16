@@ -27,7 +27,7 @@ jobs:
         run: npm install
 
       - name: Verify architecture
-        run: ./scripts/verify_architecture.sh
+        run: ./deploy/scripts/verify_architecture.sh
 
       - name: Typecheck
         run: npm run typecheck

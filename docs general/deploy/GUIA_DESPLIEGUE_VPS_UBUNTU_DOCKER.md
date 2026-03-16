@@ -54,7 +54,7 @@ cd /opt/erp/Back_ERP
 Crear archivo de entorno de produccion:
 
 ```bash
-cp .env.prod.example .env
+cp env.prod.template .env
 nano .env
 ```
 
@@ -191,6 +191,6 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ## 9. Monitoreo y alertas
 
 Ver guia:
-- `docs general/GUIA_PROMETHEUS_ALERTAS_ERP.md`
+- `docs general/deploy/GUIA_PROMETHEUS_ALERTAS_ERP.md`
 
 Incluye ejemplos de `prometheus.yml`, reglas de alertas y checklist operativo.

@@ -101,5 +101,4 @@ npm run db:studio
 - `prisma/schema.prisma`: Definición del esquema de BD
 - `prisma/seed.ts`: Datos iniciales
 - `prisma/migrations/`: Historial de cambios en BD
-- `.env`: Variables de entorno (DATABASE_URL)</content>
-<parameter name="filePath">/home/adrian/Documentos/proyectos/ERP/docs general/README_Prisma.md
+- `.env`: Variables de entorno (DATABASE_URL)

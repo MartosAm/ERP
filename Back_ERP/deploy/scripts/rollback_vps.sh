@@ -2,12 +2,12 @@
 set -euo pipefail
 
 if [[ "$#" -ne 1 ]]; then
-  echo "Uso: ./scripts/rollback_vps.sh <commit_sha>"
+  echo "Uso: ./deploy/scripts/rollback_vps.sh <commit_sha>"
   exit 1
 fi
 
 TARGET_SHA="$1"
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 if [[ ! -f .env ]]; then
