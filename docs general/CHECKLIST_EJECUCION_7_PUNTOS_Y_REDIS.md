@@ -14,6 +14,19 @@ Objetivo: convertir la guia de calidad en tareas concretas, medibles y ejecutabl
 
 ---
 
+## Estado actual (marzo 2026)
+
+- [x] Bloque 4 base: idempotencia backend + bloqueo doble submit frontend.
+- [x] Redis para rate limiting distribuido (backend/infrastructure).
+- [ ] Bloque 1 completo al 100% en todos los modulos.
+- [ ] Bloque 2 completo al 100% en todos los modulos.
+- [ ] Bloque 3 completo al 100% (cobertura adicional de concurrencia/e2e).
+- [ ] Bloque 5 completo al 100% (hardening final SSL + secretos + auditoria).
+- [ ] Bloque 6 completo al 100% (metricas y alertas operativas).
+- [ ] Bloque 7 completo al 100% (pipeline y rollback formalizado).
+
+---
+
 ## Bloque 1 - Arquitectura y Limites
 
 ### Tareas
