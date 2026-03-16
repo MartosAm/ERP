@@ -15,6 +15,8 @@ import crypto from 'crypto';
 import type { NextFunction, Request, Response } from 'express';
 import NodeCache from 'node-cache';
 import { ApiResponse } from '../compartido/respuesta';
+import { obtenerRedisClient } from '../config/redis';
+import { logger } from '../compartido/logger';
 
 interface EntradaPendiente {
   estado: 'PENDIENTE';
@@ -51,6 +53,7 @@ const cacheIdempotencia = new NodeCache({
   checkperiod: 60,
   useClones: true,
 });
+const redisClient = obtenerRedisClient();
 
 const MAX_LONGITUD_KEY = 128;
 
@@ -70,7 +73,90 @@ function construirHuella(req: Request): string {
 function construirClaveCache(scope: string, req: Request, key: string): string {
   const usuario = req.user?.usuarioId ?? 'anonimo';
   const empresa = req.user?.empresaId ?? 'sin-empresa';
-  return `${scope}:${empresa}:${usuario}:${key}`;
+  return `idem:${scope}:${empresa}:${usuario}:${key}`;
+}
+
+function obtenerRedisActivo() {
+  if (!redisClient || !redisClient.isOpen) return null;
+  return redisClient;
+}
+
+async function obtenerEntrada(clave: string): Promise<EntradaIdempotencia | undefined> {
+  const redis = obtenerRedisActivo();
+  if (redis) {
+    try {
+      const raw = await redis.get(clave);
+      if (!raw) return undefined;
+      return JSON.parse(raw) as EntradaIdempotencia;
+    } catch (error) {
+      logger.error({ mensaje: 'Error leyendo idempotencia en Redis', error: String(error) });
+    }
+  }
+
+  return cacheIdempotencia.get<EntradaIdempotencia>(clave);
+}
+
+async function guardarEntrada(clave: string, entrada: EntradaIdempotencia, ttlSegundos: number): Promise<void> {
+  const redis = obtenerRedisActivo();
+  if (redis) {
+    try {
+      await redis.set(clave, JSON.stringify(entrada), { EX: ttlSegundos });
+      return;
+    } catch (error) {
+      logger.error({ mensaje: 'Error guardando idempotencia en Redis', error: String(error) });
+    }
+  }
+
+  cacheIdempotencia.set<EntradaIdempotencia>(clave, entrada, ttlSegundos);
+}
+
+async function guardarPendienteSiNoExiste(
+  clave: string,
+  entrada: EntradaPendiente,
+  ttlSegundos: number,
+): Promise<boolean> {
+  const redis = obtenerRedisActivo();
+  if (redis) {
+    try {
+      const result = await redis.set(clave, JSON.stringify(entrada), { EX: ttlSegundos, NX: true });
+      return result === 'OK';
+    } catch (error) {
+      logger.error({ mensaje: 'Error en lock idempotente Redis', error: String(error) });
+    }
+  }
+
+  if (cacheIdempotencia.has(clave)) return false;
+  cacheIdempotencia.set<EntradaIdempotencia>(clave, entrada, ttlSegundos);
+  return true;
+}
+
+async function eliminarEntrada(clave: string): Promise<void> {
+  const redis = obtenerRedisActivo();
+  if (redis) {
+    try {
+      await redis.del(clave);
+      return;
+    } catch (error) {
+      logger.error({ mensaje: 'Error eliminando idempotencia en Redis', error: String(error) });
+    }
+  }
+
+  cacheIdempotencia.del(clave);
+}
+
+function responderDesdeEntrada(res: Response, existente: EntradaIdempotencia): void {
+  if (existente.estado === 'PENDIENTE') {
+    res.status(409).json(
+      ApiResponse.fail(
+        'Ya existe una operacion en proceso con esta idempotency key',
+        'IDEMPOTENCY_IN_PROGRESS',
+      ),
+    );
+    return;
+  }
+
+  res.setHeader('X-Idempotency-Replayed', 'true');
+  res.status(existente.statusCode).json(existente.cuerpo);
 }
 
 export function requerirIdempotencia(opciones: OpcionesIdempotencia) {
@@ -78,81 +164,103 @@ export function requerirIdempotencia(opciones: OpcionesIdempotencia) {
   const requerido = opciones.requerido ?? true;
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const raw = req.header('x-idempotency-key')?.trim();
+    void (async () => {
+      const raw = req.header('x-idempotency-key')?.trim();
 
-    if (!raw) {
-      if (requerido) {
+      if (!raw) {
+        if (requerido) {
+          res.status(400).json(
+            ApiResponse.fail('Header X-Idempotency-Key requerido', 'IDEMPOTENCY_KEY_REQUIRED'),
+          );
+          return;
+        }
+        next();
+        return;
+      }
+
+      if (raw.length > MAX_LONGITUD_KEY) {
         res.status(400).json(
-          ApiResponse.fail('Header X-Idempotency-Key requerido', 'IDEMPOTENCY_KEY_REQUIRED'),
+          ApiResponse.fail('X-Idempotency-Key excede longitud maxima', 'IDEMPOTENCY_KEY_INVALID'),
         );
         return;
       }
-      return next();
-    }
 
-    if (raw.length > MAX_LONGITUD_KEY) {
-      res.status(400).json(
-        ApiResponse.fail('X-Idempotency-Key excede longitud maxima', 'IDEMPOTENCY_KEY_INVALID'),
+      const huella = construirHuella(req);
+      const clave = construirClaveCache(opciones.scope, req, raw);
+      const existente = await obtenerEntrada(clave);
+
+      if (existente) {
+        if (existente.huella !== huella) {
+          res.status(409).json(
+            ApiResponse.fail(
+              'La misma idempotency key no puede reutilizarse con otro payload',
+              'IDEMPOTENCY_KEY_REUSED',
+            ),
+          );
+          return;
+        }
+
+        responderDesdeEntrada(res, existente);
+        return;
+      }
+
+      const adquirido = await guardarPendienteSiNoExiste(
+        clave,
+        { estado: 'PENDIENTE', huella },
+        ttlSegundos,
       );
-      return;
-    }
 
-    const huella = construirHuella(req);
-    const clave = construirClaveCache(opciones.scope, req, raw);
-    const existente = cacheIdempotencia.get<EntradaIdempotencia>(clave);
+      if (!adquirido) {
+        // Si otro nodo/proceso gano la carrera, responder segun estado actual.
+        const carrera = await obtenerEntrada(clave);
+        if (!carrera) {
+          res.status(409).json(
+            ApiResponse.fail(
+              'No se pudo adquirir lock de idempotencia para esta operacion',
+              'IDEMPOTENCY_LOCK_FAILED',
+            ),
+          );
+          return;
+        }
 
-    if (existente) {
-      if (existente.huella !== huella) {
-        res.status(409).json(
-          ApiResponse.fail(
-            'La misma idempotency key no puede reutilizarse con otro payload',
-            'IDEMPOTENCY_KEY_REUSED',
-          ),
-        );
+        if (carrera.huella !== huella) {
+          res.status(409).json(
+            ApiResponse.fail(
+              'La misma idempotency key no puede reutilizarse con otro payload',
+              'IDEMPOTENCY_KEY_REUSED',
+            ),
+          );
+          return;
+        }
+
+        responderDesdeEntrada(res, carrera);
         return;
       }
 
-      if (existente.estado === 'PENDIENTE') {
-        res.status(409).json(
-          ApiResponse.fail(
-            'Ya existe una operacion en proceso con esta idempotency key',
-            'IDEMPOTENCY_IN_PROGRESS',
-          ),
-        );
-        return;
-      }
+      const jsonOriginal = res.json.bind(res);
 
-      res.setHeader('X-Idempotency-Replayed', 'true');
-      res.status(existente.statusCode).json(existente.cuerpo);
-      return;
-    }
+      res.json = ((cuerpo: unknown) => {
+        const statusCode = res.statusCode;
 
-    cacheIdempotencia.set<EntradaIdempotencia>(
-      clave,
-      { estado: 'PENDIENTE', huella },
-      ttlSegundos,
-    );
+        // Guardar respuestas estables para replay.
+        if (statusCode >= 200 && statusCode < 500) {
+          void guardarEntrada(
+            clave,
+            { estado: 'COMPLETADA', huella, statusCode, cuerpo },
+            ttlSegundos,
+          );
+        } else {
+          void eliminarEntrada(clave);
+        }
 
-    const jsonOriginal = res.json.bind(res);
+        return jsonOriginal(cuerpo);
+      }) as Response['json'];
 
-    res.json = ((cuerpo: unknown) => {
-      const statusCode = res.statusCode;
-
-      // Guardar respuestas estables para replay.
-      if (statusCode >= 200 && statusCode < 500) {
-        cacheIdempotencia.set<EntradaIdempotencia>(
-          clave,
-          { estado: 'COMPLETADA', huella, statusCode, cuerpo },
-          ttlSegundos,
-        );
-      } else {
-        cacheIdempotencia.del(clave);
-      }
-
-      return jsonOriginal(cuerpo);
-    }) as Response['json'];
-
-    next();
+      next();
+    })().catch((error) => {
+      logger.error({ mensaje: 'Error en middleware de idempotencia', error: String(error) });
+      next(error);
+    });
   };
 }
 
