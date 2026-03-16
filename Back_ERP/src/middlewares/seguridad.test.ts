@@ -108,6 +108,42 @@ describe('middleware seguridad', () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  it('validarContentType permite application/json con charset', () => {
+    const req = {
+      method: 'POST',
+      path: '/api/clientes',
+      headers: {
+        'content-length': '10',
+        'content-type': 'application/json; charset=utf-8',
+      },
+    } as any;
+
+    const res = {} as any;
+    const next = jest.fn();
+
+    validarContentType(req, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('validarContentType permite subtipos +json', () => {
+    const req = {
+      method: 'PATCH',
+      path: '/api/clientes',
+      headers: {
+        'content-length': '10',
+        'content-type': 'application/merge-patch+json',
+      },
+    } as any;
+
+    const res = {} as any;
+    const next = jest.fn();
+
+    validarContentType(req, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it('ocultarTecnologia remueve headers de fingerprinting', () => {
     const res = {
       removeHeader: jest.fn(),

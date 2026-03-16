@@ -178,7 +178,11 @@ export function validarContentType(
   }
 
   const contentType = req.headers['content-type'];
-  if (!contentType || !contentType.includes('application/json')) {
+  const esJson =
+    typeof contentType === 'string' &&
+    /^application\/(?:[a-z0-9!#$&^_.+-]+\+)?json(?:\s*;.*)?$/i.test(contentType);
+
+  if (!esJson) {
     res.status(415).json(
       ApiResponse.fail('Content-Type debe ser application/json', 'CONTENT_TYPE_INVALIDO'),
     );
