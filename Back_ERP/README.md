@@ -19,11 +19,13 @@ a
 Editar `.env`:
 
 ```env
-DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/erp_db
+DATABASE_URL=postgresql://usuario:password@localhost:5432/erp_db?connection_limit=20&pool_timeout=10
 JWT_SECRET=tu_clave_secreta_aqui
 JWT_EXPIRES_IN=7d
 NODE_ENV=development
-PORT=3000
+PORT=3001
+REQUEST_TIMEOUT_MS=30000
+PRISMA_QUERY_TIMEOUT_MS=30000
 ```
 
 ### Ejecutar en Desarrollo

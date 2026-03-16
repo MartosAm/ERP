@@ -99,14 +99,14 @@ export class ProductoFormDialogComponent implements OnInit {
         proveedorId: p.proveedor?.id ?? '',
         tipoUnidad: p.tipoUnidad,
         etiquetaUnidad: p.etiquetaUnidad,
-        precioCosto: p.precioCosto ?? 0,
-        precioVenta1: p.precioVenta1,
-        precioVenta2: p.precioVenta2,
-        precioVenta3: p.precioVenta3,
+        precioCosto: Number(p.precioCosto) || 0,
+        precioVenta1: Number(p.precioVenta1),
+        precioVenta2: p.precioVenta2 != null ? Number(p.precioVenta2) : null,
+        precioVenta3: p.precioVenta3 != null ? Number(p.precioVenta3) : null,
         impuestoIncluido: p.impuestoIncluido,
-        tasaImpuesto: p.tasaImpuesto,
+        tasaImpuesto: Number(p.tasaImpuesto),
         rastrearInventario: p.rastrearInventario,
-        stockMinimo: p.stockMinimo,
+        stockMinimo: Number(p.stockMinimo) || 0,
       });
     }
   }

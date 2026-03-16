@@ -59,6 +59,9 @@ const EnvSchema = z.object({
 
   /** Timeout de request HTTP en milisegundos. Default: 30000 (30s). */
   REQUEST_TIMEOUT_MS: z.coerce.number().min(5000).max(120000).default(30000),
+
+  /** Timeout maximo por query Prisma en milisegundos. */
+  PRISMA_QUERY_TIMEOUT_MS: z.coerce.number().min(1000).max(120000).default(30000),
 });
 
 // Validar las variables de entorno al importar este modulo
@@ -75,12 +78,13 @@ if (!resultado.success) {
 
 const datosValidados = resultado.data;
 
-// Advertencia si se usa CORS default en produccion
+// Bloquear arranque en produccion si CORS_ORIGIN no fue configurado
 if (datosValidados.NODE_ENV === 'production' && datosValidados.CORS_ORIGIN === 'http://localhost:4200') {
-  console.warn(
-    'ADVERTENCIA: CORS_ORIGIN esta configurado a localhost en produccion. ' +
-    'Establece la URL real del frontend en la variable CORS_ORIGIN.',
+  console.error(
+    'ERROR: CORS_ORIGIN debe configurarse con la URL real del frontend en produccion. ' +
+    'No se permite usar localhost como origen en produccion.',
   );
+  process.exit(1);
 }
 
 /**

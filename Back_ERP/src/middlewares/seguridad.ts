@@ -58,7 +58,8 @@ export function asignarRequestId(
   res: Response,
   next: NextFunction,
 ): void {
-  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  // Siempre generar internamente para evitar log injection
+  const requestId = randomUUID();
 
   // Disponible para loggers y otros middlewares
   req.headers['x-request-id'] = requestId;

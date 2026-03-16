@@ -18,7 +18,7 @@ import { asyncHandler } from '../../compartido/asyncHandler';
 import { autenticar } from '../../middlewares/autenticar';
 import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
-import { limitarLogin } from '../../middlewares/limitarRates';
+import { limitarLogin, limitarRegistro, limitarCambioPin } from '../../middlewares/limitarRates';
 import { AuthController } from './auth.controller';
 import { LoginSchema, RegistroSchema, RegistroPublicoSchema, CambiarPinSchema } from './auth.schema';
 
@@ -118,7 +118,7 @@ router.post(
  */
 router.post(
   '/registro-publico',
-  limitarLogin,
+  limitarRegistro,
   validar(RegistroPublicoSchema),
   asyncHandler(AuthController.registroPublico),
 );
@@ -262,6 +262,7 @@ router.get('/perfil', asyncHandler(AuthController.perfil));
  */
 router.post(
   '/cambiar-pin',
+  limitarCambioPin,
   requerirRol('ADMIN'),
   validar(CambiarPinSchema),
   asyncHandler(AuthController.cambiarPin),

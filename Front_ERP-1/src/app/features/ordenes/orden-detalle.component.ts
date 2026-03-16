@@ -16,9 +16,10 @@ import { EstadoBadgeComponent } from '../../shared/components/estado-badge/estad
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CancelarOrdenDialogComponent } from './cancelar-orden-dialog.component';
 import { DevolucionDialogComponent } from './devolucion-dialog.component';
+import { ConfirmarCotizacionDialogComponent } from './confirmar-cotizacion-dialog.component';
 import { MonedaPipe } from '../../shared/pipes/moneda.pipe';
 import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
-import type { OrdenDetalle } from '../../core/models/api.model';
+import type { OrdenDetalle, ConfirmarCotizacionDto } from '../../core/models/api.model';
 
 @Component({
   selector: 'app-orden-detalle',
@@ -78,6 +79,11 @@ export class OrdenDetalleComponent implements OnInit {
     return !!o && o.estado === 'COMPLETADA';
   }
 
+  get puedeConfirmarCotizacion(): boolean {
+    const o = this.orden();
+    return !!o && o.estado === 'COTIZACION';
+  }
+
   cancelar(): void {
     const o = this.orden();
     if (!o) return;
@@ -120,6 +126,31 @@ export class OrdenDetalleComponent implements OnInit {
           this.notify.exito('Devolución procesada');
           this.cargar(o.id);
         }
+      });
+  }
+
+  confirmarCotizacion(): void {
+    const o = this.orden();
+    if (!o) return;
+
+    const ref = this.dialog.open(ConfirmarCotizacionDialogComponent, {
+      width: '520px',
+      disableClose: true,
+    });
+
+    ref.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pagos: ConfirmarCotizacionDto['pagos'] | undefined) => {
+        if (!pagos) return;
+        this.svc.confirmarCotizacion(o.id, { pagos })
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.notify.exito('Cotización confirmada como venta');
+              this.cargar(o.id);
+            },
+            error: () => this.notify.error('Error al confirmar la cotización'),
+          });
       });
   }
 

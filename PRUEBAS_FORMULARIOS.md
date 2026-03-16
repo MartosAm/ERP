@@ -1,6 +1,6 @@
 # Guía de Pruebas de Formularios — ERP POS
 
-> **Fecha de pruebas:** 07/03/2026  
+> **Fecha de pruebas:** 07/03/2026 – 11/03/2026  
 > **Entorno:** Angular 17.3 + Express + Prisma + PostgreSQL  
 > **URL Frontend:** `http://localhost:4200` | **API:** `http://localhost:3001/api/v1`
 
@@ -27,6 +27,7 @@
 17. [Módulo: Dashboard](#módulo-dashboard)
 18. [Errores Comunes del Usuario](#errores-comunes-del-usuario)
 19. [Flujo Completo de Prueba (Paso a Paso)](#flujo-completo-de-prueba-paso-a-paso)
+20. [Pruebas de Sesión 2 — Cobertura de Gaps](#pruebas-de-sesión-2-110326--cobertura-de-gaps)
 
 ---
 
@@ -50,6 +51,13 @@
 | Reportes | ✅ 6 tabs probadas | Ventas, Top productos, Métodos pago, Inventario, Cajeros, Entregas |
 | Configuración | ✅ Perfil + Seguridad | PIN de cajero cambiado exitosamente |
 | Dashboard | ✅ KPIs correctos | Ventas, utilidad, stock bajo, devoluciones, compras, entregas |
+| **Edición CRUD** | ✅ Todos los módulos | Productos (PATCH 3 tabs), Clientes, Almacenes, Proveedores, Categorías |
+| **Soft Delete** | ✅ Desactivar/Activar | Producto desactivado (activo=false) y reactivado desde menú contextual |
+| **Búsqueda código** | ✅ Barcode + SKU | GET /productos/codigo/{barcode\|sku}, 404 en código inválido |
+| **Filtros/Paginación** | ✅ Búsqueda + filtros | Productos por nombre/SKU, Órdenes por estado (7 opciones), "Limpiar búsqueda" |
+| **Confirmar cotización** | ✅ Feature nueva + test | Botón "Confirmar cotización" → pago simple y pago dividido (2 métodos) |
+| **Entregas lifecycle** | ✅ Todos los estados | EN_CAMINO → ENTREGADO, EN_CAMINO → NO_ENTREGADO → re-enviar |
+| **Delete c/dependencias** | ✅ Protección FK | Categoría con productos → 422 "No se puede eliminar" |
 
 ---
 
@@ -92,6 +100,39 @@
 - **Efecto:** Al hacer clic en "Devolver" en una orden: "Error al procesar la devolución" (HTTP 400)
 - **Fix:** Cambiar `z.number()` → `z.coerce.number()` en `ItemDevolucionSchema.cantidad`
 - **Patrón:** Mismo patrón que Bug 2 — todos los campos Decimal de Prisma necesitan `z.coerce.number()`
+
+### Bug 6: Edición de productos falla por Prisma Decimal strings (400 Bad Request)
+
+- **Archivos backend:** `productos.schema.ts`, `clientes.schema.ts`, `inventario.schema.ts`
+- **Archivo frontend:** `producto-form-dialog.component.ts`
+- **Problema:** Al editar un producto desde el formulario UI, los valores precargados (precioCosto, precioVenta1, etc.) vienen como strings de Prisma Decimal. El backend rechaza con `z.number()`.
+- **Efecto:** "Error al guardar producto" (HTTP 400) — mensaje: `Expected number, received string` para precioCosto, precioVenta1, precioVenta2, tasaImpuesto, stockMinimo
+- **Fix Backend:** Cambiar `z.number()` → `z.coerce.number()` en:
+  - `productos.schema.ts`: conversionUnidad, cantidadMinimaVenta, incrementoVenta, precioCosto, precioVenta1-3, tasaImpuesto, stockMinimo, stockMaximo
+  - `clientes.schema.ts`: limiteCredito (Crear + Actualizar)
+  - `inventario.schema.ts`: cantidad, costoUnitario
+- **Fix Frontend:** Wrapping con `Number()` al hacer patchValue en el formulario de edición:
+  ```typescript
+  precioCosto: Number(p.precioCosto) || 0,
+  precioVenta1: Number(p.precioVenta1),
+  precioVenta2: p.precioVenta2 != null ? Number(p.precioVenta2) : null,
+  ```
+- **Estado:** ✅ Verificado vía API y UI — edición de producto funciona correctamente
+
+### Feature: Botón "Confirmar cotización" implementado
+
+- **Archivos nuevos:**
+  - `confirmar-cotizacion-dialog.component.ts` — Diálogo con FormArray de pagos (método, monto, referencia)
+  - `confirmar-cotizacion-dialog.component.html` — Template Material con tarjetas de pago dinámicas
+- **Archivos modificados:**
+  - `orden-detalle.component.ts` — getter `puedeConfirmarCotizacion` + método `confirmarCotizacion()`
+  - `orden-detalle.component.html` — botón condicional `@if (puedeConfirmarCotizacion)`
+- **Funcionalidad:** Convierte una cotización (estado COTIZACION) en venta completada, registrando los pagos
+- **Variaciones probadas:**
+  - Pago simple: 1 pago Efectivo por el total → ✅
+  - Pago dividido: Efectivo $15 + Tarjeta Débito $15 (con referencia TXN-12345) → ✅
+  - Validación: Submit sin monto → muestra error "Requerido" → ✅
+  - Post-confirmación: botón desaparece, estado cambia a "Completada", pagos visibles en tabla → ✅
 
 ---
 
@@ -842,6 +883,104 @@ Clic en "Cambiar PIN"
 
 ---
 
+## Pruebas de Sesión 2 (11/03/2026) — Cobertura de Gaps
+
+### Edición CRUD via API (PATCH)
+
+| Módulo | Endpoint | Campos Editados | Resultado |
+|--------|----------|-----------------|-----------|
+| Productos | `PATCH /productos/{id}` | nombre, descripcion, precioVenta1 | ✅ 200 OK |
+| Clientes | `PATCH /clientes/{id}` | nombre, telefono, correo | ✅ 200 OK |
+| Almacenes | `PATCH /almacenes/{id}` | direccion | ✅ "Almacen actualizado" |
+
+> **Nota:** Los productos usan PATCH (no PUT). PUT devuelve 404.
+
+### Edición CRUD via UI (Angular Material Dialog)
+
+**Producto — Dialog de 3 tabs:**
+- **Tab General:** nombre, SKU (readonly), código barras, categoría (dropdown), proveedor (dropdown), marca
+- **Tab Precios:** precioCosto, precioVenta1, precioVenta2, tasaImpuesto, impuesto incluido (toggle)
+- **Tab Inventario:** tipoUnidad, etiquetaUnidad, rastrearInventario (checkbox), stockMinimo
+- **Test:** Cambiar nombre "Arroz Grano Largo 1kg" → "Arroz Premium 1kg", precioVenta1 28→30 → ✅ "Producto actualizado"
+
+**Categoría — Inline edit:** Editado desde menú de acciones → ✅
+**Proveedor — Inline edit:** Editado desde menú de acciones → ✅
+
+### Soft Delete (Desactivar/Activar)
+
+```
+DELETE /productos/{id}  →  activo: false (soft delete)
+GET    /productos/{id}  →  activo: false confirmado
+
+UI: menú contextual producto
+  - "Desactivar" → snackbar "Producto desactivado" → chip "inactivo" en tabla
+  - "Activar"    → snackbar "Producto activado"    → chip cambia a "activo"
+```
+
+### Búsqueda por Código de Barras / SKU
+
+| Búsqueda | Endpoint | Resultado |
+|----------|----------|-----------|
+| Código barras `75177213028105` | `GET /productos/codigo/75177213028105` | ✅ Aceite Vegetal 1L |
+| SKU `ABR-T1772130281-3` | `GET /productos/codigo/ABR-T1772130281-3` | ✅ Aceite Vegetal 1L |
+| Código inválido `INVALID-999` | `GET /productos/codigo/INVALID-999` | ✅ 404 "Producto no encontrado" |
+
+### Filtros y Paginación UI
+
+**Productos:**
+- Buscar "Coca" → 1 resultado (Coca-Cola Test 600ml), paginación "1-1 of 1" ✅
+- Buscar "ABR" → 3 resultados con prefijo ABR-, paginación "1-3 of 3" ✅
+- Botón "Limpiar búsqueda" → regresa a lista completa ✅
+
+**Órdenes:**
+- Dropdown de filtro con 7 opciones: Todas, Cotización, Pendiente, En proceso, Completada, Cancelada, Devuelta ✅
+- Filtrar por "Cancelada" → 3 órdenes canceladas, "1-3 of 3" ✅
+
+### Delete con Dependencias (Protección FK)
+
+```
+DELETE /categorias/{id}  (categoría con 3 productos)
+→ 422 "No se puede eliminar la categoría porque tiene 3 productos asociados"
+```
+✅ El backend protege correctamente contra eliminación de entidades con dependencias.
+
+### Entregas — Ciclo de Vida Completo
+
+| Transición | Resultado |
+|-----------|-----------|
+| PENDIENTE → EN_CAMINO (asignar repartidor) | ✅ |
+| EN_CAMINO → ENTREGADO (confirmar entrega) | ✅ |
+| EN_CAMINO → NO_ENTREGADO (problema en entrega) | ✅ |
+| NO_ENTREGADO → EN_CAMINO (reiniciar ruta) | ✅ |
+| Repartidor desactivado → reactivado para ciclo | ✅ |
+
+### Usuarios — Gestión Completa
+
+- Editar nombre y datos de usuario → ✅
+- Configurar horario laboral (Mon-Sat 08:00-18:00) → ✅
+- Desactivar usuario → ✅ chip "inactivo"
+- Reactivar usuario → ✅ chip "activo"
+
+### Confirmar Cotización (Feature Nueva)
+
+**Flujo pago simple:**
+1. Crear cotización COT-2026-00003 ($91) via API
+2. Navegar a detalle → botón "Confirmar cotización" visible ✅
+3. Click → dialog con formulario de pago (Método, Monto, Referencia)
+4. Llenar Efectivo $91 → Click "Confirmar cotización"
+5. Estado cambia a "Completada", pagos visibles en tabla ✅
+
+**Flujo pago dividido:**
+1. Crear cotización COT-2026-00004 ($30) via API
+2. Pago 1: Efectivo $15 | Pago 2: Tarjeta Débito $15 (ref: TXN-12345)
+3. Click "Confirmar cotización" → ✅ ambos pagos en tabla de pagos
+
+**Validación:**
+- Submit sin monto → error "Requerido" bajo el campo ✅
+- Botón desaparece post-confirmación (órdenes completadas no lo muestran) ✅
+
+---
+
 ## Cuentas de Prueba del Seed
 
 | Correo | Contraseña | Rol | Empresa |
@@ -859,4 +998,5 @@ Clic en "Cambiar PIN"
 - **Prisma Decimal:** Los campos de precio en la BD son `Decimal`. Se serializan como strings en JSON. El backend usa `z.coerce.number()` y el frontend `Number()` para convertir.
 - **Paginación:** El listado máximo por página es 100 registros (`limite` max=100 en todos los schemas de filtro).
 - **Sesiones:** El token JWT expira en 8 horas. Máximo de sesiones activas configurable.
-- **Bugs totales corregidos:** 5 (ver sección Bugs Encontrados y Corregidos)
+- **Bugs totales corregidos:** 6 (ver sección Bugs Encontrados y Corregidos)
+- **Features implementadas:** 1 — Botón "Confirmar cotización" con pago simple y dividido

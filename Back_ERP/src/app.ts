@@ -33,6 +33,7 @@ import { limitarGeneral } from './middlewares/limitarRates';
 import { manejarErrores } from './middlewares/manejarErrores';
 import { ApiResponse } from './compartido/respuesta';
 import { prisma } from './config/database';
+import { sanitizarBody } from './middlewares/sanitizarBody';
 import {
   asignarRequestId,
   medirTiempoRespuesta,
@@ -147,6 +148,9 @@ app.use(validarContentType);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// Sanitizar automaticamente todos los strings del body contra XSS
+app.use(sanitizarBody);
+
 // ------------------------------------------------------------------
 // 4. Compresion gzip/brotli en respuestas
 // ------------------------------------------------------------------
@@ -170,13 +174,7 @@ app.use('/api/', limitarGeneral);
 
 // Liveness: el proceso responde (para k8s/Docker liveness probes)
 app.get('/api/health', (_req, res) => {
-  res.json(
-    ApiResponse.ok({
-      estado: 'activo',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    }),
-  );
+  res.json(ApiResponse.ok({ estado: 'activo', timestamp: new Date().toISOString() }));
 });
 
 // Readiness: el proceso puede atender trafico (verifica BD)
@@ -187,11 +185,7 @@ app.get('/api/health/ready', async (_req, res) => {
       ApiResponse.ok({
         estado: 'listo',
         timestamp: new Date().toISOString(),
-        componentes: {
-          baseDatos: 'conectada',
-          memoria: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-          uptime: process.uptime(),
-        },
+        baseDatos: 'conectada',
       }),
     );
   } catch {

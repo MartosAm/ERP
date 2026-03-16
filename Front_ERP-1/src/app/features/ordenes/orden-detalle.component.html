@@ -16,6 +16,11 @@
           <mat-icon>cancel</mat-icon> Cancelar
         </button>
       }
+      @if (puedeConfirmarCotizacion) {
+        <button mat-raised-button color="primary" (click)="confirmarCotizacion()">
+          <mat-icon>check_circle</mat-icon> Confirmar cotización
+        </button>
+      }
       @if (puedeDevolver) {
         <button mat-raised-button color="accent" (click)="devolver()">
           <mat-icon>undo</mat-icon> Devolver

@@ -44,3 +44,35 @@ export const limitarGeneral = rateLimit({
     'RATE_LIMIT',
   ),
 });
+
+/**
+ * Limitador para registro publico.
+ * Maximo 3 registros por IP por hora.
+ * Previene creacion masiva de cuentas/empresas.
+ */
+export const limitarRegistro = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: ApiResponse.fail(
+    'Demasiados registros. Intente de nuevo en una hora.',
+    'RATE_LIMIT',
+  ),
+});
+
+/**
+ * Limitador para cambio de PIN.
+ * Maximo 5 intentos por IP en ventana de 15 minutos.
+ * Protege contra fuerza bruta de PIN (4-6 digitos).
+ */
+export const limitarCambioPin = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: ApiResponse.fail(
+    'Demasiados intentos de cambio de PIN. Intente en 15 minutos.',
+    'RATE_LIMIT',
+  ),
+});

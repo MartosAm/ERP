@@ -1,0 +1,66 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon class="text-green-600">check_circle</mat-icon>
+  Confirmar cotización
+</h2>
+
+<mat-dialog-content class="pt-2 min-w-[420px]">
+  <p class="text-sm text-gray-600 mb-4">
+    Registra los pagos para convertir esta cotización en venta.
+  </p>
+
+  <form [formGroup]="form">
+    <div formArrayName="pagos">
+      @for (pago of pagosArray.controls; let i = $index; track i) {
+        <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 mb-3">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-semibold text-gray-700">Pago {{ i + 1 }}</span>
+            @if (pagosArray.length > 1) {
+              <button type="button" mat-icon-button (click)="eliminarPago(i)" color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Método de pago</mat-label>
+              <mat-select formControlName="metodo">
+                @for (m of metodosPago; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Monto</mat-label>
+              <span matPrefix>$&nbsp;</span>
+              <input matInput type="number" formControlName="monto" step="0.01" min="0.01" />
+              @if (pago.get('monto')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+              @if (pago.get('monto')?.hasError('min')) {
+                <mat-error>Mínimo $0.01</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Referencia (opcional)</mat-label>
+            <input matInput formControlName="referencia" placeholder="Nº transacción, cheque, etc." />
+          </mat-form-field>
+        </div>
+      }
+    </div>
+
+    <button type="button" mat-stroked-button (click)="agregarPago()" class="w-full">
+      <mat-icon>add</mat-icon> Agregar otro pago
+    </button>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="gap-2">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-raised-button color="primary" (click)="confirmar()">
+    Confirmar cotización
+  </button>
+</mat-dialog-actions>

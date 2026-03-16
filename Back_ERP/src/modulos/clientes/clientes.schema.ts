@@ -16,7 +16,7 @@ export const CrearClienteSchema = z.object({
   direccion: z.string().max(300).optional(),
   rfc: z.string().max(13).optional(),
   notas: z.string().max(1000).optional(),
-  limiteCredito: z.number().min(0).default(0),
+  limiteCredito: z.coerce.number().min(0).default(0),
   diasCredito: z.number().int().min(0).max(365).default(0),
 });
 
@@ -28,7 +28,7 @@ export const ActualizarClienteSchema = z.object({
   direccion: z.string().max(300).nullish(),
   rfc: z.string().max(13).nullish(),
   notas: z.string().max(1000).nullish(),
-  limiteCredito: z.number().min(0).optional(),
+  limiteCredito: z.coerce.number().min(0).optional(),
   diasCredito: z.number().int().min(0).max(365).optional(),
   activo: z.boolean().optional(),
 });
