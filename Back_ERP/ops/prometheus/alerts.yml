@@ -1,0 +1,38 @@
+groups:
+  - name: erp-backend-alerts
+    rules:
+      - alert: ERPApiDown
+        expr: up{job="erp-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ERP API no responde"
+          description: "Prometheus no puede scrapear metricas del backend ERP."
+
+      - alert: ERPHigh5xxRate
+        expr: |
+          (
+            sum(rate(erp_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(erp_http_requests_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Tasa de errores 5xx alta"
+          description: "La API supera 1% de respuestas 5xx durante 5 minutos."
+
+      - alert: ERPHighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(erp_http_request_duration_seconds_bucket[5m]))
+          ) > 1.5
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Latencia p95 elevada"
+          description: "La latencia p95 del backend supera 1.5s durante 5 minutos."

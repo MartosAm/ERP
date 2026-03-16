@@ -185,3 +185,12 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 3. Validar health checks.
+
+---
+
+## 9. Monitoreo y alertas
+
+Ver guia:
+- `docs general/GUIA_PROMETHEUS_ALERTAS_ERP.md`
+
+Incluye ejemplos de `prometheus.yml`, reglas de alertas y checklist operativo.
