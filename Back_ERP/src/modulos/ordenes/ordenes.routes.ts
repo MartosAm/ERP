@@ -18,6 +18,7 @@ import { Router } from 'express';
 import { autenticar } from '../../middlewares/autenticar';
 import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
+import { requerirIdempotencia } from '../../middlewares/idempotencia';
 import { asyncHandler } from '../../compartido/asyncHandler';
 import { OrdenesController } from './ordenes.controller';
 import {
@@ -83,6 +84,7 @@ router.use(autenticar);
  */
 router.post(
   '/',
+  requerirIdempotencia({ scope: 'ordenes:crear' }),
   validar(CrearOrdenSchema),
   asyncHandler(OrdenesController.crear),
 );
@@ -187,6 +189,7 @@ router.get('/:id', asyncHandler(OrdenesController.obtenerPorId));
  */
 router.post(
   '/cotizacion',
+  requerirIdempotencia({ scope: 'ordenes:cotizacion' }),
   validar(CrearCotizacionSchema),
   asyncHandler(OrdenesController.crearCotizacion),
 );
@@ -234,6 +237,7 @@ router.post(
  */
 router.post(
   '/:id/confirmar',
+  requerirIdempotencia({ scope: 'ordenes:confirmar' }),
   validar(ConfirmarCotizacionSchema),
   asyncHandler(OrdenesController.confirmarCotizacion),
 );

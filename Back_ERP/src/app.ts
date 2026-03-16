@@ -125,7 +125,7 @@ app.use(
     origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Idempotency-Key'],
     exposedHeaders: ['X-Request-Id', 'X-Response-Time'],
     maxAge: 86400, // Cache preflight 24h (reduce OPTIONS requests)
   }),
