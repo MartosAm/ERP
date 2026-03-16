@@ -19,6 +19,7 @@
 import app from './app';
 import { env } from './config/env';
 import { prisma } from './config/database';
+import { conectarRedis, desconectarRedis } from './config/redis';
 import { logger } from './compartido/logger';
 
 // ------------------------------------------------------------------
@@ -32,6 +33,9 @@ const iniciar = async (): Promise<void> => {
     logger.error('No se pudo conectar a la base de datos:', error);
     process.exit(1);
   }
+
+  // Redis opcional (rate limiting distribuido y cache compartido)
+  await conectarRedis();
 
   // ------------------------------------------------------------------
   // Iniciar servidor HTTP
@@ -80,6 +84,8 @@ const iniciar = async (): Promise<void> => {
       } catch (err) {
         logger.error('Error al desconectar Prisma:', err);
       }
+
+      await desconectarRedis();
 
       process.exit(0);
     });

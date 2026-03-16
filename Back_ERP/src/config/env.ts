@@ -62,6 +62,9 @@ const EnvSchema = z.object({
 
   /** Timeout maximo por query Prisma en milisegundos. */
   PRISMA_QUERY_TIMEOUT_MS: z.coerce.number().min(1000).max(120000).default(30000),
+
+  /** URL de Redis para rate limiting distribuido y cache compartido. */
+  REDIS_URL: z.string().url().optional(),
 });
 
 // Validar las variables de entorno al importar este modulo
