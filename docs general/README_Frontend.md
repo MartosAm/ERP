@@ -1,12 +1,12 @@
-# README - Backend (API REST)
+# README - Frontend (Angular)
 
 ## Descripción
-Backend del ERP construido con Node.js 20, Express, TypeScript y Prisma. Proporciona API REST para gestión de inventario, ventas, usuarios, etc.
+Frontend del ERP construido con Angular 17, Angular Material y TailwindCSS. Interfaz de usuario para gestión de ventas, inventario, reportes, etc.
 
 ## Requisitos Previos
-- Node.js >= 20 (instalar con nvm)
-- PostgreSQL corriendo (Docker o local)
-- Base de datos configurada con Prisma
+- Node.js >= 18 (Angular CLI requiere mínimo 18)
+- Backend corriendo en puerto 3001 (o configurado)
+- Puerto 4200 libre
 
 ## Comandos Básicos
 
@@ -16,176 +16,169 @@ Backend del ERP construido con Node.js 20, Express, TypeScript y Prisma. Proporc
 npm install
 
 # Levantar servidor de desarrollo (con hot-reload)
-npm run dev
+npm start
 
 # Construir para producción
 npm run build
 
-# Ejecutar en producción
-npm run start
-```
-
-### Base de Datos
-```bash
-# Migrar esquema
-npm run db:migrate
-
-# Generar cliente Prisma
-npm run db:generate
-
-# Cargar datos iniciales
-npm run db:seed
-
-# Abrir Prisma Studio
-npm run db:studio
+# Construir y observar cambios
+npm run watch
 ```
 
 ### Qué Hace Cada Comando
-- **`npm run dev`**: Inicia servidor con tsx (hot-reload), puerto 3001 por defecto
-- **`npm run build`**: Compila TypeScript a JavaScript en carpeta `dist/`
-- **`npm run start`**: Ejecuta código compilado en producción
-- **`npm run db:migrate`**: Aplica cambios de esquema a BD
-- **`npm run db:generate`**: Crea cliente Prisma tipado
-- **`npm run db:seed`**: Inserta datos de prueba
-- **`npm run db:studio`**: Interfaz web para BD en `http://localhost:5555`
+- **`npm start`**: Inicia `ng serve` en puerto 4200, abre navegador automáticamente
+- **`npm run build`**: Compila aplicación para producción en carpeta `dist/`
+- **`npm run watch`**: Construye en modo watch para desarrollo (sin servidor)
 
 ## Comandos Avanzados
 
-### Testing y Calidad
+### Angular CLI
 ```bash
-# Ejecutar tests
-npm test
+# Generar componentes
+ng generate component nombre-componente
 
-# Tests con watch mode
-npm run test:watch
+# Generar servicios
+ng generate service nombre-servicio
 
-# Tests de CI (sin watch)
-npm run test:ci
+# Generar módulos
+ng generate module nombre-modulo
 
-# Tests end-to-end
-npm run test:e2e
-
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
+# Generar guards
+ng generate guard nombre-guard
 ```
 
-### Producción
+### Build y Optimización
 ```bash
-# Build y start combinado
-npm run build && npm run start
+# Build para desarrollo
+ng build
 
-# Start con variables de producción
-NODE_ENV=production npm run start
+# Build para producción con optimizaciones
+ng build --configuration production
 
-# Start con puerto personalizado
-PORT=3002 npm run start
+# Build con service worker (PWA)
+ng build --configuration production --service-worker
+
+# Analizar bundle
+ng build --stats-json && npx webpack-bundle-analyzer dist/front-erp/stats.json
 ```
 
-### Gestión de BD Avanzada
+### Testing
 ```bash
-# Reset BD completa
-npm run db:reset
+# Ejecutar tests unitarios
+ng test
 
-# Push schema sin migración (desarrollo)
-npm run db:push
+# Ejecutar tests e2e
+ng e2e
 
-# Deploy migraciones en prod
-npm run db:migrate:deploy
+# Tests con coverage
+ng test --code-coverage
+```
+
+### Debugging
+```bash
+# Ver configuración
+ng config
+
+# Ver versión
+ng version
+
+# Limpiar cache
+ng cache clean
 ```
 
 ### Qué Hace Cada Comando Avanzado
-- **`npm test`**: Ejecuta tests con Jest (unitarios + integración)
-- **`npm run test:watch`**: Tests en modo watch (se ejecutan al cambiar archivos)
-- **`npm run test:ci`**: Tests para CI/CD (con coverage)
-- **`npm run test:e2e`**: Tests end-to-end con script `test-flujo-completo.sh`
-- **`npm run typecheck`**: Verifica tipos TypeScript sin compilar
-- **`npm run lint`**: Ejecuta ESLint para calidad de código
-- **`npm run db:reset`**: Borra todo y re-inicia BD desde cero
-- **`npm run db:push`**: Sincroniza schema con BD sin versionar
-- **`npm run db:migrate:deploy`**: Aplica migraciones en producción
+- **`ng generate`**: Crea archivos y actualiza módulos automáticamente
+- **`ng build --configuration production`**: Optimiza CSS/JS, minifica, tree-shaking
+- **`ng test`**: Ejecuta tests con Karma/Jasmine
+- **`ng e2e`**: Tests end-to-end (requiere configuración)
+- **`ng cache clean`**: Limpia cache de Angular CLI
 
 ## Pasos para Tener Todo en Orden
 
 ### 1. Primera Configuración
 ```bash
-# 1. Instalar Node.js 20 con nvm
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-source ~/.bashrc
-nvm install 20
-nvm use 20
+# 1. Instalar Node.js (si no tienes)
+# Angular requiere Node >= 18
+node --version  # Debe ser >= 18
 
 # 2. Instalar dependencias
 npm install
 
-# 3. Configurar entorno
-cp .env.example .env
-# Editar DATABASE_URL y otras variables
+# 3. Verificar Angular CLI
+npx ng version
 
-# 4. Preparar base de datos
-npm run db:migrate
-npm run db:generate
-npm run db:seed
+# 4. Configurar entorno (opcional)
+# Editar src/environments/environment.ts si es necesario
 
-# 5. Verificar build
-npm run build
-
-# 6. Probar servidor
-npm run dev
+# 5. Levantar servidor
+npm start
 ```
 
 ### 2. Desarrollo Diario
 ```bash
-# Levantar servidor
-npm run dev
+# Levantar frontend
+npm start
 
-# En otra terminal, verificar API
-curl http://localhost:3001/api/health
+# El navegador se abre automáticamente en http://localhost:4200
 
-# Si cambias schema.prisma
-npm run db:migrate && npm run db:generate
+# Si cambias configuración, reiniciar
+# Ctrl+C y npm start
 ```
 
-### 3. Testing
+### 3. Build para Producción
 ```bash
-# Ejecutar todos los tests
-npm run typecheck
-npm run lint
-npm run test
-npm run test:e2e
+# Construir optimizado
+npm run build
+
+# Los archivos listos están en dist/front-erp/
+
+# Para servir estáticamente (ejemplo con nginx)
+# Copiar dist/front-erp/* a carpeta de nginx
 ```
 
 ### 4. Troubleshooting
-- **Puerto ocupado**: Cambiar PORT en .env o usar `PORT=3002 npm run dev`
-- **Error de BD**: Verificar PostgreSQL corriendo y DATABASE_URL correcta
-- **Tipos desactualizados**: `npm run db:generate`
-- **Dependencias**: `rm -rf node_modules && npm install`
+- **Puerto ocupado**: Cambiar puerto con `ng serve --port 4201`
+- **CORS errors**: Verificar backend corriendo y CORS_ORIGIN en .env del backend
+- **Build falla**: `ng cache clean && npm install`
+- **Hot-reload lento**: Verificar Node.js versión y RAM disponible
 
-### 5. Despliegue a Producción
+### 5. Despliegue
 ```bash
-# Build
+# Build optimizado
 npm run build
 
-# Migrar BD
-npm run db:migrate:deploy
-
-# Start
-NODE_ENV=production npm run start
+# Los archivos en dist/ se pueden servir con:
+# - Nginx
+# - Apache
+# - Firebase Hosting
+# - Vercel
+# - Netlify
 ```
 
-## Endpoints Principales
-- `GET /api/health` - Health check
-- `POST /api/auth/login` - Autenticación
-- `GET /api/productos` - Listar productos
-- `POST /api/ordenes` - Crear orden
-- Documentación completa en `http://localhost:3001/api-docs` (Swagger)
+## Estructura del Proyecto
+```
+src/
+├── app/
+│   ├── core/          # Servicios singleton, guards
+│   ├── features/      # Módulos de funcionalidad
+│   ├── layout/        # Layouts, header, sidebar
+│   ├── shared/        # Componentes reutilizables
+│   └── app.routes.ts  # Configuración de rutas
+├── assets/            # Imágenes, íconos
+├── environments/      # Config por entorno
+└── styles/            # CSS global
+```
+
+## Endpoints del Backend
+- Base URL: `http://localhost:3001/api`
+- Auth: `/auth/login`
+- Productos: `/productos`
+- Órdenes: `/ordenes`
+- Usuarios: `/usuarios`
 
 ## Archivos Importantes
-- `src/server.ts` - Punto de entrada
-- `src/app.ts` - Configuración Express
-- `prisma/schema.prisma` - Esquema de BD
-- `.env` - Variables de entorno
-- `package.json` - Dependencias y scripts</content>
-<parameter name="filePath">/home/adrian/Documentos/proyectos/ERP/docs general/README_Backend.md
+- `angular.json` - Configuración de Angular CLI
+- `src/environments/` - Variables por entorno
+- `src/app/app.config.ts` - Configuración de la app
+- `src/app/app.routes.ts` - Definición de rutas
+- `package.json` - Dependencias y scripts

@@ -96,14 +96,4 @@ Para desplegar en producción, ver documentación específica de cada componente
 
 ---
 **Versión**: 1.0.0
-**Última actualización**: Marzo 2026</content>
-<parameter name="filePath">/home/adrian/Documentos/proyectos/ERP/docs general/README.md
-
-
-
-cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && docker compose ps
-sudo usermod -aG docker $USER
-source ~/.bashrc && nvm use 20 && npm run db:studio
-newgrp docker
-cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && docker compose up -d
-cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && source ~/.bashrc && nvm use 20 && npm run db:studio
+**Última actualización**: Marzo 2026

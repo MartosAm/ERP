@@ -1,185 +1,104 @@
-# README - Frontend (Angular)
+# README - Prisma (Base de Datos)
 
 ## Descripción
-Frontend del ERP construido con Angular 17, Angular Material y TailwindCSS. Interfaz de usuario para gestión de ventas, inventario, reportes, etc.
+Prisma es el ORM (Object-Relational Mapping) que gestiona la base de datos PostgreSQL del ERP. Conecta tu código TypeScript con la BD, genera migraciones, y proporciona un cliente tipado para queries.
 
 ## Requisitos Previos
-- Node.js >= 18 (Angular CLI requiere mínimo 18)
-- Backend corriendo en puerto 3001 (o configurado)
-- Puerto 4200 libre
+- PostgreSQL corriendo (local o Docker)
+- Node.js >= 20
+- Archivo `.env` configurado con `DATABASE_URL`
 
 ## Comandos Básicos
 
-### Desarrollo
+### Levantar y Configurar Base de Datos
 ```bash
-# Instalar dependencias
-npm install
+# Aplicar migraciones (crea tablas desde schema.prisma)
+npm run db:migrate
 
-# Levantar servidor de desarrollo (con hot-reload)
-npm start
+# Generar cliente Prisma (autocompletado TypeScript)
+npm run db:generate
 
-# Construir para producción
-npm run build
+# Cargar datos iniciales (seed)
+npm run db:seed
 
-# Construir y observar cambios
-npm run watch
+# Abrir interfaz web para ver/editar datos
+npm run db:studio
 ```
 
 ### Qué Hace Cada Comando
-- **`npm start`**: Inicia `ng serve` en puerto 4200, abre navegador automáticamente
-- **`npm run build`**: Compila aplicación para producción en carpeta `dist/`
-- **`npm run watch`**: Construye en modo watch para desarrollo (sin servidor)
+- **`npm run db:migrate`**: Crea/aplica cambios en el esquema de BD. Genera archivos SQL versionados en `prisma/migrations/`
+- **`npm run db:generate`**: Regenera el cliente Prisma con tipos actualizados. Necesario después de cambiar `schema.prisma`
+- **`npm run db:seed`**: Ejecuta `prisma/seed.ts` para insertar datos de prueba (usuarios, productos, etc.)
+- **`npm run db:studio`**: Abre navegador en `http://localhost:5555` para inspeccionar datos visualmente
 
 ## Comandos Avanzados
 
-### Angular CLI
+### Desarrollo Rápido
 ```bash
-# Generar componentes
-ng generate component nombre-componente
+# Empujar schema directamente a BD (sin migración) - SOLO DESARROLLO
+npm run db:push
 
-# Generar servicios
-ng generate service nombre-servicio
-
-# Generar módulos
-ng generate module nombre-modulo
-
-# Generar guards
-ng generate guard nombre-guard
+# Resetear BD completamente (borra todo y re-aplica)
+npm run db:reset
 ```
 
-### Build y Optimización
+### Producción
 ```bash
-# Build para desarrollo
-ng build
-
-# Build para producción con optimizaciones
-ng build --configuration production
-
-# Build con service worker (PWA)
-ng build --configuration production --service-worker
-
-# Analizar bundle
-ng build --stats-json && npx webpack-bundle-analyzer dist/front-erp/stats.json
-```
-
-### Testing
-```bash
-# Ejecutar tests unitarios
-ng test
-
-# Ejecutar tests e2e
-ng e2e
-
-# Tests con coverage
-ng test --code-coverage
-```
-
-### Debugging
-```bash
-# Ver configuración
-ng config
-
-# Ver versión
-ng version
-
-# Limpiar cache
-ng cache clean
+# Aplicar migraciones en producción (sin prompts)
+npm run db:migrate:deploy
 ```
 
 ### Qué Hace Cada Comando Avanzado
-- **`ng generate`**: Crea archivos y actualiza módulos automáticamente
-- **`ng build --configuration production`**: Optimiza CSS/JS, minifica, tree-shaking
-- **`ng test`**: Ejecuta tests con Karma/Jasmine
-- **`ng e2e`**: Tests end-to-end (requiere configuración)
-- **`ng cache clean`**: Limpia cache de Angular CLI
+- **`npm run db:push`**: Sincroniza `schema.prisma` con BD sin crear migración. Útil para prototipos, pero no versiona cambios
+- **`npm run db:reset`**: Borra todas las tablas, re-ejecuta migraciones y seed. Útil para empezar desde cero
+- **`npm run db:migrate:deploy`**: Aplica migraciones pendientes en entornos de producción (no interactivo)
 
 ## Pasos para Tener Todo en Orden
 
 ### 1. Primera Configuración
 ```bash
-# 1. Instalar Node.js (si no tienes)
-# Angular requiere Node >= 18
-node --version  # Debe ser >= 18
+# 1. Asegurar PostgreSQL corriendo
+docker compose up -d  # o verificar BD local
 
 # 2. Instalar dependencias
 npm install
 
-# 3. Verificar Angular CLI
-npx ng version
+# 3. Configurar .env (copiar de .env.example)
+cp .env.example .env
+# Editar DATABASE_URL si es necesario
 
-# 4. Configurar entorno (opcional)
-# Editar src/environments/environment.ts si es necesario
+# 4. Aplicar esquema inicial
+npm run db:migrate
 
-# 5. Levantar servidor
-npm start
+# 5. Generar cliente
+npm run db:generate
+
+# 6. Cargar datos de prueba
+npm run db:seed
 ```
 
 ### 2. Desarrollo Diario
 ```bash
-# Levantar frontend
-npm start
+# Al cambiar schema.prisma
+npm run db:migrate  # Crear migración
+npm run db:generate # Actualizar tipos
 
-# El navegador se abre automáticamente en http://localhost:4200
-
-# Si cambias configuración, reiniciar
-# Ctrl+C y npm start
+# Para ver datos
+npm run db:studio
 ```
 
-### 3. Build para Producción
-```bash
-# Construir optimizado
-npm run build
+### 3. Troubleshooting
+- **Error de conexión**: Verificar `DATABASE_URL` y que PostgreSQL esté corriendo
+- **Tipos desactualizados**: Ejecutar `npm run db:generate`
+- **Datos corruptos**: `npm run db:reset` (borra todo)
 
-# Los archivos listos están en dist/front-erp/
-
-# Para servir estáticamente (ejemplo con nginx)
-# Copiar dist/front-erp/* a carpeta de nginx
-```
-
-### 4. Troubleshooting
-- **Puerto ocupado**: Cambiar puerto con `ng serve --port 4201`
-- **CORS errors**: Verificar backend corriendo y CORS_ORIGIN en .env del backend
-- **Build falla**: `ng cache clean && npm install`
-- **Hot-reload lento**: Verificar Node.js versión y RAM disponible
-
-### 5. Despliegue
-```bash
-# Build optimizado
-npm run build
-
-# Los archivos en dist/ se pueden servir con:
-# - Nginx
-# - Apache
-# - Firebase Hosting
-# - Vercel
-# - Netlify
-```
-
-## Estructura del Proyecto
-```
-src/
-├── app/
-│   ├── core/          # Servicios singleton, guards
-│   ├── features/      # Módulos de funcionalidad
-│   ├── layout/        # Layouts, header, sidebar
-│   ├── shared/        # Componentes reutilizables
-│   └── app.routes.ts  # Configuración de rutas
-├── assets/            # Imágenes, íconos
-├── environments/      # Config por entorno
-└── styles/            # CSS global
-```
-
-## Endpoints del Backend
-- Base URL: `http://localhost:3001/api`
-- Auth: `/auth/login`
-- Productos: `/productos`
-- Órdenes: `/ordenes`
-- Usuarios: `/usuarios`
+### 4. En Producción
+- Nunca usar `db:push` o `db:reset`
+- Usar `db:migrate:deploy` para aplicar migraciones
+- Backup de BD antes de migraciones importantes
 
 ## Archivos Importantes
-- `angular.json` - Configuración de Angular CLI
-- `src/environments/` - Variables por entorno
-- `src/app/app.config.ts` - Configuración de la app
-- `src/app/app.routes.ts` - Definición de rutas
-- `package.json` - Dependencias y scripts</content>
-<parameter name="filePath">/home/adrian/Documentos/proyectos/ERP/docs general/README_Frontend.md
+- `prisma/schema.prisma`: Definición del esquema de BD
+- `prisma/seed.ts`: Datos iniciales
+- `prisma/migrations/`: Historial de cambios en BD
+- `.env`: Variables de entorno (DATABASE_URL)

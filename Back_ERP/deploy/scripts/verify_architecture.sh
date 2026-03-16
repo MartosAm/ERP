@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MOD_DIR="$ROOT_DIR/src/modulos"
 
+if command -v rg >/dev/null 2>&1; then
+  SEARCH_BIN="rg"
+else
+  SEARCH_BIN="grep"
+fi
+
 fail=0
 
 for mod_path in "$MOD_DIR"/*; do
@@ -18,7 +24,7 @@ for mod_path in "$MOD_DIR"/*; do
   done
 
   # Guard rail: evitar acceso directo a prisma desde controllers
-  if rg -n "from '../../config/database'|from \"../../config/database\"" "$mod_path/$mod_name.controller.ts" >/dev/null 2>&1; then
+  if "$SEARCH_BIN" -nE "from '../../config/database'|from \"../../config/database\"" "$mod_path/$mod_name.controller.ts" >/dev/null 2>&1; then
     echo "[ERROR] Controller $mod_name.controller.ts importa prisma directo (rompe capas)."
     fail=1
   fi

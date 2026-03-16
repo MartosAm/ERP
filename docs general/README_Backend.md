@@ -1,105 +1,190 @@
-# README - Prisma (Base de Datos)
+# README - Backend (API REST)
 
 ## Descripción
-Prisma es el ORM (Object-Relational Mapping) que gestiona la base de datos PostgreSQL del ERP. Conecta tu código TypeScript con la BD, genera migraciones, y proporciona un cliente tipado para queries.
+Backend del ERP construido con Node.js 20, Express, TypeScript y Prisma. Proporciona API REST para gestión de inventario, ventas, usuarios, etc.
 
 ## Requisitos Previos
-- PostgreSQL corriendo (local o Docker)
-- Node.js >= 20
-- Archivo `.env` configurado con `DATABASE_URL`
+- Node.js >= 20 (instalar con nvm)
+- PostgreSQL corriendo (Docker o local)
+- Base de datos configurada con Prisma
 
 ## Comandos Básicos
 
-### Levantar y Configurar Base de Datos
+### Desarrollo
 ```bash
-# Aplicar migraciones (crea tablas desde schema.prisma)
+# Instalar dependencias
+npm install
+
+# Levantar servidor de desarrollo (con hot-reload)
+npm run dev
+
+# Construir para producción
+npm run build
+
+# Ejecutar en producción
+npm run start
+```
+
+### Base de Datos
+```bash
+# Migrar esquema
 npm run db:migrate
 
-# Generar cliente Prisma (autocompletado TypeScript)
+# Generar cliente Prisma
 npm run db:generate
 
-# Cargar datos iniciales (seed)
+# Cargar datos iniciales
 npm run db:seed
 
-# Abrir interfaz web para ver/editar datos
+# Abrir Prisma Studio
 npm run db:studio
 ```
 
 ### Qué Hace Cada Comando
-- **`npm run db:migrate`**: Crea/aplica cambios en el esquema de BD. Genera archivos SQL versionados en `prisma/migrations/`
-- **`npm run db:generate`**: Regenera el cliente Prisma con tipos actualizados. Necesario después de cambiar `schema.prisma`
-- **`npm run db:seed`**: Ejecuta `prisma/seed.ts` para insertar datos de prueba (usuarios, productos, etc.)
-- **`npm run db:studio`**: Abre navegador en `http://localhost:5555` para inspeccionar datos visualmente
+- **`npm run dev`**: Inicia servidor con tsx (hot-reload), puerto 3001 por defecto
+- **`npm run build`**: Compila TypeScript a JavaScript en carpeta `dist/`
+- **`npm run start`**: Ejecuta código compilado en producción
+- **`npm run db:migrate`**: Aplica cambios de esquema a BD
+- **`npm run db:generate`**: Crea cliente Prisma tipado
+- **`npm run db:seed`**: Inserta datos de prueba
+- **`npm run db:studio`**: Interfaz web para BD en `http://localhost:5555`
 
 ## Comandos Avanzados
 
-### Desarrollo Rápido
+### Testing y Calidad
 ```bash
-# Empujar schema directamente a BD (sin migración) - SOLO DESARROLLO
-npm run db:push
+# Ejecutar tests
+npm test
 
-# Resetear BD completamente (borra todo y re-aplica)
-npm run db:reset
+# Tests con watch mode
+npm run test:watch
+
+# Tests de CI (sin watch)
+npm run test:ci
+
+# Tests end-to-end
+npm run test:e2e
+
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
 ```
 
 ### Producción
 ```bash
-# Aplicar migraciones en producción (sin prompts)
+# Build y start combinado
+npm run build && npm run start
+
+# Start con variables de producción
+NODE_ENV=production npm run start
+
+# Start con puerto personalizado
+PORT=3002 npm run start
+```
+
+### Gestión de BD Avanzada
+```bash
+# Reset BD completa
+npm run db:reset
+
+# Push schema sin migración (desarrollo)
+npm run db:push
+
+# Deploy migraciones en prod
 npm run db:migrate:deploy
 ```
 
 ### Qué Hace Cada Comando Avanzado
-- **`npm run db:push`**: Sincroniza `schema.prisma` con BD sin crear migración. Útil para prototipos, pero no versiona cambios
-- **`npm run db:reset`**: Borra todas las tablas, re-ejecuta migraciones y seed. Útil para empezar desde cero
-- **`npm run db:migrate:deploy`**: Aplica migraciones pendientes en entornos de producción (no interactivo)
+- **`npm test`**: Ejecuta tests con Jest (unitarios + integración)
+- **`npm run test:watch`**: Tests en modo watch (se ejecutan al cambiar archivos)
+- **`npm run test:ci`**: Tests para CI/CD (con coverage)
+- **`npm run test:e2e`**: Tests end-to-end con script `test-flujo-completo.sh`
+- **`npm run typecheck`**: Verifica tipos TypeScript sin compilar
+- **`npm run lint`**: Ejecuta ESLint para calidad de código
+- **`npm run db:reset`**: Borra todo y re-inicia BD desde cero
+- **`npm run db:push`**: Sincroniza schema con BD sin versionar
+- **`npm run db:migrate:deploy`**: Aplica migraciones en producción
 
 ## Pasos para Tener Todo en Orden
 
 ### 1. Primera Configuración
 ```bash
-# 1. Asegurar PostgreSQL corriendo
-docker compose up -d  # o verificar BD local
+# 1. Instalar Node.js 20 con nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
 
 # 2. Instalar dependencias
 npm install
 
-# 3. Configurar .env (copiar de .env.example)
+# 3. Configurar entorno
 cp .env.example .env
-# Editar DATABASE_URL si es necesario
+# Editar DATABASE_URL y otras variables
 
-# 4. Aplicar esquema inicial
+# 4. Preparar base de datos
 npm run db:migrate
-
-# 5. Generar cliente
 npm run db:generate
-
-# 6. Cargar datos de prueba
 npm run db:seed
+
+# 5. Verificar build
+npm run build
+
+# 6. Probar servidor
+npm run dev
 ```
 
 ### 2. Desarrollo Diario
 ```bash
-# Al cambiar schema.prisma
-npm run db:migrate  # Crear migración
-npm run db:generate # Actualizar tipos
+# Levantar servidor
+npm run dev
 
-# Para ver datos
-npm run db:studio
+# En otra terminal, verificar API
+curl http://localhost:3001/api/health
+
+# Si cambias schema.prisma
+npm run db:migrate && npm run db:generate
 ```
 
-### 3. Troubleshooting
-- **Error de conexión**: Verificar `DATABASE_URL` y que PostgreSQL esté corriendo
-- **Tipos desactualizados**: Ejecutar `npm run db:generate`
-- **Datos corruptos**: `npm run db:reset` (borra todo)
+### 3. Testing
+```bash
+# Ejecutar todos los tests
+npm run typecheck
+npm run lint
+npm run test
+npm run test:e2e
+```
 
-### 4. En Producción
-- Nunca usar `db:push` o `db:reset`
-- Usar `db:migrate:deploy` para aplicar migraciones
-- Backup de BD antes de migraciones importantes
+### 4. Troubleshooting
+- **Puerto ocupado**: Cambiar PORT en .env o usar `PORT=3002 npm run dev`
+- **Error de BD**: Verificar PostgreSQL corriendo y DATABASE_URL correcta
+- **Tipos desactualizados**: `npm run db:generate`
+- **Dependencias**: `rm -rf node_modules && npm install`
+
+### 5. Despliegue a Producción
+```bash
+# Build
+npm run build
+
+# Migrar BD
+npm run db:migrate:deploy
+
+# Start
+NODE_ENV=production npm run start
+```
+
+## Endpoints Principales
+- `GET /api/health` - Health check
+- `POST /api/auth/login` - Autenticación
+- `GET /api/productos` - Listar productos
+- `POST /api/ordenes` - Crear orden
+- Documentación completa en `http://localhost:3001/api-docs` (Swagger)
 
 ## Archivos Importantes
-- `prisma/schema.prisma`: Definición del esquema de BD
-- `prisma/seed.ts`: Datos iniciales
-- `prisma/migrations/`: Historial de cambios en BD
-- `.env`: Variables de entorno (DATABASE_URL)</content>
-<parameter name="filePath">/home/adrian/Documentos/proyectos/ERP/docs general/README_Prisma.md
+- `src/server.ts` - Punto de entrada
+- `src/app.ts` - Configuración Express
+- `prisma/schema.prisma` - Esquema de BD
+- `.env` - Variables de entorno
+- `package.json` - Dependencias y scripts
