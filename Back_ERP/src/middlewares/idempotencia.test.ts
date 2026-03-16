@@ -78,4 +78,17 @@ describe('idempotencia middleware', () => {
     expect(res.body.error.codigo).toBe('IDEMPOTENCY_KEY_REUSED');
   });
 
+  it('rechaza si la idempotency key supera longitud maxima', async () => {
+    const { app } = crearApp();
+    const keyLarga = 'k'.repeat(129);
+
+    const res = await request(app)
+      .post('/ventas')
+      .set('X-Idempotency-Key', keyLarga)
+      .send({ monto: 100 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.codigo).toBe('IDEMPOTENCY_KEY_INVALID');
+  });
+
 });

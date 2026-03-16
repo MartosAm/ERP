@@ -279,6 +279,7 @@ router.post(
  */
 router.post(
   '/:id/cancelar',
+  requerirIdempotencia({ scope: 'ordenes:cancelar' }),
   requerirRol('ADMIN'),
   validar(CancelarOrdenSchema),
   asyncHandler(OrdenesController.cancelar),
@@ -329,6 +330,7 @@ router.post(
  */
 router.post(
   '/:id/devolver',
+  requerirIdempotencia({ scope: 'ordenes:devolver' }),
   requerirRol('ADMIN'),
   validar(DevolucionSchema),
   asyncHandler(OrdenesController.devolver),

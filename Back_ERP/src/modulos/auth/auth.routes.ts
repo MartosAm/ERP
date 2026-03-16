@@ -16,6 +16,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../compartido/asyncHandler';
 import { autenticar } from '../../middlewares/autenticar';
+import { requerirIdempotencia } from '../../middlewares/idempotencia';
 import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
 import { limitarLogin, limitarRegistro, limitarCambioPin } from '../../middlewares/limitarRates';
@@ -118,6 +119,7 @@ router.post(
  */
 router.post(
   '/registro-publico',
+  requerirIdempotencia({ scope: 'auth:registro-publico' }),
   limitarRegistro,
   validar(RegistroPublicoSchema),
   asyncHandler(AuthController.registroPublico),
@@ -188,6 +190,7 @@ router.use(autenticar);
  */
 router.post(
   '/registro',
+  requerirIdempotencia({ scope: 'auth:registro' }),
   requerirRol('ADMIN'),
   validar(RegistroSchema),
   asyncHandler(AuthController.registrar),

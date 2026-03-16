@@ -13,6 +13,7 @@
 
 import { Router } from 'express';
 import { autenticar } from '../../middlewares/autenticar';
+import { requerirIdempotencia } from '../../middlewares/idempotencia';
 import { requerirRol } from '../../middlewares/requerirRol';
 import { validar } from '../../middlewares/validar';
 import { asyncHandler } from '../../compartido/asyncHandler';
@@ -60,6 +61,7 @@ router.use(requerirRol('ADMIN'));
  */
 router.post(
   '/',
+  requerirIdempotencia({ scope: 'compras:crear' }),
   validar(CrearCompraSchema),
   asyncHandler(ComprasController.crear),
 );
@@ -150,6 +152,7 @@ router.get('/:id', asyncHandler(ComprasController.obtenerPorId));
  */
 router.post(
   '/:id/recibir',
+  requerirIdempotencia({ scope: 'compras:recibir' }),
   validar(RecibirCompraSchema),
   asyncHandler(ComprasController.recibir),
 );
