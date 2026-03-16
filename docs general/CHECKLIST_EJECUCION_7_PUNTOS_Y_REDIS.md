@@ -18,12 +18,13 @@ Objetivo: convertir la guia de calidad en tareas concretas, medibles y ejecutabl
 
 - [x] Bloque 4 base: idempotencia backend + bloqueo doble submit frontend.
 - [x] Redis para rate limiting distribuido (backend/infrastructure).
+- [x] Bloque 5: hardening productivo (TLS profile Nginx + secretos en template prod).
+- [x] Bloque 6: metricas y alertas operativas (Prometheus + reglas base).
+- [x] Bloque 7 (parcial avanzado): evidencia de pipeline local (typecheck/test/build).
 - [ ] Bloque 1 completo al 100% en todos los modulos.
 - [ ] Bloque 2 completo al 100% en todos los modulos.
 - [ ] Bloque 3 completo al 100% (cobertura adicional de concurrencia/e2e).
-- [ ] Bloque 5 completo al 100% (hardening final SSL + secretos + auditoria).
-- [ ] Bloque 6 completo al 100% (metricas y alertas operativas).
-- [ ] Bloque 7 completo al 100% (pipeline y rollback formalizado).
+- [ ] Bloque 7 completo al 100% (pipeline CI/CD automatico y rollback formalizado en servidor).
 
 ---
 
