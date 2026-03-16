@@ -16,6 +16,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { firstValueFrom, of } from 'rxjs';
 import { routes } from './app.routes';
+import { idempotencyInterceptor } from './core/interceptors/idempotency.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { AuthService } from './core/services/auth.service';
@@ -38,7 +39,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withViewTransitions()),
     provideHttpClient(
-      withInterceptors([authInterceptor, errorInterceptor]),
+      withInterceptors([idempotencyInterceptor, authInterceptor, errorInterceptor]),
     ),
     provideAnimationsAsync(),
     provideServiceWorker('ngsw-worker.js', {

@@ -113,6 +113,7 @@ export class PosComponent implements OnInit {
   readonly clienteSeleccionado = signal<Cliente | null>(null);
   readonly listaPrecio = signal<ListaPrecio>(1);
   readonly notas = signal('');
+  readonly procesandoCobro = signal(false);
 
   // ─── Computed del carrito ──────────────────────────────────
   readonly subtotal = computed(() =>
@@ -179,7 +180,7 @@ export class PosComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
     // F2 → Cobrar
-    if (event.key === 'F2' && this.lineas().length > 0) {
+    if (event.key === 'F2' && this.lineas().length > 0 && !this.procesandoCobro()) {
       event.preventDefault();
       this.cobrar();
     }
@@ -419,6 +420,10 @@ export class PosComponent implements OnInit {
 
   // ─── Cobrar ────────────────────────────────────────────────
   cobrar(): void {
+    if (this.procesandoCobro()) {
+      return;
+    }
+
     if (!this.turnoActivo()) {
       this.notify.error('Debes abrir un turno de caja para poder vender');
       return;
@@ -451,6 +456,12 @@ export class PosComponent implements OnInit {
   private procesarVenta(
     pagos: Array<{ metodo: MetodoPago; monto: number; referencia?: string }>,
   ): void {
+    if (this.procesandoCobro()) {
+      return;
+    }
+
+    this.procesandoCobro.set(true);
+
     const payload: CrearOrdenDto = {
       detalles: this.lineas().map((l) => ({
         productoId: l.productoId,
@@ -474,8 +485,12 @@ export class PosComponent implements OnInit {
           this.lineas.set([]);
           this.clienteSeleccionado.set(null);
           this.notas.set('');
+          this.procesandoCobro.set(false);
         },
-        error: () => this.notify.error('Error al procesar la venta'),
+        error: () => {
+          this.notify.error('Error al procesar la venta');
+          this.procesandoCobro.set(false);
+        },
       });
   }
 

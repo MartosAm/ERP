@@ -224,10 +224,10 @@
       <!-- Botón Cobrar -->
       <button
         class="pos-cobrar-btn"
-        [disabled]="lineas().length === 0"
+        [disabled]="lineas().length === 0 || procesandoCobro()"
         (click)="cobrar()">
         <mat-icon>payments</mat-icon>
-        COBRAR {{ total() | moneda }}
+        {{ procesandoCobro() ? 'PROCESANDO...' : 'COBRAR' }} {{ total() | moneda }}
         <span class="text-xs opacity-75 ml-2">(F2)</span>
       </button>
     </div>
