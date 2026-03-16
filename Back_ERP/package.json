@@ -19,6 +19,8 @@
     "db:reset": "npx prisma migrate reset",
     "db:push": "npx prisma db push",
     "typecheck": "tsc --noEmit",
+    "verify:architecture": "./scripts/verify_architecture.sh",
+    "quality:gate": "./scripts/quality_gate.sh",
     "lint": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
