@@ -268,3 +268,18 @@ export function requerirIdempotencia(opciones: OpcionesIdempotencia) {
 export function limpiarCacheIdempotenciaParaTests(): void {
   cacheIdempotencia.flushAll();
 }
+
+export function sembrarEntradaIdempotenciaParaTests(params: {
+  scope: string;
+  key: string;
+  entrada: EntradaIdempotencia;
+  empresaId?: string;
+  usuarioId?: string;
+  ttlSegundos?: number;
+}): void {
+  const empresaId = params.empresaId ?? 'sin-empresa';
+  const usuarioId = params.usuarioId ?? 'anonimo';
+  const ttlSegundos = params.ttlSegundos ?? 300;
+  const clave = `idem:${params.scope}:${empresaId}:${usuarioId}:${params.key}`;
+  cacheIdempotencia.set<EntradaIdempotencia>(clave, params.entrada, ttlSegundos);
+}

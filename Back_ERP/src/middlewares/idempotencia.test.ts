@@ -2,7 +2,12 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import { requerirIdempotencia, limpiarCacheIdempotenciaParaTests } from './idempotencia';
+import crypto from 'crypto';
+import {
+  requerirIdempotencia,
+  limpiarCacheIdempotenciaParaTests,
+  sembrarEntradaIdempotenciaParaTests,
+} from './idempotencia';
 
 function crearApp() {
   const app = express();
@@ -89,6 +94,38 @@ describe('idempotencia middleware', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.codigo).toBe('IDEMPOTENCY_KEY_INVALID');
+  });
+
+  it('rechaza cuando existe operacion en progreso con misma key y huella', async () => {
+    const { app } = crearApp();
+    const payload = { monto: 100 };
+    const huella = crypto
+      .createHash('sha256')
+      .update(
+        JSON.stringify({
+          method: 'POST',
+          path: '/ventas',
+          query: {},
+          body: payload,
+          usuarioId: null,
+          empresaId: null,
+        }),
+      )
+      .digest('hex');
+
+    sembrarEntradaIdempotenciaParaTests({
+      scope: 'ordenes:crear',
+      key: 'key-en-proceso',
+      entrada: { estado: 'PENDIENTE', huella },
+    });
+
+    const res = await request(app)
+      .post('/ventas')
+      .set('X-Idempotency-Key', 'key-en-proceso')
+      .send(payload);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.codigo).toBe('IDEMPOTENCY_IN_PROGRESS');
   });
 
 });
