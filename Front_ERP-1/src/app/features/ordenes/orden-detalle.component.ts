@@ -22,17 +22,16 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { OrdenDetalle, ConfirmarCotizacionDto } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-orden-detalle',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule,
-    MatIconModule, MatButtonModule, MatCardModule,
-    MatTableModule, MatDividerModule, MatProgressSpinnerModule,
-    PageHeaderComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './orden-detalle.component.html',
-  styleUrl: './orden-detalle.component.css',
+    selector: 'app-orden-detalle',
+    imports: [
+        CommonModule, RouterModule,
+        MatIconModule, MatButtonModule, MatCardModule,
+        MatTableModule, MatDividerModule, MatProgressSpinnerModule,
+        PageHeaderComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './orden-detalle.component.html',
+    styleUrl: './orden-detalle.component.css'
 })
 export class OrdenDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

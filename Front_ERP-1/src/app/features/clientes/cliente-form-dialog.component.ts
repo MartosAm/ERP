@@ -17,15 +17,14 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-cliente-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './cliente-form-dialog.component.html',
-  styleUrl: './cliente-form-dialog.component.css',
+    selector: 'app-cliente-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './cliente-form-dialog.component.html',
+    styleUrl: './cliente-form-dialog.component.css'
 })
 export class ClienteFormDialogComponent {
   private readonly fb = inject(FormBuilder);

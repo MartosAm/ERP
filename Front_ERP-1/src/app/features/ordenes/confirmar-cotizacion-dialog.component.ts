@@ -17,14 +17,13 @@ const METODOS_PAGO: Array<{ value: MetodoPago; label: string }> = [
 ];
 
 @Component({
-  selector: 'app-confirmar-cotizacion-dialog',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule,
-  ],
-  templateUrl: './confirmar-cotizacion-dialog.component.html',
+    selector: 'app-confirmar-cotizacion-dialog',
+    imports: [
+        ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule,
+    ],
+    templateUrl: './confirmar-cotizacion-dialog.component.html'
 })
 export class ConfirmarCotizacionDialogComponent {
   private readonly fb = inject(FormBuilder);

@@ -66,21 +66,20 @@ function confirmarContrasenaIgual(group: AbstractControl): ValidationErrors | nu
 }
 
 @Component({
-  selector: 'app-registro',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-  ],
-  templateUrl: './registro.component.html',
-  styleUrl: './registro.component.css',
+    selector: 'app-registro',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        RouterLink,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+    ],
+    templateUrl: './registro.component.html',
+    styleUrl: './registro.component.css'
 })
 export class RegistroComponent {
   private readonly auth = inject(AuthService);

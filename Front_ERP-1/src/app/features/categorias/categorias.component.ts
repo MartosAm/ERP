@@ -19,17 +19,16 @@ import { CategoriaFormDialogComponent } from './categoria-form-dialog.component'
 import type { Categoria, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-categorias',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent,
-    EmptyStateComponent, EstadoBadgeComponent,
-  ],
-  templateUrl: './categorias.component.html',
-  styleUrl: './categorias.component.css',
+    selector: 'app-categorias',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent,
+        EmptyStateComponent, EstadoBadgeComponent,
+    ],
+    templateUrl: './categorias.component.html',
+    styleUrl: './categorias.component.css'
 })
 export class CategoriasComponent implements OnInit {
   private readonly svc = inject(CategoriasService);

@@ -27,18 +27,17 @@ interface TransicionEstado {
 }
 
 @Component({
-  selector: 'app-entrega-detalle',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule, ReactiveFormsModule,
-    MatIconModule, MatButtonModule, MatCardModule,
-    MatSelectModule, MatFormFieldModule, MatInputModule,
-    MatDividerModule, MatProgressSpinnerModule,
-    PageHeaderComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './entrega-detalle.component.html',
-  styleUrl: './entrega-detalle.component.css',
+    selector: 'app-entrega-detalle',
+    imports: [
+        CommonModule, RouterModule, ReactiveFormsModule,
+        MatIconModule, MatButtonModule, MatCardModule,
+        MatSelectModule, MatFormFieldModule, MatInputModule,
+        MatDividerModule, MatProgressSpinnerModule,
+        PageHeaderComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './entrega-detalle.component.html',
+    styleUrl: './entrega-detalle.component.css'
 })
 export class EntregaDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

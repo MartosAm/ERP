@@ -20,18 +20,17 @@ import { ClienteFormDialogComponent } from './cliente-form-dialog.component';
 import type { Cliente } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-clientes',
-  standalone: true,
-  imports: [
-    CommonModule, CurrencyPipe,
-    MatTableModule, MatPaginatorModule, MatButtonModule,
-    MatIconModule, MatMenuModule, MatDialogModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent, EmptyStateComponent,
-    EstadoBadgeComponent, MonedaPipe,
-  ],
-  templateUrl: './clientes.component.html',
-  styleUrl: './clientes.component.css',
+    selector: 'app-clientes',
+    imports: [
+        CommonModule, CurrencyPipe,
+        MatTableModule, MatPaginatorModule, MatButtonModule,
+        MatIconModule, MatMenuModule, MatDialogModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent, EmptyStateComponent,
+        EstadoBadgeComponent, MonedaPipe,
+    ],
+    templateUrl: './clientes.component.html',
+    styleUrl: './clientes.component.css'
 })
 export class ClientesComponent implements OnInit {
   private readonly svc = inject(ClientesService);

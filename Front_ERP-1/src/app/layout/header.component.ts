@@ -8,11 +8,10 @@ import { AuthService } from '../core/services/auth.service';
 import { TurnosService } from '../core/services/turnos.service';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule],
-  templateUrl: './header.component.html',
-  styleUrl: './header.component.css',
+    selector: 'app-header',
+    imports: [CommonModule, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule],
+    templateUrl: './header.component.html',
+    styleUrl: './header.component.css'
 })
 export class HeaderComponent {
   readonly auth = inject(AuthService);

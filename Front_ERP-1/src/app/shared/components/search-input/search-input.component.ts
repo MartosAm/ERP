@@ -17,17 +17,16 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
-  selector: 'app-search-input',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatButtonModule,
-  ],
-  templateUrl: './search-input.component.html',
-  styleUrl: './search-input.component.css',
+    selector: 'app-search-input',
+    imports: [
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatIconModule,
+        MatButtonModule,
+    ],
+    templateUrl: './search-input.component.html',
+    styleUrl: './search-input.component.css'
 })
 export class SearchInputComponent implements OnInit {
   @Input() placeholder = 'Buscar...';

@@ -17,14 +17,13 @@ interface CajaOption {
 }
 
 @Component({
-  selector: 'app-abrir-turno-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './abrir-turno-dialog.component.html',
+    selector: 'app-abrir-turno-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './abrir-turno-dialog.component.html'
 })
 export class AbrirTurnoDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

@@ -22,16 +22,15 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-producto-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatSlideToggleModule,
-    MatProgressSpinnerModule, MatTabsModule,
-  ],
-  templateUrl: './producto-form-dialog.component.html',
-  styleUrl: './producto-form-dialog.component.css',
+    selector: 'app-producto-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatSlideToggleModule,
+        MatProgressSpinnerModule, MatTabsModule,
+    ],
+    templateUrl: './producto-form-dialog.component.html',
+    styleUrl: './producto-form-dialog.component.css'
 })
 export class ProductoFormDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

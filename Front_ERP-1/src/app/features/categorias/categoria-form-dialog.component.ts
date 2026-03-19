@@ -19,16 +19,15 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-categoria-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatSlideToggleModule,
-    MatProgressSpinnerModule,
-  ],
-  templateUrl: './categoria-form-dialog.component.html',
-  styleUrl: './categoria-form-dialog.component.css',
+    selector: 'app-categoria-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatSlideToggleModule,
+        MatProgressSpinnerModule,
+    ],
+    templateUrl: './categoria-form-dialog.component.html',
+    styleUrl: './categoria-form-dialog.component.css'
 })
 export class CategoriaFormDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

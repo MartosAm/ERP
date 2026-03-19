@@ -20,14 +20,13 @@ const METODO_LABELS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-ticket-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, MatDialogModule, MatButtonModule,
-    MatIconModule, MatDividerModule, MonedaPipe, DatePipe,
-  ],
-  templateUrl: './ticket-dialog.component.html',
-  styleUrl: './ticket-dialog.component.css',
+    selector: 'app-ticket-dialog',
+    imports: [
+        CommonModule, MatDialogModule, MatButtonModule,
+        MatIconModule, MatDividerModule, MonedaPipe, DatePipe,
+    ],
+    templateUrl: './ticket-dialog.component.html',
+    styleUrl: './ticket-dialog.component.css'
 })
 export class TicketDialogComponent {
   readonly dialogRef = inject(MatDialogRef<TicketDialogComponent>);

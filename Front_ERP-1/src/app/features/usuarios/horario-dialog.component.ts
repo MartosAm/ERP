@@ -23,14 +23,13 @@ const DIAS = [
 ];
 
 @Component({
-  selector: 'app-horario-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatCheckboxModule,
-  ],
-  template: `
+    selector: 'app-horario-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatCheckboxModule,
+    ],
+    template: `
     <h2 mat-dialog-title class="flex items-center gap-2">
       <mat-icon class="text-blue-600">schedule</mat-icon>
       Horario de {{ data.nombre }}
@@ -66,7 +65,7 @@ const DIAS = [
         Guardar horario
       </button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class HorarioDialogComponent {
   private readonly fb = inject(FormBuilder);

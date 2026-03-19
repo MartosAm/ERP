@@ -25,19 +25,18 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { Existencia, MovimientoInventario, Almacen, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-inventario',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatTabsModule,
-    MatIconModule, MatButtonModule, MatSelectModule,
-    MatFormFieldModule, MatChipsModule, MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent,
-    EmptyStateComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './inventario.component.html',
-  styleUrl: './inventario.component.css',
+    selector: 'app-inventario',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatTabsModule,
+        MatIconModule, MatButtonModule, MatSelectModule,
+        MatFormFieldModule, MatChipsModule, MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent,
+        EmptyStateComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './inventario.component.html',
+    styleUrl: './inventario.component.css'
 })
 export class InventarioComponent implements OnInit {
   private readonly svc = inject(InventarioService);

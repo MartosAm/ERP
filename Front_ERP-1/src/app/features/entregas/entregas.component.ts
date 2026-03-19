@@ -23,18 +23,17 @@ interface FiltroEstado {
 }
 
 @Component({
-  selector: 'app-entregas',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatChipsModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, EmptyStateComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaCortaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './entregas.component.html',
-  styleUrl: './entregas.component.css',
+    selector: 'app-entregas',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatChipsModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, EmptyStateComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaCortaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './entregas.component.html',
+    styleUrl: './entregas.component.css'
 })
 export class EntregasComponent implements OnInit {
   private readonly svc = inject(EntregasService);

@@ -43,26 +43,25 @@ import type {
 Chart.register(...registerables);
 
 @Component({
-  selector: 'app-reportes',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatTabsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatTableModule,
-    MatProgressSpinnerModule,
-    MatCardModule,
-    PageHeaderComponent,
-    MonedaPipe,
-  ],
-  templateUrl: './reportes.component.html',
-  styleUrl: './reportes.component.css',
+    selector: 'app-reportes',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatTabsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatTableModule,
+        MatProgressSpinnerModule,
+        MatCardModule,
+        PageHeaderComponent,
+        MonedaPipe,
+    ],
+    templateUrl: './reportes.component.html',
+    styleUrl: './reportes.component.css'
 })
 export class ReportesComponent implements OnInit, OnDestroy {
   private readonly svc = inject(ReportesService);

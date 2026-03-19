@@ -19,17 +19,16 @@ import { ProveedorFormDialogComponent } from './proveedor-form-dialog.component'
 import type { Proveedor, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-proveedores',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent,
-    EmptyStateComponent, EstadoBadgeComponent,
-  ],
-  templateUrl: './proveedores.component.html',
-  styleUrl: './proveedores.component.css',
+    selector: 'app-proveedores',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent,
+        EmptyStateComponent, EstadoBadgeComponent,
+    ],
+    templateUrl: './proveedores.component.html',
+    styleUrl: './proveedores.component.css'
 })
 export class ProveedoresComponent implements OnInit {
   private readonly svc = inject(ProveedoresService);

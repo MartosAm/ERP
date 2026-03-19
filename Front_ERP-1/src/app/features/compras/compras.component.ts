@@ -24,19 +24,18 @@ import { FechaCortaPipe } from '../../shared/pipes/fecha.pipe';
 import type { Compra, Proveedor, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-compras',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatSelectModule,
-    MatFormFieldModule, MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent,
-    EmptyStateComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaCortaPipe,
-  ],
-  templateUrl: './compras.component.html',
-  styleUrl: './compras.component.css',
+    selector: 'app-compras',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatSelectModule,
+        MatFormFieldModule, MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent,
+        EmptyStateComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaCortaPipe,
+    ],
+    templateUrl: './compras.component.html',
+    styleUrl: './compras.component.css'
 })
 export class ComprasComponent implements OnInit {
   private readonly svc = inject(ComprasService);

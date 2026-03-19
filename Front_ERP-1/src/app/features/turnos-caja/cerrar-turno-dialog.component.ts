@@ -13,14 +13,13 @@ import { TurnoCaja } from '../../core/models/api.model';
 import { MonedaPipe } from '../../shared/pipes/moneda.pipe';
 
 @Component({
-  selector: 'app-cerrar-turno-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatProgressSpinnerModule, MonedaPipe,
-  ],
-  templateUrl: './cerrar-turno-dialog.component.html',
+    selector: 'app-cerrar-turno-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatProgressSpinnerModule, MonedaPipe,
+    ],
+    templateUrl: './cerrar-turno-dialog.component.html'
 })
 export class CerrarTurnoDialogComponent {
   private readonly fb = inject(FormBuilder);

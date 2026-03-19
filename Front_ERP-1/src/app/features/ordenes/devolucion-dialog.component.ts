@@ -17,14 +17,13 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-devolucion-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatCheckboxModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './devolucion-dialog.component.html',
+    selector: 'app-devolucion-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatCheckboxModule,
+        MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './devolucion-dialog.component.html'
 })
 export class DevolucionDialogComponent {
   private readonly fb = inject(FormBuilder);

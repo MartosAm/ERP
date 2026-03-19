@@ -20,18 +20,17 @@ import { ProductoFormDialogComponent } from './producto-form-dialog.component';
 import type { Producto } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-productos',
-  standalone: true,
-  imports: [
-    CommonModule, CurrencyPipe,
-    MatTableModule, MatPaginatorModule, MatButtonModule,
-    MatIconModule, MatMenuModule, MatDialogModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent, EmptyStateComponent,
-    EstadoBadgeComponent, MonedaPipe,
-  ],
-  templateUrl: './productos.component.html',
-  styleUrl: './productos.component.css',
+    selector: 'app-productos',
+    imports: [
+        CommonModule, CurrencyPipe,
+        MatTableModule, MatPaginatorModule, MatButtonModule,
+        MatIconModule, MatMenuModule, MatDialogModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent, EmptyStateComponent,
+        EstadoBadgeComponent, MonedaPipe,
+    ],
+    templateUrl: './productos.component.html',
+    styleUrl: './productos.component.css'
 })
 export class ProductosComponent implements OnInit {
   private readonly svc = inject(ProductosService);

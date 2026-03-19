@@ -21,18 +21,17 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { CompraDetalle, Almacen } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-compra-detalle',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule,
-    MatIconModule, MatButtonModule, MatCardModule,
-    MatTableModule, MatSelectModule, MatFormFieldModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './compra-detalle.component.html',
-  styleUrl: './compra-detalle.component.css',
+    selector: 'app-compra-detalle',
+    imports: [
+        CommonModule, RouterModule,
+        MatIconModule, MatButtonModule, MatCardModule,
+        MatTableModule, MatSelectModule, MatFormFieldModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './compra-detalle.component.html',
+    styleUrl: './compra-detalle.component.css'
 })
 export class CompraDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

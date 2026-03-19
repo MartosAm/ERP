@@ -16,17 +16,16 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { TurnoCaja } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-turno-detalle',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule,
-    MatIconModule, MatButtonModule, MatCardModule,
-    MatDividerModule, MatProgressSpinnerModule,
-    PageHeaderComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './turno-detalle.component.html',
-  styleUrl: './turno-detalle.component.css',
+    selector: 'app-turno-detalle',
+    imports: [
+        CommonModule, RouterModule,
+        MatIconModule, MatButtonModule, MatCardModule,
+        MatDividerModule, MatProgressSpinnerModule,
+        PageHeaderComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './turno-detalle.component.html',
+    styleUrl: './turno-detalle.component.css'
 })
 export class TurnoDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

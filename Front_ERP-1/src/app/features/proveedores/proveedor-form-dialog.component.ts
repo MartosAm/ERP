@@ -17,15 +17,14 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-proveedor-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './proveedor-form-dialog.component.html',
-  styleUrl: './proveedor-form-dialog.component.css',
+    selector: 'app-proveedor-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './proveedor-form-dialog.component.html',
+    styleUrl: './proveedor-form-dialog.component.css'
 })
 export class ProveedorFormDialogComponent {
   private readonly fb = inject(FormBuilder);

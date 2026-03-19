@@ -15,14 +15,13 @@ import { NotificationService } from '../../core/services/notification.service';
 import type { Producto, Almacen } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-traslado-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './traslado-dialog.component.html',
+    selector: 'app-traslado-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './traslado-dialog.component.html'
 })
 export class TrasladoDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

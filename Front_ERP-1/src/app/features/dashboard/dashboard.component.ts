@@ -11,15 +11,14 @@ import { NotificationService } from '../../core/services/notification.service';
 import type { DashboardData } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [
-    CommonModule, DecimalPipe, CurrencyPipe, DatePipe,
-    MatCardModule, MatIconModule, MatProgressSpinnerModule,
-    MatButtonModule, MatDividerModule,
-  ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css',
+    selector: 'app-dashboard',
+    imports: [
+        CommonModule, DecimalPipe, CurrencyPipe, DatePipe,
+        MatCardModule, MatIconModule, MatProgressSpinnerModule,
+        MatButtonModule, MatDividerModule,
+    ],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
   private readonly dashSvc = inject(DashboardService);

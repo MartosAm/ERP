@@ -18,15 +18,14 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-almacen-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatSlideToggleModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './almacen-form-dialog.component.html',
-  styleUrl: './almacen-form-dialog.component.css',
+    selector: 'app-almacen-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatSlideToggleModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './almacen-form-dialog.component.html',
+    styleUrl: './almacen-form-dialog.component.css'
 })
 export class AlmacenFormDialogComponent {
   private readonly fb = inject(FormBuilder);

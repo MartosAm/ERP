@@ -22,18 +22,17 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { TurnoCaja, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-turnos-caja',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatChipsModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, EmptyStateComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaHoraPipe,
-  ],
-  templateUrl: './turnos-caja.component.html',
-  styleUrl: './turnos-caja.component.css',
+    selector: 'app-turnos-caja',
+    imports: [
+        CommonModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatChipsModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, EmptyStateComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaHoraPipe,
+    ],
+    templateUrl: './turnos-caja.component.html',
+    styleUrl: './turnos-caja.component.css'
 })
 export class TurnosCajaComponent implements OnInit {
   private readonly svc = inject(TurnosService);

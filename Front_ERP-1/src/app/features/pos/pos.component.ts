@@ -64,26 +64,25 @@ export interface LineaCarrito {
 type ListaPrecio = 1 | 2 | 3;
 
 @Component({
-  selector: 'app-pos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatButtonModule,
-    MatBadgeModule,
-    MatTooltipModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDialogModule,
-    MatProgressSpinnerModule,
-    MatDividerModule,
-    MatMenuModule,
-    MonedaPipe,
-  ],
-  templateUrl: './pos.component.html',
-  styleUrl: './pos.component.css',
+    selector: 'app-pos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatButtonModule,
+        MatBadgeModule,
+        MatTooltipModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatDialogModule,
+        MatProgressSpinnerModule,
+        MatDividerModule,
+        MatMenuModule,
+        MonedaPipe,
+    ],
+    templateUrl: './pos.component.html',
+    styleUrl: './pos.component.css'
 })
 export class PosComponent implements OnInit {
   private readonly productosSvc = inject(ProductosService);

@@ -10,11 +10,10 @@ import { SidebarComponent } from './sidebar.component';
 import { InactividadService } from '../core/services/inactividad.service';
 
 @Component({
-  selector: 'app-shell',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, MatSidenavModule, HeaderComponent, SidebarComponent],
-  templateUrl: './shell.component.html',
-  styleUrl: './shell.component.css',
+    selector: 'app-shell',
+    imports: [CommonModule, RouterOutlet, MatSidenavModule, HeaderComponent, SidebarComponent],
+    templateUrl: './shell.component.html',
+    styleUrl: './shell.component.css'
 })
 export class ShellComponent implements OnInit, OnDestroy {
   @ViewChild('sidenav') sidenav!: MatSidenav;

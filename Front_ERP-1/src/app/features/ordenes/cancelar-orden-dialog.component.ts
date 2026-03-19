@@ -7,14 +7,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-cancelar-orden-dialog',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule,
-    MatButtonModule, MatIconModule,
-  ],
-  templateUrl: './cancelar-orden-dialog.component.html',
+    selector: 'app-cancelar-orden-dialog',
+    imports: [
+        ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule,
+        MatButtonModule, MatIconModule,
+    ],
+    templateUrl: './cancelar-orden-dialog.component.html'
 })
 export class CancelarOrdenDialogComponent {
   private readonly fb = inject(FormBuilder);

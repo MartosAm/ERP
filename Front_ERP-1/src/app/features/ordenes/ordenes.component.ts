@@ -30,20 +30,19 @@ interface FiltroEstado {
 }
 
 @Component({
-  selector: 'app-ordenes',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule,
-    MatTableModule, MatPaginatorModule, MatIconModule,
-    MatButtonModule, MatMenuModule, MatChipsModule,
-    MatFormFieldModule, MatDatepickerModule, MatInputModule,
-    MatNativeDateModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, SearchInputComponent,
-    EmptyStateComponent, EstadoBadgeComponent,
-    MonedaPipe, FechaCortaPipe,
-  ],
-  templateUrl: './ordenes.component.html',
-  styleUrl: './ordenes.component.css',
+    selector: 'app-ordenes',
+    imports: [
+        CommonModule, FormsModule,
+        MatTableModule, MatPaginatorModule, MatIconModule,
+        MatButtonModule, MatMenuModule, MatChipsModule,
+        MatFormFieldModule, MatDatepickerModule, MatInputModule,
+        MatNativeDateModule, MatProgressSpinnerModule, MatTooltipModule,
+        PageHeaderComponent, SearchInputComponent,
+        EmptyStateComponent, EstadoBadgeComponent,
+        MonedaPipe, FechaCortaPipe,
+    ],
+    templateUrl: './ordenes.component.html',
+    styleUrl: './ordenes.component.css'
 })
 export class OrdenesComponent implements OnInit {
   private readonly svc = inject(OrdenesService);

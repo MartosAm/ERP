@@ -15,15 +15,14 @@ import { ClientesService } from '../../core/services/clientes.service';
 import type { Cliente } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-cliente-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatListModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './cliente-dialog.component.html',
-  styleUrl: './cliente-dialog.component.css',
+    selector: 'app-cliente-dialog',
+    imports: [
+        CommonModule, FormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatButtonModule,
+        MatIconModule, MatListModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './cliente-dialog.component.html',
+    styleUrl: './cliente-dialog.component.css'
 })
 export class ClienteDialogComponent {
   private readonly clientesSvc = inject(ClientesService);

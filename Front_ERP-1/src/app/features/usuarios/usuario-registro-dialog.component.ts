@@ -12,14 +12,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
-  selector: 'app-usuario-registro-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule,
-  ],
-  template: `
+    selector: 'app-usuario-registro-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule,
+    ],
+    template: `
     <h2 mat-dialog-title class="flex items-center gap-2">
       <mat-icon class="text-green-600">person_add</mat-icon>
       Registrar usuario
@@ -71,7 +70,7 @@ import { NotificationService } from '../../core/services/notification.service';
         Registrar
       </button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class UsuarioRegistroDialogComponent {
   private readonly fb = inject(FormBuilder);

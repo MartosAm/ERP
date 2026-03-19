@@ -20,16 +20,15 @@ import { AlmacenFormDialogComponent } from './almacen-form-dialog.component';
 import type { Almacen } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-almacenes',
-  standalone: true,
-  imports: [
-    CommonModule, MatTableModule, MatPaginatorModule, MatButtonModule,
-    MatIconModule, MatMenuModule, MatDialogModule, MatChipsModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent, SearchInputComponent, EmptyStateComponent, EstadoBadgeComponent,
-  ],
-  templateUrl: './almacenes.component.html',
-  styleUrl: './almacenes.component.css',
+    selector: 'app-almacenes',
+    imports: [
+        CommonModule, MatTableModule, MatPaginatorModule, MatButtonModule,
+        MatIconModule, MatMenuModule, MatDialogModule, MatChipsModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent, SearchInputComponent, EmptyStateComponent, EstadoBadgeComponent,
+    ],
+    templateUrl: './almacenes.component.html',
+    styleUrl: './almacenes.component.css'
 })
 export class AlmacenesComponent implements OnInit {
   private readonly svc = inject(AlmacenesService);

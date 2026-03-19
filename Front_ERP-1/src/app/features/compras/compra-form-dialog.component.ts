@@ -18,16 +18,15 @@ import { MonedaPipe } from '../../shared/pipes/moneda.pipe';
 import type { Proveedor, Producto } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-compra-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatAutocompleteModule,
-    MatProgressSpinnerModule, MatDividerModule, MonedaPipe,
-  ],
-  templateUrl: './compra-form-dialog.component.html',
-  styleUrl: './compra-form-dialog.component.css',
+    selector: 'app-compra-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatAutocompleteModule,
+        MatProgressSpinnerModule, MatDividerModule, MonedaPipe,
+    ],
+    templateUrl: './compra-form-dialog.component.html',
+    styleUrl: './compra-form-dialog.component.css'
 })
 export class CompraFormDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

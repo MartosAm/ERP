@@ -27,25 +27,24 @@ import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { PerfilUsuario, UsuarioAdmin } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-configuracion',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatTabsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCardModule,
-    MatDividerModule,
-    MatProgressSpinnerModule,
-    PageHeaderComponent,
-    FechaHoraPipe,
-  ],
-  templateUrl: './configuracion.component.html',
-  styleUrl: './configuracion.component.css',
+    selector: 'app-configuracion',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatTabsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatCardModule,
+        MatDividerModule,
+        MatProgressSpinnerModule,
+        PageHeaderComponent,
+        FechaHoraPipe,
+    ],
+    templateUrl: './configuracion.component.html',
+    styleUrl: './configuracion.component.css'
 })
 export class ConfiguracionComponent implements OnInit {
   private readonly authSvc = inject(AuthService);

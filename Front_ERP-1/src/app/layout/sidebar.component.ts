@@ -14,11 +14,10 @@ interface NavItem {
 }
 
 @Component({
-  selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, RouterModule, MatListModule, MatIconModule, MatDividerModule],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css',
+    selector: 'app-sidebar',
+    imports: [CommonModule, RouterModule, MatListModule, MatIconModule, MatDividerModule],
+    templateUrl: './sidebar.component.html',
+    styleUrl: './sidebar.component.css'
 })
 export class SidebarComponent {
   readonly auth = inject(AuthService);

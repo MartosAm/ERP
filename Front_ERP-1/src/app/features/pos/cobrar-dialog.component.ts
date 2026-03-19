@@ -23,16 +23,15 @@ interface OpcionPago {
 }
 
 @Component({
-  selector: 'app-cobrar-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatDividerModule,
-    MonedaPipe,
-  ],
-  templateUrl: './cobrar-dialog.component.html',
-  styleUrl: './cobrar-dialog.component.css',
+    selector: 'app-cobrar-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatDividerModule,
+        MonedaPipe,
+    ],
+    templateUrl: './cobrar-dialog.component.html',
+    styleUrl: './cobrar-dialog.component.css'
 })
 export class CobrarDialogComponent {
   private readonly fb = inject(FormBuilder);

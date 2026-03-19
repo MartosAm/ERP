@@ -14,14 +14,13 @@ import { NotificationService } from '../../core/services/notification.service';
 import type { UsuarioAdmin, Rol } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-usuario-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule,
-  ],
-  template: `
+    selector: 'app-usuario-form-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule,
+    ],
+    template: `
     <h2 mat-dialog-title class="flex items-center gap-2">
       <mat-icon class="text-indigo-600">edit</mat-icon>
       Editar usuario
@@ -54,7 +53,7 @@ import type { UsuarioAdmin, Rol } from '../../core/models/api.model';
         Guardar
       </button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class UsuarioFormDialogComponent {
   private readonly fb = inject(FormBuilder);

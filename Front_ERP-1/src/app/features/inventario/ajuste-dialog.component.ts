@@ -15,14 +15,13 @@ import { NotificationService } from '../../core/services/notification.service';
 import type { Producto, Almacen } from '../../core/models/api.model';
 
 @Component({
-  selector: 'app-ajuste-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-  ],
-  templateUrl: './ajuste-dialog.component.html',
+    selector: 'app-ajuste-dialog',
+    imports: [
+        CommonModule, ReactiveFormsModule, MatDialogModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule,
+        MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    ],
+    templateUrl: './ajuste-dialog.component.html'
 })
 export class AjusteDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
