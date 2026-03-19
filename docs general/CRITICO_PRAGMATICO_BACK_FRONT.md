@@ -119,3 +119,30 @@ Para avanzar sin complejidad excesiva, el minimo funcional movil debe incluir:
 - Sincronizacion basica sin cache agresivo en endpoints de estado.
 
 Eso permite operar en campo de forma integral sin entrar aun a arquitectura offline avanzada.
+
+---
+
+## 7) Estado de ejecucion en esta sesion
+
+Implementado:
+
+- [x] Permisos estrictos en actualizacion de estado de entregas.
+  - Solo ADMIN o REPARTIDOR.
+  - Si es REPARTIDOR, solo puede actualizar entregas asignadas a su usuario.
+  - Se agregaron pruebas unitarias para casos permitidos y denegados.
+
+- [x] Cache de API desactivado en PWA para evitar datos obsoletos en flujos criticos.
+  - Se removio `dataGroups` de API en service worker.
+
+- [x] Validacion minima frontend para CI.
+  - Script `typecheck`.
+  - Script `ci` (typecheck + build).
+
+- [x] Mitigacion pragmatica de vulnerabilidades altas en backend.
+  - `bcrypt` actualizado a version no vulnerable.
+
+Pendiente critico controlado:
+
+- [ ] Vulnerabilidades frontend que requieren upgrades mayores del stack Angular.
+  - No se aplicaron en esta tanda para evitar romper funcionalidad.
+  - Requiere ventana controlada de actualizacion y regresion funcional.
