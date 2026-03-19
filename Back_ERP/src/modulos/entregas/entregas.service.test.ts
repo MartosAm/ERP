@@ -4,7 +4,7 @@
  * y las reglas de validación sin tocar la base de datos.
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { ErrorNoEncontrado, ErrorNegocio, ErrorConflicto } from '../../compartido/errores';
+import { ErrorNoEncontrado, ErrorNegocio, ErrorConflicto, ErrorAcceso } from '../../compartido/errores';
 
 // ─── Mock de Prisma ───────────────────────────────────────
 
@@ -64,6 +64,7 @@ const ordenCompletada = {
 const entregaBase = {
   id: 'entrega-001',
   ordenId: 'orden-001',
+  asignadoAId: 'rep-001',
   estado: 'ASIGNADO',
   notas: null,
 };
@@ -73,6 +74,11 @@ const entregaConIncludes = {
   cliente: { id: 'cliente-001', nombre: 'Test', telefono: '555' },
   asignadoA: { id: 'rep-001', nombre: 'Repartidor' },
 };
+
+const actorAdmin = { usuarioId: 'admin-001', rol: 'ADMIN' };
+const actorRepartidorAsignado = { usuarioId: 'rep-001', rol: 'REPARTIDOR' };
+const actorRepartidorNoAsignado = { usuarioId: 'rep-999', rol: 'REPARTIDOR' };
+const actorCajero = { usuarioId: 'caj-001', rol: 'CAJERO' };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -166,6 +172,7 @@ describe('EntregasService.actualizarEstado', () => {
       'entrega-001',
       { estado: 'EN_RUTA' },
       empresaId,
+      actorAdmin,
     );
 
     expect(result.estado).toBe('EN_RUTA');
@@ -179,6 +186,7 @@ describe('EntregasService.actualizarEstado', () => {
       'entrega-001',
       { estado: 'ENTREGADO' },
       empresaId,
+      actorAdmin,
     );
 
     // Verificar que se envió entregadaEn
@@ -195,6 +203,7 @@ describe('EntregasService.actualizarEstado', () => {
       'entrega-001',
       { estado: 'NO_ENTREGADO', motivoFallo: 'Nadie en casa' },
       empresaId,
+      actorAdmin,
     );
 
     const updateCall = mockPrisma.entrega.update.mock.calls[0][0] as any;
@@ -209,6 +218,7 @@ describe('EntregasService.actualizarEstado', () => {
         'entrega-001',
         { estado: 'NO_ENTREGADO' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow('Se requiere motivo');
   });
@@ -221,6 +231,7 @@ describe('EntregasService.actualizarEstado', () => {
       'entrega-001',
       { estado: 'REPROGRAMADO', programadaEn: '2026-03-15T10:00:00Z' },
       empresaId,
+      actorAdmin,
     );
 
     const updateCall = mockPrisma.entrega.update.mock.calls[0][0] as any;
@@ -235,6 +246,7 @@ describe('EntregasService.actualizarEstado', () => {
         'entrega-001',
         { estado: 'REPROGRAMADO' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow('Se requiere nueva fecha');
   });
@@ -247,6 +259,7 @@ describe('EntregasService.actualizarEstado', () => {
       'entrega-001',
       { estado: 'EN_RUTA' },
       empresaId,
+      actorAdmin,
     );
 
     expect(result.estado).toBe('EN_RUTA');
@@ -261,6 +274,7 @@ describe('EntregasService.actualizarEstado', () => {
         'entrega-001',
         { estado: 'ENTREGADO' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow(ErrorNegocio);
   });
@@ -273,6 +287,7 @@ describe('EntregasService.actualizarEstado', () => {
         'entrega-001',
         { estado: 'EN_RUTA' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow(ErrorNegocio);
   });
@@ -285,6 +300,7 @@ describe('EntregasService.actualizarEstado', () => {
         'entrega-001',
         { estado: 'ENTREGADO' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow(ErrorNegocio);
   });
@@ -297,8 +313,49 @@ describe('EntregasService.actualizarEstado', () => {
         'no-existe',
         { estado: 'EN_RUTA' },
         empresaId,
+        actorAdmin,
       ),
     ).rejects.toThrow(ErrorNoEncontrado);
+  });
+
+  it('permite a REPARTIDOR actualizar su entrega asignada', async () => {
+    mockPrisma.entrega.findFirst.mockResolvedValue({ ...entregaBase, estado: 'ASIGNADO', asignadoAId: 'rep-001' });
+    mockPrisma.entrega.update.mockResolvedValue({ ...entregaConIncludes, estado: 'EN_RUTA' });
+
+    const result = await EntregasService.actualizarEstado(
+      'entrega-001',
+      { estado: 'EN_RUTA' },
+      empresaId,
+      actorRepartidorAsignado,
+    );
+
+    expect(result.estado).toBe('EN_RUTA');
+  });
+
+  it('rechaza a REPARTIDOR que no tiene la entrega asignada', async () => {
+    mockPrisma.entrega.findFirst.mockResolvedValue({ ...entregaBase, estado: 'ASIGNADO', asignadoAId: 'rep-001' });
+
+    await expect(
+      EntregasService.actualizarEstado(
+        'entrega-001',
+        { estado: 'EN_RUTA' },
+        empresaId,
+        actorRepartidorNoAsignado,
+      ),
+    ).rejects.toThrow(ErrorAcceso);
+  });
+
+  it('rechaza roles no permitidos para actualizar entregas', async () => {
+    mockPrisma.entrega.findFirst.mockResolvedValue({ ...entregaBase, estado: 'ASIGNADO', asignadoAId: 'rep-001' });
+
+    await expect(
+      EntregasService.actualizarEstado(
+        'entrega-001',
+        { estado: 'EN_RUTA' },
+        empresaId,
+        actorCajero,
+      ),
+    ).rejects.toThrow(ErrorAcceso);
   });
 });
 

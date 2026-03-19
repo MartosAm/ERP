@@ -26,7 +26,12 @@ export const EntregasController = {
    * Actualizar estado de entrega.
    */
   actualizarEstado: async (req: Request, res: Response): Promise<void> => {
-    const entrega = await EntregasService.actualizarEstado(req.params.id, req.body, req.user.empresaId);
+    const entrega = await EntregasService.actualizarEstado(
+      req.params.id,
+      req.body,
+      req.user.empresaId,
+      { usuarioId: req.user.usuarioId, rol: req.user.rol },
+    );
 
     res.json(ApiResponse.ok(entrega, 'Estado de entrega actualizado'));
   },

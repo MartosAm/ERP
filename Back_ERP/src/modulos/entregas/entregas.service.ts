@@ -21,6 +21,7 @@ import {
   ErrorNoEncontrado,
   ErrorNegocio,
   ErrorConflicto,
+  ErrorAcceso,
 } from '../../compartido/errores';
 import { logger } from '../../compartido/logger';
 import type { CrearEntregaDto, ActualizarEstadoDto, FiltroEntregasDto } from './entregas.schema';
@@ -32,6 +33,11 @@ const TRANSICIONES_VALIDAS: Record<string, string[]> = {
   ASIGNADO: ['EN_RUTA'],
   EN_RUTA: ['ENTREGADO', 'NO_ENTREGADO', 'REPROGRAMADO'],
   REPROGRAMADO: ['ASIGNADO', 'EN_RUTA'],
+};
+
+type ActorActualizacion = {
+  usuarioId: string;
+  rol: string;
 };
 
 export const EntregasService = {
@@ -104,13 +110,26 @@ export const EntregasService = {
   /**
    * Actualiza el estado de una entrega con validacion de transiciones.
    */
-  async actualizarEstado(entregaId: string, dto: ActualizarEstadoDto, empresaId: string) {
+  async actualizarEstado(
+    entregaId: string,
+    dto: ActualizarEstadoDto,
+    empresaId: string,
+    actor: ActorActualizacion,
+  ) {
     const entrega = await prisma.entrega.findFirst({
       where: { id: entregaId, orden: { empresaId } },
     });
 
     if (!entrega) {
       throw new ErrorNoEncontrado('Entrega no encontrada');
+    }
+
+    if (actor.rol !== 'ADMIN' && actor.rol !== 'REPARTIDOR') {
+      throw new ErrorAcceso('No tiene permisos para actualizar entregas');
+    }
+
+    if (actor.rol === 'REPARTIDOR' && entrega.asignadoAId !== actor.usuarioId) {
+      throw new ErrorAcceso('Solo puede actualizar entregas asignadas a su usuario');
     }
 
     // Validar transicion de estado

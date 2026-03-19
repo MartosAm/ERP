@@ -168,6 +168,7 @@ router.get('/:id', asyncHandler(EntregasController.obtenerPorId));
  */
 router.patch(
   '/:id/estado',
+  requerirRol('ADMIN', 'REPARTIDOR'),
   validar(ActualizarEstadoSchema),
   asyncHandler(EntregasController.actualizarEstado),
 );
