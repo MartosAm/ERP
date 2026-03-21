@@ -8,28 +8,35 @@
 
 /* ── Design Tokens ─────────────────────────────────────────────── */
 @theme {
-  --color-primary: #3f51b5;
-  --color-primary-light: #7986cb;
-  --color-primary-dark: #303f9f;
-  --color-accent: #ff4081;
-  --color-warn: #f44336;
-  --color-success: #4caf50;
+  /* Modern clean palette - Blue & Slate */
+  --color-primary: #2563eb;       /* blue-600 */
+  --color-primary-light: #60a5fa; /* blue-400 */
+  --color-primary-dark: #1e40af;  /* blue-800 */
+  
+  --color-accent: #f59e0b;        /* amber-500 (softer accent than pink) */
+  --color-warn: #ef4444;          /* red-500 */
+  --color-success: #22c55e;       /* green-500 */
+  
   --color-surface: #ffffff;
-  --color-bg: #fafafa;
-  --color-text: #212121;
-  --color-text-secondary: #757575;
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
+  --color-bg: #f8fafc;            /* slate-50 */
+  
+  --color-text: #0f172a;          /* slate-900 */
+  --color-text-secondary: #64748b; /* slate-500 */
+  
+  --color-border: #e2e8f0;        /* slate-200 */
+  --color-border-light: #f1f5f9;  /* slate-100 */
+
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
 
 /* ── CSS Custom Properties (non-theme layout tokens) ───────────── */
 :root {
   --sidebar-width: 260px;
   --header-height: 64px;
-  --border-radius: 8px;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --border-radius: 12px; /* More modern rounded corners */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* Softer shadows */
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   /* Dark mode semantic aliases — light defaults */
   --dm-bg: var(--color-bg);
@@ -39,26 +46,32 @@
   --dm-border: var(--color-border);
   --dm-border-light: var(--color-border-light);
   --dm-card-bg: #ffffff;
-  --dm-hover: #f9fafb;
+  --dm-hover: #f1f5f9;
   --dm-shadow-sm: var(--shadow-sm);
   --dm-shadow-md: var(--shadow-md);
+}
+
+html, body {
+  font-family: 'Inter', sans-serif;
+  @apply text-base antialiased;
 }
 
 /* ── Dark Mode ─────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --dm-bg: #121212;
-    --dm-surface: #1e1e1e;
-    --dm-text: #e0e0e0;
-    --dm-text-secondary: #a0a0a0;
-    --dm-border: #333333;
-    --dm-border-light: #2a2a2a;
-    --dm-card-bg: #1e1e1e;
-    --dm-hover: #2a2a2a;
+    --dm-bg: #0f172a;        /* slate-900 */
+    --dm-surface: #1e293b;   /* slate-800 */
+    --dm-text: #f8fafc;      /* slate-50 */
+    --dm-text-secondary: #94a3b8; /* slate-400 */
+    --dm-border: #334155;    /* slate-700 */
+    --dm-border-light: #1e293b; /* slate-800 */
+    --dm-card-bg: #1e293b;
+    --dm-hover: #334155;
     --dm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
     --dm-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35);
     color-scheme: dark;
   }
+
 
   html, body {
     background: var(--dm-bg);

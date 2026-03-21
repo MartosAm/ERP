@@ -24,6 +24,7 @@ const mockPrisma = {
   sesion: {
     create: jest.fn(),
     update: jest.fn(),
+    updateMany: jest.fn(),
   },
   empresa: { create: jest.fn() },
   $transaction: jest.fn(),
@@ -82,6 +83,7 @@ const usuarioActivo = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPrisma.sesion.updateMany.mockResolvedValue({ count: 0 });
 });
 
 // ─── Registro ─────────────────────────────────────────────
@@ -358,6 +360,24 @@ describe('AuthService.login', () => {
     expect(mockPrisma.sesion.create).not.toHaveBeenCalled();
 
     verificarSpy.mockRestore();
+  });
+
+  it('cierra sesiones previas activas antes de iniciar una nueva', async () => {
+    mockPrisma.usuario.findUnique.mockResolvedValue(usuarioActivo);
+    bcryptCompare.mockResolvedValue(true as never);
+    mockPrisma.sesion.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.usuario.update.mockResolvedValue(usuarioActivo);
+    mockPrisma.sesion.create.mockResolvedValue({ id: 'sesion-002' });
+    mockPrisma.sesion.update.mockResolvedValue({});
+
+    await AuthService.login(dtoLogin);
+
+    expect(mockPrisma.sesion.updateMany).toHaveBeenCalledWith({
+      where: { usuarioId: usuarioActivo.id, activo: true },
+      data: { activo: false },
+    });
+
+    expect(mockPrisma.sesion.create).toHaveBeenCalled();
   });
 });
 

@@ -1,0 +1,40 @@
+<div class="flex items-center gap-3 p-3 bg-white border-b border-gray-200">
+  <div class="flex items-center gap-3 flex-1 bg-gray-50 rounded-lg px-3 py-2 transition hover:bg-gray-100 focus-within:ring-2 focus-within:ring-primary-light/20">
+    <mat-icon class="text-gray-400">search</mat-icon>
+    <input
+      #searchInput
+      class="flex-1 bg-transparent border-none outline-none text-base text-gray-800 placeholder:text-gray-400"
+      type="text"
+      [ngModel]="terminoBusqueda()"
+      (ngModelChange)="onSearchChange($event)"
+      (keydown.enter)="onEnter()"
+      placeholder="Buscar producto o escanear código... (F4)"
+      autocomplete="off" />
+    @if (terminoBusqueda()) {
+      <button mat-icon-button (click)="onClear()" matTooltip="Limpiar" class="scale-75 text-gray-500">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+
+  <div class="flex items-center gap-2">
+    <button mat-button [matMenuTriggerFor]="menuPrecio" class="text-sm font-medium text-gray-600 hover:text-gray-900">
+      <mat-icon class="!text-base mr-1">sell</mat-icon>
+      Lista {{ listaPrecio() }}
+    </button>
+    <mat-menu #menuPrecio="matMenu">
+      <button mat-menu-item (click)="onPriceChange(1)">
+        <mat-icon class="text-primary">{{ listaPrecio() === 1 ? 'check' : '' }}</mat-icon> 
+        <span [class.font-bold]="listaPrecio() === 1">Lista 1 (Principal)</span>
+      </button>
+      <button mat-menu-item (click)="onPriceChange(2)">
+        <mat-icon class="text-primary">{{ listaPrecio() === 2 ? 'check' : '' }}</mat-icon> 
+        <span [class.font-bold]="listaPrecio() === 2">Lista 2 (Mayoreo)</span>
+      </button>
+      <button mat-menu-item (click)="onPriceChange(3)">
+        <mat-icon class="text-primary">{{ listaPrecio() === 3 ? 'check' : '' }}</mat-icon> 
+        <span [class.font-bold]="listaPrecio() === 3">Lista 3 (Especial)</span>
+      </button>
+    </mat-menu>
+  </div>
+</div>

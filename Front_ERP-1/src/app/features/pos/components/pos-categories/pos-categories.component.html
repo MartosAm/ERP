@@ -1,0 +1,32 @@
+<div class="pos-categories flex gap-2 overflow-x-auto p-3 bg-white border-b border-gray-100 items-center">
+  <button 
+    class="px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap border"
+    [class.bg-primary]="selectedCategory() === null"
+    [class.text-white]="selectedCategory() === null"
+    [class.border-primary]="selectedCategory() === null"
+    [class.bg-white]="selectedCategory() !== null"
+    [class.text-gray-600]="selectedCategory() !== null"
+    [class.border-gray-200]="selectedCategory() !== null"
+    [class.hover:bg-gray-50]="selectedCategory() !== null"
+    (click)="onSelect(null)">
+    Todas
+  </button>
+
+  @for (cat of categories(); track cat.id) {
+    <button
+      class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap border"
+      [class.bg-primary]="selectedCategory() === cat.id"
+      [class.text-white]="selectedCategory() === cat.id"
+      [class.border-primary]="selectedCategory() === cat.id"
+      [class.bg-white]="selectedCategory() !== cat.id"
+      [class.text-gray-600]="selectedCategory() !== cat.id"
+      [class.border-gray-200]="selectedCategory() !== cat.id"
+      [class.hover:bg-gray-50]="selectedCategory() !== cat.id"
+      (click)="onSelect(cat.id)">
+      @if (cat.nombreIcono) {
+        <mat-icon class="!text-lg !w-[18px] !h-[18px] leading-tight">{{ cat.nombreIcono }}</mat-icon>
+      }
+      {{ cat.nombre }}
+    </button>
+  }
+</div>

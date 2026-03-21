@@ -1,0 +1,127 @@
+<div class="pos-cart flex flex-col h-full bg-white shadow-xl border-l border-gray-100">
+  <!-- Header -->
+  <div class="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 backdrop-blur">
+    <div class="flex items-center gap-3">
+      <div class="bg-primary/10 p-2 rounded-lg text-primary">
+        <mat-icon class="!w-6 !h-6 text-2xl">shopping_cart</mat-icon>
+      </div>
+      <div>
+        <h2 class="font-bold text-gray-800 leading-none">Venta Actual</h2>
+        <span class="text-xs text-gray-500 font-medium">{{ totalItems() }} productos</span>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-1">
+      <button 
+        mat-icon-button 
+        matTooltip="Seleccionar cliente (F2)"
+        (click)="selectClient.emit()"
+        class="text-gray-500 hover:text-primary transition-colors">
+        <mat-icon>person_add</mat-icon>
+      </button>
+      <button 
+        mat-icon-button 
+        matTooltip="Limpiar todo (Esc)"
+        [disabled]="cartLines().length === 0"
+        (click)="clearCart.emit()"
+        class="text-gray-400 hover:text-warn disabled:opacity-30 transition-colors">
+        <mat-icon>delete_sweep</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cliente Banner -->
+  @if (selectedClient()) {
+    <div class="bg-blue-50/50 px-4 py-2 flex items-center justify-between border-b border-blue-100">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <mat-icon class="text-primary !text-lg !w-5 !h-5">person</mat-icon>
+        <span class="text-sm font-semibold text-primary truncate">{{ selectedClient()!.nombre }}</span>
+      </div>
+      <button mat-icon-button (click)="removeClient.emit()" class="!w-8 !h-8 text-primary/70 hover:text-primary">
+        <mat-icon class="!text-lg">close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (cartLines().length === 0) {
+    <div class="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center opacity-60">
+      <mat-icon class="!text-6xl !w-16 !h-16 mb-4">remove_shopping_cart</mat-icon>
+      <p class="font-medium">El carrito está vacío</p>
+      <p class="text-xs mt-1">Agrega productos para comenzar</p>
+    </div>
+  } @else {
+    <!-- Listado -->
+    <div class="flex-1 overflow-y-auto p-2 space-y-2">
+      @for (line of cartLines(); track line.productoId) {
+        <div class="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all">
+          
+          <!-- Cantidad Controls -->
+          <div class="flex flex-col items-center gap-1 bg-white rounded-md border border-gray-200 shadow-sm p-0.5">
+            <button 
+              mat-icon-button 
+              class="!w-6 !h-6 !leading-none text-gray-500 hover:text-primary hover:bg-primary/10 rounded"
+              (click)="updateQuantity.emit({ id: line.productoId, delta: 1 })">
+              <mat-icon class="!text-sm">add</mat-icon>
+            </button>
+            <span class="text-sm font-bold text-gray-800 w-6 text-center select-none">{{ line.cantidad }}</span>
+            <button 
+              mat-icon-button 
+              class="!w-6 !h-6 !leading-none text-gray-500 hover:text-warn hover:bg-warn/10 rounded"
+              [disabled]="line.cantidad <= 1"
+              (click)="updateQuantity.emit({ id: line.productoId, delta: -1 })">
+              <mat-icon class="!text-sm">remove</mat-icon>
+            </button>
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0 pt-0.5">
+            <div class="flex justify-between items-start">
+              <span class="font-medium text-gray-800 line-clamp-2 leading-tight">{{ line.nombre }}</span>
+              <span class="font-bold text-gray-900 ml-2 whitespace-nowrap">{{ (line.precioUnitario * line.cantidad) | moneda }}</span>
+            </div>
+            <div class="flex items-center justify-between mt-1 text-xs text-gray-500">
+              <span>{{ line.precioUnitario | moneda }} c/u</span>
+              <span class="bg-gray-100 text-gray-600 px-1.5 rounded font-mono">{{ line.sku }}</span>
+            </div>
+          </div>
+
+          <!-- Delete Action -->
+          <button 
+            mat-icon-button 
+            class="opacity-0 group-hover:opacity-100 transition-opacity !w-8 !h-8 text-gray-400 hover:text-warn"
+            (click)="removeLine.emit(line.productoId)">
+            <mat-icon class="!text-lg">delete</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Footer Totales -->
+    <div class="bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] p-4">
+      <div class="space-y-2 mb-4">
+        <div class="flex justify-between text-sm text-gray-500">
+          <span>Subtotal</span>
+          <span>{{ subTotal() | moneda }}</span>
+        </div>
+        <div class="flex justify-between text-sm text-gray-500">
+          <span>Impuestos</span>
+          <span>{{ impuestos() | moneda }}</span>
+        </div>
+        <div class="flex justify-between items-end mt-2 pt-2 border-t border-dashed border-gray-200">
+          <span class="text-lg font-bold text-gray-800">Total</span>
+          <span class="text-2xl font-black text-primary tracking-tight">{{ total() | moneda }}</span>
+        </div>
+      </div>
+
+      <button 
+        mat-flat-button 
+        color="primary" 
+        class="w-full !py-6 !text-lg !rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all font-bold tracking-wide"
+        (click)="checkout.emit()">
+        <mat-icon class="mr-2">payments</mat-icon>
+        COBRAR (F9)
+      </button>
+    </div>
+  }
+</div>

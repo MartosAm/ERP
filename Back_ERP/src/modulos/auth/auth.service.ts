@@ -320,6 +320,9 @@ export const AuthService = {
       this.verificarHorarioLaboral(usuario);
     }
 
+    // 5.1. Cerrar sesiones activas previas para garantizar solo una sesion por usuario
+    await this.cerrarSesionesActivas(usuario.id);
+
     // 6. Resetear intentos fallidos y actualizar ultimo login
     await prisma.usuario.update({
       where: { id: usuario.id },
@@ -387,6 +390,29 @@ export const AuthService = {
         },
       },
     };
+  },
+
+  // ================================================================
+  // Sesiones actives
+  // ================================================================
+
+  /**
+   * Cierra todas las sesiones activas de un usuario antes de generar nueva.
+   * Garantiza que exista solo una sesion activa por usuario.
+   */
+  async cerrarSesionesActivas(usuarioId: string) {
+    const resultado = await prisma.sesion.updateMany({
+      where: { usuarioId, activo: true },
+      data: { activo: false },
+    });
+
+    if (resultado.count > 0) {
+      logger.warn({
+        mensaje: 'Sesiones activas cerradas al iniciar login',
+        usuarioId,
+        cantidad: resultado.count,
+      });
+    }
   },
 
   // ================================================================
