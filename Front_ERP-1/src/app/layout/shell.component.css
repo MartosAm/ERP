@@ -1,24 +1,68 @@
-.shell-container {
-  position: fixed;
-  top: var(--header-height);
-  bottom: 0;
+/* shell.component.css */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.skip-nav {
+  position: absolute;
+  top: -40px;
   left: 0;
-  right: 0;
+  background: var(--color-primary);
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.skip-nav:focus {
+  top: 0;
+}
+
+/* Modificamos comportamiento de Material Sidenav */
+.shell-container {
+  flex: 1;
+  background-color: var(--color-bg);
 }
 
 .shell-sidebar {
-  width: var(--sidebar-width);
-  border-right: 1px solid var(--dm-border, #e5e7eb);
+  width: var(--sidebar-width, 260px);
+  border-right: none !important; /* Managed by tailwind inner div */
+  background: transparent !important;
 }
 
+.shell-sidebar.mat-drawer-collapsed {
+  width: 80px; /* Para futura implementación de collapsed puro si se desea */
+}
+
+/* El contenido principal toma el color de fondo moderno */
 .shell-content {
-  background: var(--dm-bg, var(--color-bg));
+  background-color: #f8fafc; /* slate-50 */
+  padding: 1.5rem; /* Margen global para las vistas */
   overflow-y: auto;
 }
 
-/* Tablet: narrower sidebar */
-@media (max-width: 1024px) and (min-width: 769px) {
+/* Dark mode del contenido */
+@media (prefers-color-scheme: dark) {
+  .shell-content {
+    background-color: #020617; /* slate-950 */
+  }
+  .shell-container {
+    background-color: #020617;
+  }
+}
+
+/* Tablet / Móvil */
+@media (max-width: 1024px) {
   .shell-sidebar {
-    width: 220px;
+    width: 240px;
+  }
+}
+@media (max-width: 640px) {
+  .shell-content {
+    padding: 1rem;
   }
 }

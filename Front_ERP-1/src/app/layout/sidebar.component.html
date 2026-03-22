@@ -1,35 +1,45 @@
-<!-- sidebar.component.html — Navegación lateral con Material -->
-<div class="sidebar-brand">
-  <mat-icon class="text-indigo-500">store</mat-icon>
-  @if (!collapsed) {
-    <span class="font-bold text-lg ml-2">ERP POS</span>
-  }
-</div>
-
-<mat-divider />
-
-<mat-nav-list>
-  @for (item of navItems; track item.route) {
-    @if (!item.roles || tieneRol(item.roles)) {
-      <a mat-list-item
-         [routerLink]="item.route"
-         routerLinkActive="active-link"
-         [title]="item.label">
-        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-        @if (!collapsed) {
-          <span matListItemTitle>{{ item.label }}</span>
-        }
-      </a>
-    }
-  }
-</mat-nav-list>
-
-<div class="sidebar-footer">
-  <mat-divider />
-  <a mat-list-item (click)="auth.logout()" class="cursor-pointer">
-    <mat-icon matListItemIcon class="text-red-400">logout</mat-icon>
+<div class="flex flex-col h-full bg-slate-900 text-slate-300 transition-all duration-300 relative border-r border-slate-800">
+  
+  <!-- Brand Area -->
+  <div class="flex items-center h-16 px-6 bg-slate-950/50 border-b border-slate-800 shrink-0">
+    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white mr-3 shadow-lg shadow-blue-900/20">
+      <mat-icon class="!w-5 !h-5 text-[20px] leading-[20px]">explore</mat-icon>
+    </div>
     @if (!collapsed) {
-      <span class="text-red-400">Cerrar sesión</span>
+      <span class="font-bold text-lg tracking-wide text-white">ERP <span class="text-blue-400 font-medium">POS</span></span>
     }
-  </a>
+  </div>
+
+  <!-- Navigation Area -->
+  <div class="flex-1 overflow-y-auto space-y-1 p-3 scrollbar-hide">
+    @for (item of navItems; track item.route) {
+      @if (!item.roles || tieneRol(item.roles)) {
+        <a [routerLink]="item.route"
+           routerLinkActive="bg-blue-600/10 text-blue-400 font-medium border-blue-500"
+           [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg border-l-2 border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition-colors group"
+           [title]="collapsed ? item.label : ''">
+          <mat-icon class="!w-5 !h-5 text-[20px] leading-[20px] group-hover:scale-110 transition-transform"
+                    [ngClass]="{'text-blue-400': rla.isActive}"
+                    #rla="routerLinkActive"
+                    routerLinkActive="!text-blue-400">{{ item.icon }}</mat-icon>
+          @if (!collapsed) {
+            <span class="truncate">{{ item.label }}</span>
+          }
+        </a>
+      }
+    }
+  </div>
+
+  <!-- Footer Area -->
+  <div class="p-3 border-t border-slate-800 bg-slate-900 shrink-0">
+    <!-- User summary info here if needed -->
+    <button (click)="auth.logout()"
+            class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors group">
+      <mat-icon class="!w-5 !h-5 text-[20px] leading-[20px] group-hover:scale-110 transition-transform">logout</mat-icon>
+      @if (!collapsed) {
+        <span class="truncate">Cerrar sesión</span>
+      }
+    </button>
+  </div>
 </div>

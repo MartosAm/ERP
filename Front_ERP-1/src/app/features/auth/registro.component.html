@@ -41,6 +41,21 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Nombre de la Empresa</mat-label>
+          <input matInput formControlName="nombreEmpresa" placeholder="Ej. Mi Negocio SA" />
+          <mat-icon matSuffix class="text-slate-400">business</mat-icon>
+          @if (form.get('nombreEmpresa')?.hasError('required') && form.get('nombreEmpresa')?.touched) {
+            <mat-error>El nombre de la empresa es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Teléfono (Opcional)</mat-label>
+          <input matInput formControlName="telefono" placeholder="Ej. 1234567890" />
+          <mat-icon matSuffix class="text-slate-400">phone</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Correo electrónico</mat-label>
           <input matInput formControlName="correo" type="email" autocomplete="email" placeholder="ejemplo@empresa.com" />
           <mat-icon matSuffix class="text-slate-400">mail</mat-icon>
@@ -73,11 +88,11 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Confirmar Contraseña</mat-label>
           <input matInput formControlName="confirmarContrasena"
-                 [type]="ocultarPassConfirm() ? 'password' : 'text'"
+                 [type]="ocultarConfirmar() ? 'password' : 'text'"
                  autocomplete="new-password" />
           <button mat-icon-button matSuffix type="button"
-                  (click)="ocultarPassConfirm.set(!ocultarPassConfirm())" class="text-slate-400">
-            <mat-icon>{{ ocultarPassConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                  (click)="ocultarConfirmar.set(!ocultarConfirmar())" class="text-slate-400">
+            <mat-icon>{{ ocultarConfirmar() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           @if (form.hasError('mismatch')) {
             <mat-error>Las contraseñas no coinciden</mat-error>
@@ -91,15 +106,8 @@
           </div>
         }
 
-        @if (registroExitoso()) {
-          <div class="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded text-green-700 dark:text-green-300 text-sm animate-fade-in flex items-center gap-2 shadow-sm" role="alert">
-            <mat-icon class="!text-sm !w-4 !h-4 flex-shrink-0">check_circle</mat-icon>
-            <span>Registro exitoso. Redirigiendo a inicio de sesión...</span>
-          </div>
-        }
-
         <button mat-flat-button color="primary" type="submit"
-                [disabled]="form.invalid || cargando() || registroExitoso()"
+                [disabled]="form.invalid || cargando()"
                 class="!h-13 !rounded-lg !text-base !font-semibold shadow-md hover:shadow-lg transition-all w-full mt-2">
           @if (cargando()) {
             <div class="flex items-center justify-center">
