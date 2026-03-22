@@ -1,34 +1,59 @@
-<!-- login.component.html — Pantalla de inicio de sesión -->
-<div class="login-wrapper">
-  <mat-card class="login-card">
-    <mat-card-header>
-      <mat-icon mat-card-avatar class="text-indigo-500 text-4xl">store</mat-icon>
-      <mat-card-title>ERP POS</mat-card-title>
-      <mat-card-subtitle>Inicia sesión para continuar</mat-card-subtitle>
-    </mat-card-header>
+<div class="min-h-screen flex w-full animate-fade-in bg-white dark:bg-slate-900">
+  <!-- Parte Izquierda (Decorativa / Marca) -->
+  <div class="hidden lg:flex w-1/2 bg-blue-600 relative items-center justify-center overflow-hidden">
+    <!-- Patrón de fondo abstracto (Dots SVG en base64) -->
+    <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIvPgo8Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+Cjwvc3ZnPg==')]"></div>
+    <div class="z-10 text-center text-white p-12 max-w-lg">
+      <mat-icon class="!text-7xl mb-8 font-light !h-auto !w-auto animate-slide-up" style="font-size: 72px">explore</mat-icon>
+      <h1 class="text-5xl font-bold mb-6 tracking-tight animate-slide-up" style="animation-delay: 0.1s;">Sistema ERP POS</h1>
+      <p class="text-xl text-blue-100 leading-relaxed font-light animate-slide-up" style="animation-delay: 0.2s;">
+        La solución definitiva para gestionar tu inventario, ventas y procesos empresariales de manera inteligente.
+      </p>
+    </div>
+  </div>
 
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onLogin()" class="flex flex-col gap-4 mt-6">
-        <mat-form-field appearance="outline">
+  <!-- Parte Derecha (Formulario) -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-surface">
+    <div class="w-full max-w-md animate-slide-up" style="animation-delay: 0.1s;">
+      
+      <!-- Versión Móvil de la Marca -->
+      <div class="text-center mb-10 lg:hidden">
+        <mat-icon class="!text-6xl text-primary mb-3 !h-auto !w-auto" style="font-size: 56px">explore</mat-icon>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white">ERP POS</h2>
+      </div>
+
+      <!-- Encabezado del Formulario -->
+      <div class="mb-10 text-center lg:text-left">
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">Bienvenido de nuevo</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-base">Inicia sesión en tu cuenta para acceder</p>
+      </div>
+
+      <!-- Formulario -->
+      <form [formGroup]="form" (ngSubmit)="onLogin()" class="flex flex-col gap-5">
+        
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Correo electrónico</mat-label>
-          <input matInput formControlName="correo" type="email" autocomplete="email" />
-          <mat-icon matSuffix>mail</mat-icon>
+          <input matInput formControlName="correo" type="email" autocomplete="email" placeholder="ejemplo@empresa.com" class="text-base" />
+          <mat-icon matSuffix class="text-slate-400">mail</mat-icon>
           @if (form.get('correo')?.hasError('required') && form.get('correo')?.touched) {
             <mat-error>El correo es obligatorio</mat-error>
           }
           @if (form.get('correo')?.hasError('email') && form.get('correo')?.touched) {
-            <mat-error>Correo inválido</mat-error>
+            <mat-error>Formato de correo inválido</mat-error>
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Contraseña</mat-label>
           <input matInput formControlName="contrasena"
                  [type]="ocultarPass() ? 'password' : 'text'"
-                 autocomplete="current-password" />
+                 autocomplete="current-password" 
+                 placeholder="••••••••"
+                 class="text-base" />
           <button mat-icon-button matSuffix type="button"
                   aria-label="Mostrar u ocultar contraseña"
-                  (click)="ocultarPass.set(!ocultarPass())">
+                  (click)="ocultarPass.set(!ocultarPass())"
+                  class="text-slate-400">
             <mat-icon>{{ ocultarPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           @if (form.get('contrasena')?.hasError('required') && form.get('contrasena')?.touched) {
@@ -39,29 +64,43 @@
           }
         </mat-form-field>
 
+        <!-- Auxiliares / Recordar -->
+        <div class="flex justify-between items-center mt-[-10px] mb-2 px-1">
+          <div class="text-sm text-slate-500">
+            <!-- Espacio para checkbox recordar si aplica en el futuro -->
+          </div>
+          <a href="#" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors" (click)="$event.preventDefault()">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Alertas Error -->
         @if (errorLogin()) {
-          <p class="text-red-600 text-sm text-center" role="alert">{{ errorLogin() }}</p>
+          <div class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded text-red-700 dark:text-red-300 text-sm animate-fade-in flex items-center gap-2 shadow-sm" role="alert">
+            <mat-icon class="!text-sm !w-4 !h-4 flex-shrink-0">error_outline</mat-icon>
+            <span>{{ errorLogin() }}</span>
+          </div>
         }
 
-        <button mat-raised-button color="primary" type="submit"
+        <!-- Botón Submit -->
+        <button mat-flat-button color="primary" type="submit"
                 [disabled]="form.invalid || cargando()"
-                class="h-12">
+                class="!h-13 !rounded-lg !text-base !font-semibold shadow-md hover:shadow-lg transition-all w-full mt-2">
           @if (cargando()) {
-            <mat-spinner diameter="20" />
+            <div class="flex items-center justify-center">
+              <mat-spinner diameter="20" class="mr-3"></mat-spinner> Iniciando...
+            </div>
           } @else {
             Iniciar sesión
           }
         </button>
 
-        <!-- Link a registro -->
-        <p class="text-center text-sm mt-2 text-gray-600 dark:text-gray-400">
-          ¿No tienes cuenta?
-          <a routerLink="/auth/registro"
-             class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-            Crear cuenta
+        <p class="text-center text-sm mt-6 text-slate-500 dark:text-slate-400">
+          ¿No tienes una cuenta? 
+          <a routerLink="/auth/registro" class="text-blue-600 font-medium hover:text-blue-800 hover:underline transition-colors">
+            Crear cuenta o contactar Admin
           </a>
         </p>
+
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 </div>

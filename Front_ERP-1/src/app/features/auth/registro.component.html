@@ -1,145 +1,123 @@
-<!-- registro.component.html — Pantalla de auto-registro público -->
-<div class="registro-wrapper">
-  <mat-card class="registro-card">
-    <mat-card-header>
-      <mat-icon mat-card-avatar class="text-indigo-500 text-4xl">store</mat-icon>
-      <mat-card-title>Crear cuenta</mat-card-title>
-      <mat-card-subtitle>Registra tu empresa y comienza a usar ERP POS</mat-card-subtitle>
-    </mat-card-header>
+<div class="min-h-screen flex w-full animate-fade-in bg-white dark:bg-slate-900">
+  
+  <!-- Parte Izquierda (Decorativa / Marca) -->
+  <div class="hidden lg:flex w-1/2 bg-blue-600 relative items-center justify-center overflow-hidden">
+    <!-- Patrón de fondo abstracto (Dots SVG en base64) -->
+    <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIvPgo8Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+Cjwvc3ZnPg==')]"></div>
+    <div class="z-10 text-center text-white p-12 max-w-lg">
+      <mat-icon class="!text-7xl mb-8 font-light !h-auto !w-auto animate-slide-up" style="font-size: 72px">group_add</mat-icon>
+      <h1 class="text-5xl font-bold mb-6 tracking-tight animate-slide-up" style="animation-delay: 0.1s;">Únete a ERP POS</h1>
+      <p class="text-xl text-blue-100 leading-relaxed font-light animate-slide-up" style="animation-delay: 0.2s;">
+        Registra tu cuenta y comienza a gestionar tus operaciones de manera eficiente hoy mismo.
+      </p>
+    </div>
+  </div>
 
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onRegistro()" class="flex flex-col gap-3 mt-6">
+  <!-- Parte Derecha (Formulario) -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-surface overflow-y-auto">
+    <div class="w-full max-w-md animate-slide-up py-8" style="animation-delay: 0.1s;">
+      
+      <!-- Versión Móvil de la Marca -->
+      <div class="text-center mb-8 lg:hidden">
+        <mat-icon class="!text-6xl text-primary mb-3 !h-auto !w-auto" style="font-size: 56px">explore</mat-icon>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white">ERP POS</h2>
+      </div>
 
-        <!-- Sección: Datos de la empresa -->
-        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-          Datos de la empresa
-        </p>
+      <div class="mb-8 text-center lg:text-left">
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">Crear Cuenta</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-base">Completa tus datos para registrarte</p>
+      </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre de la empresa</mat-label>
-          <input matInput formControlName="nombreEmpresa" autocomplete="organization" />
-          <mat-icon matSuffix>business</mat-icon>
-          @if (f.nombreEmpresa.hasError('required') && f.nombreEmpresa.touched) {
-            <mat-error>El nombre de la empresa es obligatorio</mat-error>
-          }
-          @if (f.nombreEmpresa.hasError('minlength') && f.nombreEmpresa.touched) {
-            <mat-error>Mínimo 2 caracteres</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono (opcional)</mat-label>
-          <input matInput formControlName="telefono" type="tel" autocomplete="tel" />
-          <mat-icon matSuffix>phone</mat-icon>
-        </mat-form-field>
-
-        <!-- Sección: Datos del administrador -->
-        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 mt-2">
-          Datos del administrador
-        </p>
-
-        <mat-form-field appearance="outline">
+      <!-- Formulario de Registro -->
+      <form [formGroup]="form" (ngSubmit)="onRegistro()" class="flex flex-col gap-4">
+        
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Nombre completo</mat-label>
-          <input matInput formControlName="nombre" autocomplete="name" />
-          <mat-icon matSuffix>person</mat-icon>
-          @if (f.nombre.hasError('required') && f.nombre.touched) {
+          <input matInput formControlName="nombre" placeholder="Ej. Juan Pérez" />
+          <mat-icon matSuffix class="text-slate-400">person</mat-icon>
+          @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
             <mat-error>El nombre es obligatorio</mat-error>
           }
-          @if (f.nombre.hasError('minlength') && f.nombre.touched) {
-            <mat-error>Mínimo 2 caracteres</mat-error>
-          }
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Correo electrónico</mat-label>
-          <input matInput formControlName="correo" type="email" autocomplete="email" />
-          <mat-icon matSuffix>mail</mat-icon>
-          @if (f.correo.hasError('required') && f.correo.touched) {
+          <input matInput formControlName="correo" type="email" autocomplete="email" placeholder="ejemplo@empresa.com" />
+          <mat-icon matSuffix class="text-slate-400">mail</mat-icon>
+          @if (form.get('correo')?.hasError('required') && form.get('correo')?.touched) {
             <mat-error>El correo es obligatorio</mat-error>
           }
-          @if (f.correo.hasError('email') && f.correo.touched) {
-            <mat-error>Correo inválido</mat-error>
+          @if (form.get('correo')?.hasError('email') && form.get('correo')?.touched) {
+            <mat-error>Formato de correo inválido</mat-error>
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Contraseña</mat-label>
           <input matInput formControlName="contrasena"
                  [type]="ocultarPass() ? 'password' : 'text'"
-                 autocomplete="new-password" />
+                 autocomplete="new-password"
+                 placeholder="Mínimo 6 caracteres" />
           <button mat-icon-button matSuffix type="button"
-                  aria-label="Mostrar u ocultar contraseña"
-                  (click)="ocultarPass.set(!ocultarPass())">
+                  (click)="ocultarPass.set(!ocultarPass())" class="text-slate-400">
             <mat-icon>{{ ocultarPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          @if (f.contrasena.hasError('required') && f.contrasena.touched) {
+          @if (form.get('contrasena')?.hasError('required') && form.get('contrasena')?.touched) {
             <mat-error>La contraseña es obligatoria</mat-error>
-          } @else if (f.contrasena.hasError('minlength') && f.contrasena.touched) {
-            <mat-error>Mínimo 8 caracteres</mat-error>
-          } @else if (f.contrasena.hasError('sinMayuscula') && f.contrasena.touched) {
-            <mat-error>Debe contener al menos una mayúscula</mat-error>
-          } @else if (f.contrasena.hasError('sinMinuscula') && f.contrasena.touched) {
-            <mat-error>Debe contener al menos una minúscula</mat-error>
-          } @else if (f.contrasena.hasError('sinNumero') && f.contrasena.touched) {
-            <mat-error>Debe contener al menos un número</mat-error>
+          }
+          @if (form.get('contrasena')?.hasError('minlength') && form.get('contrasena')?.touched) {
+            <mat-error>Mínimo 6 caracteres</mat-error>
           }
         </mat-form-field>
 
-        <!-- Indicador visual de fuerza de contraseña -->
-        @if (f.contrasena.value) {
-          <div class="flex gap-1 -mt-2 mb-1 px-1">
-            <div class="h-1 flex-1 rounded"
-                 [class]="f.contrasena.value.length >= 8 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
-            <div class="h-1 flex-1 rounded"
-                 [class]="!f.contrasena.hasError('sinMayuscula') && !f.contrasena.hasError('sinMinuscula') ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
-            <div class="h-1 flex-1 rounded"
-                 [class]="!f.contrasena.hasError('sinNumero') ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></div>
-          </div>
-        }
-
-        <mat-form-field appearance="outline">
-          <mat-label>Confirmar contraseña</mat-label>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Confirmar Contraseña</mat-label>
           <input matInput formControlName="confirmarContrasena"
-                 [type]="ocultarConfirmar() ? 'password' : 'text'"
+                 [type]="ocultarPassConfirm() ? 'password' : 'text'"
                  autocomplete="new-password" />
           <button mat-icon-button matSuffix type="button"
-                  aria-label="Mostrar u ocultar contraseña"
-                  (click)="ocultarConfirmar.set(!ocultarConfirmar())">
-            <mat-icon>{{ ocultarConfirmar() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                  (click)="ocultarPassConfirm.set(!ocultarPassConfirm())" class="text-slate-400">
+            <mat-icon>{{ ocultarPassConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          @if (f.confirmarContrasena.hasError('required') && f.confirmarContrasena.touched) {
-            <mat-error>Debe confirmar su contraseña</mat-error>
-          }
-          @if (form.hasError('contrasenasNoCoinciden') && f.confirmarContrasena.touched) {
+          @if (form.hasError('mismatch')) {
             <mat-error>Las contraseñas no coinciden</mat-error>
           }
         </mat-form-field>
 
-        <!-- Error del servidor -->
         @if (errorRegistro()) {
-          <p class="text-red-600 text-sm text-center" role="alert">{{ errorRegistro() }}</p>
+          <div class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded text-red-700 dark:text-red-300 text-sm animate-fade-in flex items-center gap-2 shadow-sm" role="alert">
+            <mat-icon class="!text-sm !w-4 !h-4 flex-shrink-0">error_outline</mat-icon>
+            <span>{{ errorRegistro() }}</span>
+          </div>
         }
 
-        <!-- Botón de registro -->
-        <button mat-raised-button color="primary" type="submit"
-                [disabled]="cargando()"
-                class="h-12 mt-1">
+        @if (registroExitoso()) {
+          <div class="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded text-green-700 dark:text-green-300 text-sm animate-fade-in flex items-center gap-2 shadow-sm" role="alert">
+            <mat-icon class="!text-sm !w-4 !h-4 flex-shrink-0">check_circle</mat-icon>
+            <span>Registro exitoso. Redirigiendo a inicio de sesión...</span>
+          </div>
+        }
+
+        <button mat-flat-button color="primary" type="submit"
+                [disabled]="form.invalid || cargando() || registroExitoso()"
+                class="!h-13 !rounded-lg !text-base !font-semibold shadow-md hover:shadow-lg transition-all w-full mt-2">
           @if (cargando()) {
-            <mat-spinner diameter="20" />
+            <div class="flex items-center justify-center">
+              <mat-spinner diameter="20" class="mr-3"></mat-spinner> Guardando...
+            </div>
           } @else {
             Crear cuenta
           }
         </button>
 
-        <!-- Link a login -->
-        <p class="text-center text-sm mt-2 text-gray-600 dark:text-gray-400">
-          ¿Ya tienes cuenta?
-          <a routerLink="/auth/login"
-             class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-            Inicia sesión
+        <p class="text-center text-sm mt-6 text-slate-500 dark:text-slate-400">
+          ¿Ya tienes una cuenta? 
+          <a routerLink="/auth/login" class="text-blue-600 font-medium hover:text-blue-800 hover:underline transition-colors">
+            Inicia sesión aquí
           </a>
         </p>
+
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 </div>
