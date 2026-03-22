@@ -427,7 +427,7 @@ export class PosComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (orden: OrdenCreada) => {
-          this.notify.success('Venta registrada con éxito');
+          this.notify.exito('Venta registrada con éxito');
           // Resetear
           this.lineas.set([]);
           this.clienteSeleccionado.set(null);
