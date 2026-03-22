@@ -1,15 +1,24 @@
-<div class="flex flex-col items-center justify-center py-12 text-center" role="status">
-  <mat-icon class="text-gray-300 mb-4 !text-6xl !w-16 !h-16" aria-hidden="true">{{ icono }}</mat-icon>
-  <p class="text-gray-500 font-medium text-base">{{ mensaje }}</p>
+<div class="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm my-6 w-full animate-fade-in" role="status">
+  
+  <div class="w-20 h-20 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center rounded-full mb-6 relative">
+    <!-- Círculo decorativo fondo -->
+    <div class="absolute inset-0 bg-blue-50 dark:bg-blue-900/20 rounded-full scale-110 animate-ping" style="animation-duration: 3s; animation-iteration-count: 2;"></div>
+    <mat-icon class="text-slate-300 dark:text-slate-600 !text-5xl !w-12 !h-12 z-10" aria-hidden="true">{{ icono }}</mat-icon>
+  </div>
+  
+  <h3 class="text-slate-800 dark:text-slate-200 font-semibold text-lg tracking-tight mb-2">{{ mensaje }}</h3>
+  
   @if (submensaje) {
-    <p class="text-gray-400 text-sm mt-1">{{ submensaje }}</p>
+    <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mb-6 leading-relaxed">{{ submensaje }}</p>
   }
+  
   @if (textoAccion) {
     <button
-      mat-raised-button
+      mat-flat-button
       color="primary"
-      class="mt-4"
+      class="!rounded-xl !px-6 shadow-md hover:shadow-lg transition-all"
       (click)="accion.emit()">
+      <mat-icon class="mr-2">add</mat-icon>
       {{ textoAccion }}
     </button>
   }

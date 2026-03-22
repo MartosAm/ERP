@@ -429,3 +429,87 @@ body {
     color: black !important;
   }
 }
+
+/* ====== ATOMIC DESIGN MATERIAL OVERRIDES ====== */
+/* Mat-Card (Organisms) */
+:root {
+  --mdc-elevated-card-container-shape: 16px;
+  --mdc-elevated-card-container-elevation: var(--shadow-sm);
+}
+
+.mat-mdc-card {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05) !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mat-mdc-card {
+    background-color: #0f172a !important; /* slate-900 */
+    border-color: #1e293b !important; /* slate-800 */
+  }
+}
+
+/* Tablas (Organisms) */
+.mat-mdc-table {
+  background: transparent !important;
+}
+
+.mat-mdc-header-row {
+  background-color: #f8fafc; /* slate-50 */
+}
+
+@media (prefers-color-scheme: dark) {
+  .mat-mdc-header-row {
+    background-color: #0f172a !important;
+  }
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border-bottom-color: #1e293b !important;
+    color: #cbd5e1 !important;
+  }
+}
+
+/* Form Fields y Inputs (Atoms) */
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+  border-color: var(--color-border) !important;
+  transition: border-color 0.2s;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: #334155 !important; /* slate-700 */
+  }
+}
+
+/* Hover de inputs */
+.mat-mdc-form-field:hover .mdc-notched-outline__leading,
+.mat-mdc-form-field:hover .mdc-notched-outline__notch,
+.mat-mdc-form-field:hover .mdc-notched-outline__trailing {
+  border-color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Focus de inputs */
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-width: 2px !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Botones Primary (Atoms) */
+.mdc-button--raised, .mdc-button--unelevated {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.3px !important;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1) !important;
+}
+
+.mdc-button--raised:hover, .mdc-button--unelevated:hover {
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.15) !important;
+  transform: translateY(-1px);
+}
