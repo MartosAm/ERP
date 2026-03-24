@@ -1,9 +1,9 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-purple-500">undo</mat-icon>
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="text-violet-500 dark:text-violet-400" aria-hidden="true">undo</mat-icon>
   Devolución de productos
 </h2>
 
-<mat-dialog-content class="pt-2 min-w-[600px]">
+<mat-dialog-content class="dialog-content min-w-[600px]">
   <form [formGroup]="form" class="flex flex-col gap-4">
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Motivo general de devolución</mat-label>
@@ -17,15 +17,15 @@
       }
     </mat-form-field>
 
-    <p class="text-sm text-gray-600">Selecciona los productos a devolver:</p>
+    <p class="dialog-copy">Selecciona los productos a devolver:</p>
 
-    <div class="border rounded-lg divide-y">
+    <div class="dialog-section divide-y divide-slate-200 dark:divide-slate-700">
       @for (item of itemsArray.controls; track $index) {
         <div class="p-3 flex items-center gap-3" [formGroup]="getItemGroup($index)">
-          <mat-checkbox formControlName="seleccionado" />
+          <mat-checkbox formControlName="seleccionado" [aria-label]="'Seleccionar producto ' + getItemGroup($index).get('productoNombre')?.value" />
           <div class="flex-1">
             <p class="font-medium text-sm">{{ getItemGroup($index).get('productoNombre')?.value }}</p>
-            <p class="text-xs text-gray-400">Máx: {{ getItemGroup($index).get('cantidadMax')?.value }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Máx: {{ getItemGroup($index).get('cantidadMax')?.value }}</p>
           </div>
           <mat-form-field appearance="outline" class="w-24">
             <mat-label>Cant.</mat-label>
@@ -41,17 +41,18 @@
     </div>
 
     @if (!haySeleccionados) {
-      <p class="text-sm text-amber-600">Selecciona al menos un producto para devolver.</p>
+      <p class="text-sm text-amber-700 dark:text-amber-400">Selecciona al menos un producto para devolver.</p>
     }
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="gap-2">
-  <button mat-button mat-dialog-close>Cancelar</button>
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button mat-dialog-close aria-label="Cancelar devolucion">Cancelar</button>
   <button
     mat-raised-button
     color="primary"
     [disabled]="guardando() || !haySeleccionados"
+    aria-label="Procesar devolucion"
     (click)="guardar()">
     @if (guardando()) {
       <mat-spinner diameter="20" class="inline-block mr-2" />

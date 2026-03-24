@@ -21,7 +21,8 @@ import type { Producto, Almacen } from '../../core/models/api.model';
         MatFormFieldModule, MatInputModule, MatSelectModule,
         MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     ],
-    templateUrl: './ajuste-dialog.component.html'
+    templateUrl: './ajuste-dialog.component.html',
+    styleUrl: './ajuste-dialog.component.css'
 })
 export class AjusteDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

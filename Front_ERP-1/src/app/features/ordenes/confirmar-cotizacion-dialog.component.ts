@@ -23,7 +23,8 @@ const METODOS_PAGO: Array<{ value: MetodoPago; label: string }> = [
         MatFormFieldModule, MatInputModule, MatSelectModule,
         MatButtonModule, MatIconModule,
     ],
-    templateUrl: './confirmar-cotizacion-dialog.component.html'
+    templateUrl: './confirmar-cotizacion-dialog.component.html',
+    styleUrl: './confirmar-cotizacion-dialog.component.css'
 })
 export class ConfirmarCotizacionDialogComponent {
   private readonly fb = inject(FormBuilder);

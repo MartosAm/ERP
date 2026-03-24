@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+.dialog-title {
+  @apply flex items-center gap-2 text-slate-800 dark:text-slate-100;
+}
+
+.dialog-content {
+  @apply pt-2;
+}
+
+.dialog-copy {
+  @apply text-sm text-slate-600 dark:text-slate-300;
+}
+
+.dialog-actions {
+  @apply gap-2;
+}

@@ -13,7 +13,8 @@ import { MatIconModule } from '@angular/material/icon';
         MatFormFieldModule, MatInputModule,
         MatButtonModule, MatIconModule,
     ],
-    templateUrl: './cancelar-orden-dialog.component.html'
+    templateUrl: './cancelar-orden-dialog.component.html',
+    styleUrl: './cancelar-orden-dialog.component.css'
 })
 export class CancelarOrdenDialogComponent {
   private readonly fb = inject(FormBuilder);

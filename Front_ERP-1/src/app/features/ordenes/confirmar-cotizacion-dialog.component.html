@@ -1,21 +1,21 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-green-600">check_circle</mat-icon>
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="text-emerald-600 dark:text-emerald-400" aria-hidden="true">check_circle</mat-icon>
   Confirmar cotización
 </h2>
 
-<mat-dialog-content class="pt-2 min-w-[420px]">
-  <p class="text-sm text-gray-600 mb-4">
+<mat-dialog-content class="dialog-content min-w-[420px]">
+  <p class="dialog-copy mb-4">
     Registra los pagos para convertir esta cotización en venta.
   </p>
 
   <form [formGroup]="form">
     <div formArrayName="pagos">
       @for (pago of pagosArray.controls; let i = $index; track i) {
-        <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 mb-3">
+        <div [formGroupName]="i" class="dialog-section p-4 mb-3">
           <div class="flex justify-between items-center mb-3">
-            <span class="text-sm font-semibold text-gray-700">Pago {{ i + 1 }}</span>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Pago {{ i + 1 }}</span>
             @if (pagosArray.length > 1) {
-              <button type="button" mat-icon-button (click)="eliminarPago(i)" color="warn">
+              <button type="button" mat-icon-button aria-label="Eliminar pago" (click)="eliminarPago(i)" color="warn">
                 <mat-icon>delete</mat-icon>
               </button>
             }
@@ -52,15 +52,15 @@
       }
     </div>
 
-    <button type="button" mat-stroked-button (click)="agregarPago()" class="w-full">
+    <button type="button" mat-stroked-button aria-label="Agregar otro pago" (click)="agregarPago()" class="w-full">
       <mat-icon>add</mat-icon> Agregar otro pago
     </button>
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="gap-2">
-  <button mat-button mat-dialog-close>Cancelar</button>
-  <button mat-raised-button color="primary" (click)="confirmar()">
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button mat-dialog-close aria-label="Cancelar confirmacion">Cancelar</button>
+  <button mat-raised-button color="primary" aria-label="Confirmar cotizacion" (click)="confirmar()">
     Confirmar cotización
   </button>
 </mat-dialog-actions>

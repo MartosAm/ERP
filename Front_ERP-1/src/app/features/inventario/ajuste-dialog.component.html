@@ -1,10 +1,10 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-yellow-600">tune</mat-icon>
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="text-amber-600 dark:text-amber-400" aria-hidden="true">tune</mat-icon>
   Ajuste manual de inventario
 </h2>
 
-<mat-dialog-content class="flex flex-col gap-4 pt-2 min-w-[400px]">
-  <p class="text-sm text-gray-600">
+<mat-dialog-content class="dialog-content min-w-[400px]">
+  <p class="dialog-copy">
     El ajuste establece la nueva cantidad de stock para el producto en el almacén seleccionado.
   </p>
 
@@ -35,7 +35,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Nueva cantidad</mat-label>
-      <input matInput type="number" formControlName="cantidad" min="0" />
+      <input matInput type="number" formControlName="cantidad" min="0" aria-label="Nueva cantidad de inventario" />
       @if (form.controls.cantidad.hasError('required')) {
         <mat-error>La cantidad es obligatoria</mat-error>
       }
@@ -43,7 +43,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Motivo del ajuste</mat-label>
-      <textarea matInput formControlName="motivo" rows="2"
+      <textarea matInput formControlName="motivo" rows="2" aria-label="Motivo del ajuste"
                 placeholder="Ej: Conteo físico, corrección de error..."></textarea>
       @if (form.controls.motivo.hasError('required')) {
         <mat-error>El motivo es obligatorio</mat-error>
@@ -52,12 +52,13 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="gap-2">
-  <button mat-button mat-dialog-close>Cancelar</button>
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button mat-dialog-close aria-label="Cancelar ajuste">Cancelar</button>
   <button
     mat-raised-button
     color="primary"
     [disabled]="guardando()"
+    aria-label="Registrar ajuste manual"
     (click)="guardar()">
     @if (guardando()) {
       <mat-spinner diameter="20" class="inline-block mr-2" />

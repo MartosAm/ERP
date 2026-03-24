@@ -23,7 +23,8 @@ interface DialogData {
         MatFormFieldModule, MatInputModule, MatCheckboxModule,
         MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     ],
-    templateUrl: './devolucion-dialog.component.html'
+    templateUrl: './devolucion-dialog.component.html',
+    styleUrl: './devolucion-dialog.component.css'
 })
 export class DevolucionDialogComponent {
   private readonly fb = inject(FormBuilder);

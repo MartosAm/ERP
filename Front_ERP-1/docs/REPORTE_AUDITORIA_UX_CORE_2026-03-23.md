@@ -83,3 +83,27 @@ Checklist aplicado:
 Conclusion:
 - No hay bloqueantes UX de severidad alta/critica.
 - Hallazgos del alcance core cerrados en esta iteracion.
+
+## Extension transaccional (Inventario y Ordenes)
+
+Aplicado en esta continuidad:
+- Dialogos reforzados con estilos consistentes en HTML + CSS + TS.
+- Contraste y legibilidad en dark/light ajustados.
+- Controles clave con `aria-label` en acciones sensibles.
+
+Archivos intervenidos:
+- src/app/features/inventario/ajuste-dialog.component.html
+- src/app/features/inventario/ajuste-dialog.component.ts
+- src/app/features/inventario/ajuste-dialog.component.css
+- src/app/features/inventario/traslado-dialog.component.html
+- src/app/features/inventario/traslado-dialog.component.ts
+- src/app/features/inventario/traslado-dialog.component.css
+- src/app/features/ordenes/cancelar-orden-dialog.component.html
+- src/app/features/ordenes/cancelar-orden-dialog.component.ts
+- src/app/features/ordenes/cancelar-orden-dialog.component.css
+- src/app/features/ordenes/devolucion-dialog.component.html
+- src/app/features/ordenes/devolucion-dialog.component.ts
+- src/app/features/ordenes/devolucion-dialog.component.css
+- src/app/features/ordenes/confirmar-cotizacion-dialog.component.html
+- src/app/features/ordenes/confirmar-cotizacion-dialog.component.ts
+- src/app/features/ordenes/confirmar-cotizacion-dialog.component.css

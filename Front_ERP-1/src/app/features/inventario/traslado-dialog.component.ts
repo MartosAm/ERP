@@ -21,7 +21,8 @@ import type { Producto, Almacen } from '../../core/models/api.model';
         MatFormFieldModule, MatInputModule, MatSelectModule,
         MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     ],
-    templateUrl: './traslado-dialog.component.html'
+    templateUrl: './traslado-dialog.component.html',
+    styleUrl: './traslado-dialog.component.css'
 })
 export class TrasladoDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
