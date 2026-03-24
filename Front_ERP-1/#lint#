@@ -963,3 +963,12 @@ node Front_ERP-1/mark-fases.js
  cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run ci > /tmp/erp_backend_ci.log 2>&1; echo EXIT_CODE:$?
  npm run ci > /tmp/erp_front_ci.log 2>&1; echo EXIT_CODE:$?
  tail -n 60 /tmp/erp_backend_ci.log; echo '---'; tail -n 60 /tmp/erp_front_ci.log
+ cd /home/adrian/Documentos/proyectos/ERP && git status --short
+ cd /home/adrian/Documentos/proyectos/ERP && git add "docs general/PLAN_ESTRATEGICO_MEJORA_CONTINUA_2026.md" && git commit -m "docs(plan): robustecer objetivo general con est cd /home/adrian/Documentos/proyectos/ERP && git rev-parse --short HEAD > /home/adrian/Documentos/proyectos/ERP/.git/HEAD_SHORT && git log -1 --pretty=%s > /home/adrian/Documentos/proyectos/ERP/.git/HEAD_SUBJECT
+ cd /home/adrian/Documentos/proyectos/ERP && git add "docs general/PLAN_ESTRATEGICO_MEJORA_CONTINUA_2026.md" && git commit -m "docs(plan): robustecer principios de ejecucion"
+ cd /home/adrian/Documentos/proyectos/ERP && git log -1 --pretty=format:'%h%n%s%n%an%n%ad' > commit_status_section2.txt && git status --short > status_after_section2.txt
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run test:security
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run test:security > test-security.log 2>&1; echo $? > test-security.exit
+ cd /home/adrian/Documentos/proyectos/ERP && git status --short
+ cd /home/adrian/Documentos/proyectos/ERP && git add Back_ERP/src/config/env.ts Back_ERP/src/middlewares/autenticar.ts Back_ERP/src/config/metrics.ts Back_ERP/.env.example Back_ERP/env.prod.template Back_ERP/src/middlewares/autenticar.test.ts Back_ERP/src/config/metrics.test.ts Back_ERP/src/middlewares/limitarRates.test.ts Back_ERP/package.json
+ cd /home/adrian/Documentos/proyectos/ERP && git commit -m "back: seguridad 3A rotacion de secretos y pruebas"

@@ -27,6 +27,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 echo "Validando health..."
 for i in {1..30}; do
   if curl -fsS http://localhost/api/health >/dev/null; then
+    bash ./deploy/scripts/post_deploy_smoke.sh http://localhost
     echo "Rollback OK"
     exit 0
   fi

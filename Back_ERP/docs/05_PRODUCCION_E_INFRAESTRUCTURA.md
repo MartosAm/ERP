@@ -610,6 +610,9 @@ Cada medida de seguridad esta duplicada en al menos dos capas:
 | `start` | node dist/server.js | Arrancar servidor compilado |
 | `start:prod` | NODE_ENV=production node dist/server.js | Arrancar con entorno prod |
 | `db:migrate:deploy` | prisma migrate deploy | Aplicar migraciones en prod |
+| `ops:smoke` | bash ./deploy/scripts/post_deploy_smoke.sh | Validar health/readiness/auth protegida |
+| `ops:backup` | bash ./deploy/scripts/backup_postgres.sh | Generar backup comprimido de PostgreSQL |
+| `ops:restore` | bash ./deploy/scripts/restore_postgres.sh | Restaurar backup SQL en PostgreSQL |
 
 ### Scripts de testing y CI
 
@@ -676,6 +679,7 @@ db:migrate:deploy (produccion):
 
 4. Verificar
    curl http://localhost/api/health/ready
+  npm run ops:smoke
 ```
 
 ### Rollback de emergencia
@@ -689,6 +693,22 @@ db:migrate:deploy (produccion):
 
 3. Si hay migraciones problematicas, revertir manualmente en la BD
    (Prisma no tiene rollback automatico; las reversiones se hacen via SQL)
+
+4. Verificar consistencia post-rollback
+   npm run ops:smoke
+```
+
+### Backup y restore operativos
+
+```
+Backup manual:
+  BACKUP_DIR=./backups npm run ops:backup
+
+Restore manual:
+  npm run ops:restore -- ./backups/ERP_db_YYYYMMDD_HHMMSS.sql.gz
+
+Verificacion obligatoria posterior:
+  npm run ops:smoke
 ```
 
 ---

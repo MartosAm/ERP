@@ -16,6 +16,7 @@ independiente, aunque siguen un orden logico de lo general a lo particular.
 | 04 | [Archivos Compartidos y Reutilizacion](04_ARCHIVOS_COMPARTIDOS_Y_REUTILIZACION.md) | Detalle de cada archivo en compartido/, config/, middlewares/ y tipos/; grafo de dependencias entre archivos; metricas de reutilizacion; principios de extraccion |
 | 05 | [Produccion e Infraestructura](05_PRODUCCION_E_INFRAESTRUCTURA.md) | Dockerfile multi-stage, docker-compose de produccion, Nginx reverse proxy, variables de entorno, health checks, seguridad HTTP, scripts de despliegue, checklist pre-produccion |
 | 06 | [Matriz de Contratos API Core](06_MATRIZ_CONTRATOS_API_CORE.md) | Contratos minimos verificables para auth, ordenes, inventario, compras y entregas; criterios de regresion y regla Go/No-Go por release |
+| 07 | [Runbook de Operacion e Incidentes](07_RUNBOOK_OPERACION_INCIDENTES.md) | Procedimiento operativo para triage, rollback, backup/restore y cierre de incidentes en VPS |
 
 ## Documentos preexistentes
 

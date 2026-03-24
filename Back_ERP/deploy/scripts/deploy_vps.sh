@@ -36,4 +36,7 @@ done
 echo "[4/4] Estado de servicios"
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 
+echo "Smoke test post deploy..."
+bash ./deploy/scripts/post_deploy_smoke.sh http://localhost
+
 echo "Deploy VPS completado."

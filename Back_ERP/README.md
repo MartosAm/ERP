@@ -1,250 +1,89 @@
-# ERP Backend
+# Back_ERP
 
-Backend API REST para el sistema ERP, construido con Node.js 20, Express.js, TypeScript, Prisma y PostgreSQL.
+Backend del ERP construido con Node 20, TypeScript, Express, Prisma y PostgreSQL.
 
-## 🚀 Quick Start
+## Estado
 
-### Instalación
+Este backend sigue una arquitectura modular por dominio:
+- modulos/<modulo>/<modulo>.routes.ts
+- modulos/<modulo>/<modulo>.controller.ts
+- modulos/<modulo>/<modulo>.service.ts
+- modulos/<modulo>/<modulo>.schema.ts
+
+Las utilidades transversales viven en:
+- src/config
+- src/middlewares
+- src/compartido
+
+## Requisitos
+
+- Node >= 20
+- npm >= 10
+- PostgreSQL
+- Redis (opcional pero recomendado para rate limit distribuido)
+
+## Inicio rapido
 
 ```bash
-# Las dependencias ya están instaladas
-npm install  # Si ejecuta en una máquina nueva
-
-# Crear archivo .env con las variables necesarias
 cp .env.example .env
-```
-a
-### Variables de Entorno
-
-Editar `.env`:
-
-```env
-DATABASE_URL=postgresql://usuario:password@localhost:5432/erp_db?connection_limit=20&pool_timeout=10
-JWT_SECRET=tu_clave_secreta_aqui
-JWT_EXPIRES_IN=7d
-NODE_ENV=development
-PORT=3001
-REQUEST_TIMEOUT_MS=30000
-PRISMA_QUERY_TIMEOUT_MS=30000
-```
-
-### Ejecutar en Desarrollo
-
-```bash
+npm ci
+npm run db:generate
 npm run dev
 ```
 
-El servidor estará disponible en: `http://localhost:3000`
+API local:
+- http://localhost:3001
 
-### Compilar y Ejecutar en Producción
+Health endpoints:
+- /api/health
+- /api/health/ready
 
-```bash
-npm run build
-npm start
-```
+## Scripts clave
 
-## 📦 Stack Tecnológico
-
-| Componente | Librería | Versión |
-|-----------|----------|---------|
-| Runtime | Node.js | 20 LTS |
-| Lenguaje | TypeScript | 5.x |
-| Framework | Express.js | 4.x |
-| Validación | Zod | 3.x |
-| ORM | Prisma | 5.x |
-| Autenticación | JWT + Bcrypt | 9 / 5 |
-| Documentación | Swagger UI | 5.x |
-| Base de Datos | PostgreSQL | 16 |
-
-## 📚 API Endpoints (Ejemplo)
-
-### Health Check
-```
-GET /api/health
-```
-
-### Autenticación - Generar Token JWT
-```
-POST /api/auth/token
-```
-
-### Autenticación - Hash de Contraseña
-```
-POST /api/auth/hash
-```
-
-### Validación - Validar Usuario con Zod
-```
-POST /api/validate/user
-```
-
-### Documentación Swagger
-```
-GET /api-docs
-```
-
-## 🔧 Estructura del Proyecto
-
-```
-Back_ERP/
-├── src/
-│   ├── index.ts           # Punto de entrada (ejemplo)
-│   ├── controllers/        # Controladores HTTP
-│   ├── services/           # Lógica de negocio
-│   ├── repositories/       # Acceso a datos
-│   ├── middleware/         # Middlewares Express
-│   ├── schemas/            # Validaciones Zod
-│   ├── types/              # Tipos TypeScript
-│   └── utils/              # Utilidades
-├── prisma/
-│   └── schema.prisma      # Esquema de BD (crear)
-├── dist/                   # Código compilado
-├── node_modules/           # Dependencias
-├── tsconfig.json          # Config TypeScript
-├── package.json           # Config NPM
-├── .env.example           # Template variables
-├── .gitignore             # Archivos ignorados
-└── README.md              # Este archivo
-```
-
-## 🔐 Seguridad
-
-- ✅ JWT para autenticación stateful
-- ✅ Bcrypt para hash de contraseñas
-- ✅ TypeScript para type-safety
-- ✅ Validación con Zod (DTOs type-safe)
-- ✅ CORS configurado (cuando sea necesario)
-
-## 🗄️ Base de Datos
-
-### Crear Base de Datos PostgreSQL
-
-```sql
-CREATE DATABASE erp_db;
-```
-
-### Prisma Setup
+Calidad y pruebas:
 
 ```bash
-# Inicializar Prisma (si no está hecho)
-npx prisma init
-
-# Ejecutar migraciones
-npx prisma migrate dev --name init
-
-# Abrir Prisma Studio
-npx prisma studio
+npm run typecheck
+npm run test
+npm run test:core
+npm run test:security
+npm run test:release
+npm run ci
 ```
 
-## 📝 Patrones de Código
-
-### Controller-Service-Repository Pattern
-
-**Controller**: Maneja requests/responses HTTP
-```typescript
-app.get('/api/users/:id', async (req, res) => {
-  const user = await userService.getUserById(req.params.id);
-  res.json(user);
-});
-```
-
-**Service**: Contiene lógica de negocio
-```typescript
-class UserService {
-  async getUserById(id: string) {
-    return await userRepository.findById(id);
-  }
-}
-```
-
-**Repository**: Accede a la base de datos
-```typescript
-class UserRepository {
-  async findById(id: string) {
-    return await prisma.user.findUnique({ where: { id } });
-  }
-}
-```
-
-### Validación con Zod
-
-```typescript
-const CreateUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(3),
-  password: z.string().min(8),
-});
-
-type CreateUserDTO = z.infer<typeof CreateUserSchema>;
-
-app.post('/api/users', (req, res) => {
-  const data = CreateUserSchema.parse(req.body);
-  // ...
-});
-```
-
-## 🧪 Testing (Preparado para)
+Operacion:
 
 ```bash
-npm test
+npm run quality:gate
+npm run ops:smoke
+npm run ops:backup
+npm run ops:restore -- ./backups/ERP_db_YYYYMMDD_HHMMSS.sql.gz
 ```
 
-Actualizar `package.json` scripts para agregar:
-- Jest para unit tests
-- Supertest para API testing
-- Prisma test database
+## Deploy y rollback
 
-## 📖 Documentación API (Swagger)
+Scripts disponibles en deploy/scripts:
+- deploy_vps.sh
+- rollback_vps.sh
+- quality_gate.sh
+- verify_architecture.sh
+- post_deploy_smoke.sh
+- backup_postgres.sh
+- restore_postgres.sh
 
-La documentación interactiva está disponible en:
-```
-http://localhost:3000/api-docs
-```
+## Documentacion tecnica
 
-Para agregar endpoints a Swagger, usar comentarios JSDoc o decoradores.
+Indice principal:
+- docs/README.md
 
-## 🚨 Troubleshooting
+Documentos recomendados:
+- docs/05_PRODUCCION_E_INFRAESTRUCTURA.md
+- docs/06_MATRIZ_CONTRATOS_API_CORE.md
+- docs/07_RUNBOOK_OPERACION_INCIDENTES.md
 
-### Puerto en uso
-```bash
-# Change PORT in .env or:
-PORT=3001 npm run dev
-```
+## Convenciones de seguridad
 
-### Error de base de datos
-```bash
-# Verificar conexión PostgreSQL
-psql $DATABASE_URL
-
-# Crear base de datos
-createdb erp_db
-```
-
-### TypeScript errors
-```bash
-npm run build  # Véase errores de compilación
-```
-
-## 📋 Checklist Pre-Production
-
-- [ ] Variables de entorno configuradas
-- [ ] Base de datos PostgreSQL creada
-- [ ] Prisma schema definido y migraciones ejecutadas
-- [ ] JWT_SECRET fuerte (mínimo 32 caracteres)
-- [ ] CORS configurado correctamente
-- [ ] Rate limiting implementado
-- [ ] Logging configurado
-- [ ] Tests completos
-- [ ] SSL/HTTPS habilitado
-- [ ] Monitoreo y alertas configurados
-
-## 📞 Soporte
-
-Para issues, contactar al equipo de desarrollo o revisar los logs en:
-```bash
-npm run dev  # Ver logs en consola
-```
-
----
-
-**Última actualización**: 24 de febrero de 2026
+- Secretos solo por .env en servidor
+- JWT_SECRET minimo 32 caracteres
+- CORS_ORIGIN obligatorio en produccion
+- No exponer PostgreSQL al host en produccion
