@@ -22,6 +22,22 @@ import { env } from '../config/env';
 import { ErrorNoAutorizado, ErrorAcceso } from '../compartido/errores';
 import { JwtPayload } from '../tipos/express';
 
+function verificarJwtConRotacion(token: string): JwtPayload {
+  const secretos = [env.JWT_SECRET, env.JWT_SECRET_PREVIOUS].filter(Boolean) as string[];
+
+  for (const secreto of secretos) {
+    try {
+      return jwt.verify(token, secreto, {
+        algorithms: ['HS256'],
+      }) as JwtPayload;
+    } catch {
+      // Intentar con el siguiente secreto
+    }
+  }
+
+  throw new ErrorNoAutorizado('Token invalido o expirado');
+}
+
 /**
  * Middleware que protege rutas requiriendo un JWT valido.
  * Pobla req.user con el payload del token para uso posterior.
@@ -48,11 +64,9 @@ export const autenticar = async (
 
   // 2. Verificar firma y expiracion del JWT
   try {
-    payload = jwt.verify(token, env.JWT_SECRET, {
-      algorithms: ['HS256'],
-    }) as JwtPayload;
-  } catch {
-    return next(new ErrorNoAutorizado('Token invalido o expirado'));
+    payload = verificarJwtConRotacion(token);
+  } catch (error) {
+    return next(error);
   }
 
   try {

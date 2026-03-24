@@ -17,6 +17,7 @@ jest.mock('../config/database', () => ({
 jest.mock('../config/env', () => ({
   env: {
     JWT_SECRET: 'test-secret',
+    JWT_SECRET_PREVIOUS: 'test-secret-previous',
   },
 }));
 
@@ -148,6 +149,35 @@ describe('middleware autenticar', () => {
 
     await autenticar(req, {} as any, next);
 
+    expect(req.user).toEqual(payload);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('acepta token firmado con JWT_SECRET_PREVIOUS durante rotacion', async () => {
+    const payload = { sesionId: 'ses-1', usuarioId: 'u-1', empresaId: 'e-1', rol: 'ADMIN' };
+    const req = { headers: { authorization: 'Bearer token' } } as any;
+    const next = jest.fn();
+
+    jwtVerify
+      .mockImplementationOnce(() => {
+        throw new Error('invalid with current secret');
+      })
+      .mockReturnValueOnce(payload);
+
+    mockPrisma.sesion.findUnique.mockResolvedValue({
+      activo: true,
+      usuario: {
+        activo: true,
+        rol: 'ADMIN',
+        horarioInicio: null,
+        horarioFin: null,
+        diasLaborales: [],
+      },
+    });
+
+    await autenticar(req, {} as any, next);
+
+    expect(jwtVerify).toHaveBeenCalledTimes(2);
     expect(req.user).toEqual(payload);
     expect(next).toHaveBeenCalledWith();
   });

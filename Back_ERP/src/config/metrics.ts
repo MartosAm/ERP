@@ -74,9 +74,11 @@ export function autorizarMetricas(req: Request, res: Response, next: NextFunctio
   }
 
   const auth = req.header('authorization') || '';
-  const esperado = `Bearer ${env.METRICS_TOKEN}`;
+  const tokensPermitidos = [env.METRICS_TOKEN, env.METRICS_TOKEN_PREVIOUS]
+    .filter(Boolean)
+    .map((token) => `Bearer ${token}`);
 
-  if (auth !== esperado) {
+  if (!tokensPermitidos.includes(auth)) {
     res.status(401).json({ exito: false, error: { codigo: 'UNAUTHORIZED', mensaje: 'Token de metricas invalido' } });
     return;
   }

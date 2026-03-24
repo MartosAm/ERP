@@ -26,6 +26,9 @@ const EnvSchema = z.object({
   /** Secreto para firmar tokens JWT. Minimo 32 caracteres por seguridad. */
   JWT_SECRET: z.string().min(32),
 
+  /** Secreto anterior para rotacion de JWT sin tumbar sesiones activas. */
+  JWT_SECRET_PREVIOUS: z.string().min(32).optional(),
+
   /** Puerto del servidor HTTP. Por defecto 3001 para no colisionar con Angular (4200). */
   PORT: z.coerce.number().default(3001),
 
@@ -71,6 +74,9 @@ const EnvSchema = z.object({
 
   /** Token Bearer opcional para proteger /api/metrics. */
   METRICS_TOKEN: z.string().min(16).optional(),
+
+  /** Token previo para rotacion de /api/metrics. */
+  METRICS_TOKEN_PREVIOUS: z.string().min(16).optional(),
 });
 
 // Validar las variables de entorno al importar este modulo

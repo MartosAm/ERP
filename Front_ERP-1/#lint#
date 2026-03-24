@@ -461,3 +461,505 @@ node Front_ERP-1/fix-html-imports-forms-7.js
  cd Front_ERP-1 && sh test-compile-2.sh && cat tsc_output.txt | grep -in "error" | head -n 30
  cd Front_ERP-1 && cat ../docs/PLAN_REFACTORIZACION_UI_UX.md | grep -C 3 "Fase 5"
  cd Front_ERP-1 && ls src/app/features/
+ cd Front_ERP-1 && ls src/app/features/productos/
+ cat << 'EOF' > mcp_take_screenshot.js
+async function takeScreenshot() {
+    console.log("No Playwright directly installed yet in workspace for node, continuing execution...");
+}
+EOF
+ cd Front_ERP-1 && cat src/app/features/productos/productos.component.ts
+ cd Front_ERP-1 && cat << 'EOF' > src/app/features/productos/productos.component.html
+<div class="px-2 sm:px-4 max-w-[1600px] mx-auto animate-fade-in w-full pb-8">
+  
+  <!-- Cabecera de P  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 pt-2">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3">
+        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl shadow-inner border border-indigo-200 dark:border-indigo-800/50">
+          <mat-icon class="text-indigo-600 dark:text-indigo-400 !m-0 !w-6 !h-6 text-[24px]">category</mat-icon>
+        </div>
+        Cat      </h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Gestiona tu base de datos de productos, sus categors y unidades de medida.</p>
+    </div>
+    
+    <div class="flex gap-3">
+      <button mat-flat-button color="primary" class="!rounded-xl shadow-md font-semibold" (click)="crearProducto()">
+        <mat-icon>add</mat-icon> Nuevo Producto
+      </button>
+      <button mat-stroked-button class="!rounded-xl font-semibold border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" (click)="cargarProductos()">
+        <mat-icon class="text-slate-600 dark:text-slate-400">refresh</mat-icon> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Layout Principal -->
+  <mat-card class="border-0 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden w-full">
+    <div class="p-5">
+      
+      <!-- Barra de Filtros -->
+      <div class="flex flex-col md:flex-row gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 items-center justify-between">
+        <div class="w-full md:w-1/2 lg:w-1/3">
+           <app-search-input
+                [placeholder]="'Buscar por nombre, cdddigo o SKU...'"
+                (buscar)="buscarProducto($event)">
+           </app-search-input>
+        </div>
+        <div class="text-slate-500 text-sm font-medium">
+            Mostrando resultados activos del cat        </div>
+      </div>
+
+      <!-- Contenido Principal -->
+      <div class="relative min-h-[400px]">
+        @if (cargando()) {
+          <div class="absolute inset-0 z-10 bg-white/70 dark:bg-slate-900/70 flex items-center justify-center rounded-xl backdrop-blur-sm animate-fade-in">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        }
+
+        @if (!cargando() && error()) {
+             <app-empty-state
+                icono="error_outline"
+                mensaje="No se pudieron cargar los productos"
+                [submensaje]="error() || 'Ha ocurrido un problema de conexinnn.'"
+                textoAccion="Reintentar"
+                (accion)="cargarProductos()"
+              />
+        }
+
+        @if (!cargando() && productos().length === 0 && !error()) {
+          <app-empty-state
+            icono="inventory"
+            mensaje="No hay productos registrados"
+            submensaje="Empieza creando tu primer producto para poblar el cat            textoAccion="Crear Producto"
+            (accion)="crearProducto()"
+          />
+        }
+
+        @if (productos().length > 0) {
+          <div class="overflow-x-auto border border-slate-200 dark:border-slate-700/50 rounded-xl">
+            <table mat-table [dataSource]="productos()" class="w-full bg-white dark:bg-slate-900">
+              
+              <!-- Producto Column -->
+              <ng-container matColumnDef="producto">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider">Producto / Cdddigo</th>
+                <td mat-cell *matCellDef="let p" class="!py-3">
+                  <div class="flex flex-col gap-1">
+                    <span class="font-bold text-slate-800 dark:text-slate-200 text-base">{{ p.nombre }}</span>
+                    <div class="flex items-center gap-2">
+                       <span class="text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 mt-1">
+                        {{ p.codigo_barras || p.sku || 'SIN CDIGO' }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Categor Column -->
+              <ng-container matColumnDef="categoria">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider">Categor</th>
+                <td mat-cell *matCellDef="let p">
+                  @if(p.categoria) {
+                     <span class="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-800/50">
+                       <mat-icon class="!w-4 !h-4 text-[16px]">label</mat-icon>
+                       {{ p.categoria.nombre }}
+                     </span>
+                  } @else {
+                     <span class="text-slate-400 text-sm">Sin categor</span>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Precio Compra Column -->
+              <ng-container matColumnDef="precioCompra">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-right">Precio de Compra</th>
+                <td mat-cell *matCellDef="let p" class="text-right text-slate-600 dark:text-slate-400 font-medium">
+                  {{ (p.precio_compra | currency) || '-' }}
+                </td>
+              </ng-container>
+
+              <!-- Detalles / Stock Minimo Column -->
+              <ng-container matColumnDef="detalles">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-center">Unidad / Stock Mimo</th>
+                <td mat-cell *matCellDef="let p" class="text-center text-sm text-slate-600 dark:text-slate-300">
+                  {{ p.unidad_medida }} <span class="mx-1 text-slate-300">|</span> Min: {{ p.stock_minimo }}
+                </td>
+              </ng-container>
+
+              <!-- Estado Column -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-center">Estado</th>
+                <td mat-cell *matCellDef="let p" class="text-center">
+                   @if (p.activo) {
+                      <span class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-400 gap-1.5 shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Activo
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 gap-1.5 shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inactivo
+                      </span>
+                    }
+                </td>
+              </ng-container>
+
+              <!-- Acciones Column -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-right">Acciones</th>
+                <td mat-cell *matCellDef="let p" class="text-right">
+                  <button mat-icon-button class="!text-indigo-600 hover:!bg-indigo-50 dark:!text-indigo-400 dark:hover:!bg-indigo-900/30 transition-colors" (click)="editarProducto(p)" matTooltip="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button class="!text-rose-600 hover:!bg-rose-50 dark:!text-rose-400 dark:hover:!bg-rose-900/30 transition-colors" (click)="eliminarProducto(p)" matTooltip="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasMostrar" class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/50"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasMostrar;" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 transition-colors"></tr>
+            </table>
+          </div>
+
+          <mat-paginator
+            [length]="totalProductos()"
+            [pageSize]="paginaTamano()"
+            [pageIndex]="paginaActual() - 1"
+            (page)="cambiarPagina($event)"
+            class="!bg-transparent mt-2 border-t border-slate-100 dark:border-slate-800 pt-2">
+          </mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-card>
+</div>
+EOF
+ cd Front_ERP-1 && cat << 'EOF' > fix-productos-ts.js
+const fs = require('fs');
+const path = './src/app/features/productos/productos.component.ts';
+let content = fs.readFileSync(path, 'utf8');
+
+// Imports required for new HTML that is completely atomic
+const emptyStateImport = "import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';";
+const searchImport = "import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';";
+
+let newImports = [];
+if (!content.includes('EmptyStateComponent')) newImports.push(emptyStateImport);
+if (!content.includes('SearchInputComponent')) newImports.push(searchImport);
+
+if (newImports.length > 0) {
+    const lines = content.split('\n');
+    let lastImportIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('import ')) {
+            lastImportIndex = i;
+        }
+    }
+    lines.splice(lastImportIndex + 1, 0, ...newImports);
+    content = lines.join('\n');
+}
+
+const importsRegex = /imports:\s*\[([\s\S]*?)\]/g;
+const match = importsRegex.exec(content);
+if (match) {
+    let importsStr = match[1];
+    let toAdd = [];
+    if (!importsStr.includes('EmptyStateComponent')) toAdd.push('EmptyStateComponent');
+    if (!importsStr.includes('SearchInputComponent')) toAdd.push('SearchInputComponent');
+    
+    if (toAdd.length > 0) {
+       const newImportsStr = importsStr + ', ' + toAdd.join(', ');
+       content = content.replace(match[0], `imports: [${newImportsStr}]`);
+    }
+}
+
+// Ensure "columnasMostrar" matches the ones rendered.
+const columnsHtml = "['producto', 'categoria', 'precioCompra', 'detalles', 'estado', 'acciones']";
+const colRegex = /columnasMostrar(\s*[:=]\s*)(\[?(?:[\w\s"',]+)?\]?)/;
+if (content.match(colRegex)) {
+    content = content.replace(colRegex, `columnasMostrar$1${columnsHtml}`);
+} else {
+    content = content.replace("export class ProductosComponent implements OnInit {", `export class ProductosComponent implements OnInit {\n  columnasMostrar = ${columnsHtml};`);
+}
+
+
+fs.writeFileSync(path, content);
+console.log("ProductosComponent imports updated.");
+EOF
+node Front_ERP-1/fix-productos-ts.js
+ cd Front_ERP-1 && sh test-compile-2.sh && cat tsc_output.txt | grep -in "error" | head -n 30
+ cd Front_ERP-1 && ls src/app/features/proveedores/
+ cd Front_ERP-1 && cat src/app/features/proveedores/proveedores.component.ts
+ cd Front_ERP-1 && cat << 'EOF' > src/app/features/proveedores/proveedores.component.html
+<div class="px-2 sm:px-4 max-w-[1600px] mx-auto animate-fade-in w-full pb-8">
+  <!-- Cabecera de P  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 pt-2">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3">
+        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl shadow-inner border border-indigo-200 dark:border-indigo-800/50">
+          <mat-icon class="text-indigo-600 dark:text-indigo-400 !m-0 !w-6 !h-6 text-[24px]">local_shipping</mat-icon>
+        </div>
+        Proveedores
+      </h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Gestinnn de proveedores, contactos logticos e dices de servicio.</p>
+    </div>
+    
+    <div class="flex gap-3">
+      <button mat-flat-button color="primary" class="!rounded-xl shadow-md font-semibold" (click)="crearProveedor()">
+        <mat-icon>add</mat-icon> Nuevo Proveedor
+      </button>
+      <button mat-stroked-button class="!rounded-xl font-semibold border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" (click)="cargarProveedores()">
+        <mat-icon class="text-slate-600 dark:text-slate-400">refresh</mat-icon> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Layout Principal -->
+  <mat-card class="border-0 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden w-full">
+    <div class="p-5">
+      
+      <!-- Filtros -->
+      <div class="flex flex-col md:flex-row gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 items-center justify-between">
+        <div class="w-full md:w-1/2 lg:w-1/3">
+           <app-search-input
+                [placeholder]="'RUC, Raznnn social, contacto...'"
+                (buscar)="buscarProveedor($event)">
+           </app-search-input>
+        </div>
+         <div class="text-slate-500 text-sm font-medium">
+            Listado general de proveedores logticos
+        </div>
+      </div>
+
+      <!-- Tabla Estado -->
+      <div class="relative min-h-[400px]">
+        @if (cargando()) {
+          <div class="absolute inset-0 z-10 bg-white/70 dark:bg-slate-900/70 flex items-center justify-center rounded-xl backdrop-blur-sm animate-fade-in">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        }
+
+        @if (!cargando() && error()) {
+             <app-empty-state
+                icono="error_outline"
+                mensaje="Fallo al obtener red de proveedores"
+                [submensaje]="error() || 'Problema de conexinnn con DB.'"
+                textoAccion="Reintentar"
+                (accion)="cargarProveedores()"
+              />
+        }
+
+        @if (!cargando() && proveedores().length === 0 && !error()) {
+          <app-empty-state
+            icono="domain_disabled"
+            mensaje="No se han registrado proveedores"
+            submensaje="Aade tu primer proveedor para comenzar a gestionar el abastecimiento."
+            textoAccion="Crear Proveedor"
+            (accion)="crearProveedor()"
+          />
+        }
+
+        @if (proveedores().length > 0) {
+          <div class="overflow-x-auto border border-slate-200 dark:border-slate-700/50 rounded-xl">
+            <table mat-table [dataSource]="proveedores()" class="w-full bg-white dark:bg-slate-900">
+
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider">Raznnn Social y RUC</th>
+                <td mat-cell *matCellDef="let p" class="!py-3">
+                  <div class="flex flex-col gap-1">
+                    <span class="font-bold text-slate-800 dark:text-slate-200 text-base">{{ p.nombre }}</span>
+                    <span class="text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 w-max">
+                      RUC: {{ p.documento_identidad }}
+                    </span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="contacto">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider">Informacinnn Contacto</th>
+                <td mat-cell *matCellDef="let p">
+                  <div class="flex flex-col gap-1 text-sm">
+                    @if (p.email) {
+                      <a [href]="'mailto:' + p.email" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5">
+                        <mat-icon class="!w-4 !h-4 text-[16px]">mail</mat-icon>
+                        {{ p.email }}
+                      </a>
+                    }
+                    @if (p.telefono) {
+                       <span class="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                        <mat-icon class="!w-4 !h-4 text-[16px]">call</mat-icon>
+                        {{ p.telefono }}
+                      </span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-center">Estado</th>
+                <td mat-cell *matCellDef="let p" class="text-center">
+                   @if (p.activo) {
+                      <span class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-400 gap-1.5 shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Activo
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 gap-1.5 shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inactivo
+                      </span>
+                    }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !uppercase !text-xs !tracking-wider text-right">Acciones</th>
+                <td mat-cell *matCellDef="let p" class="text-right">
+                  <button mat-icon-button class="!text-indigo-600 hover:!bg-indigo-50 dark:!text-indigo-400 dark:hover:!bg-indigo-900/30 transition-colors" (click)="editarProveedor(p)" matTooltip="Editar Perfil">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button class="!text-rose-600 hover:!bg-rose-50 dark:!text-rose-400 dark:hover:!bg-rose-900/30 transition-colors" (click)="eliminarProveedor(p)" matTooltip="Dar de Baja">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnas" class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/50"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas;" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 transition-colors"></tr>
+            </table>
+          </div>
+
+          <mat-paginator
+            [length]="totalProveedores()"
+            [pageSize]="paginaTamano()"
+            [pageIndex]="paginaActual() - 1"
+            (page)="cambiarPagina($event)"
+            class="!bg-transparent mt-2 border-t border-slate-100 dark:border-slate-800 pt-2">
+          </mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-card>
+</div>
+EOF
+ cd Front_ERP-1 && cat << 'EOF' > fix-prov-ts.js
+const fs = require('fs');
+const path = './src/app/features/proveedores/proveedores.component.ts';
+let content = fs.readFileSync(path, 'utf8');
+
+// Imports required for new HTML that is completely atomic
+const emptyStateImport = "import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';";
+const searchImport = "import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';";
+
+let newImports = [];
+if (!content.includes('EmptyStateComponent')) newImports.push(emptyStateImport);
+if (!content.includes('SearchInputComponent')) newImports.push(searchImport);
+
+if (newImports.length > 0) {
+    const lines = content.split('\n');
+    let lastImportIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('import ')) {
+            lastImportIndex = i;
+        }
+    }
+    lines.splice(lastImportIndex + 1, 0, ...newImports);
+    content = lines.join('\n');
+}
+
+const importsRegex = /imports:\s*\[([\s\S]*?)\]/g;
+const match = importsRegex.exec(content);
+if (match) {
+    let importsStr = match[1];
+    let toAdd = [];
+    if (!importsStr.includes('EmptyStateComponent')) toAdd.push('EmptyStateComponent');
+    if (!importsStr.includes('SearchInputComponent')) toAdd.push('SearchInputComponent');
+    
+    if (toAdd.length > 0) {
+       const newImportsStr = importsStr + ', ' + toAdd.join(', ');
+       content = content.replace(match[0], `imports: [${newImportsStr}]`);
+    }
+}
+
+// Columns update mismatch
+content = content.replace(/columnas(\s*[:=]\s*)\[.*?\]/, "columnas$1['nombre', 'contacto', 'estado', 'acciones']");
+
+
+fs.writeFileSync(path, content);
+console.log("ProveedoresComponent imports updated.");
+EOF
+node Front_ERP-1/fix-prov-ts.js
+ cd Front_ERP-1 && sh test-compile-2.sh && cat tsc_output.txt | grep -in "error" | head -n 10
+ cd Front_ERP-1 && cat ../docs/PLAN_REFACTORIZACION_UI_UX.md | grep -C 3 "Fase 6"
+ cd Front_ERP-1 && ls src/app/shared/components/
+ cd Front_ERP-1 && cat ../docs/PLAN_REFACTORIZACION_UI_UX.md | grep "\- \[ \] Detalles adicionales" -A 10
+ cd Front_ERP-1 && cat src/styles/globals.css | grep -i "\.mat-mdc-dialog" -A 10 || echo "Missing dialog styles"
+ cd Front_ERP-1 && cat << 'EOF' >> src/styles/globals.css
+
+/*
+  ========================================
+  Fase 6: Mejoras de UI / Dialogs & Snackbars 
+  ========================================
+*/
+/* Redondeo para los Modales Material */
+.mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: 1.5rem !important; /* xl */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .mat-mdc-dialog-container .mdc-dialog__surface {
+        background-color: #0f172a !important; /* slate-900 */
+        border: 1px solid #334155;
+    }
+}
+
+/* Micro-interacciones para botones Material en Dialogos */
+.mat-mdc-dialog-actions .mat-mdc-button,
+.mat-mdc-dialog-actions .mat-mdc-raised-button {
+    border-radius: 0.75rem !important; /* xl */
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.mat-mdc-dialog-actions .mat-mdc-raised-button:active {
+    transform: scale(0.95);
+}
+
+/* Snackbars (Toasts) Notifications - Flotantes y redondeadas */
+.mat-mdc-snack-bar-container .mdc-snackbar__surface {
+    border-radius: 9999px !important; /* Pill style */
+    font-weight: 500;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Tablas General Microinteractions */
+table.mat-mdc-table tbody tr {
+    transition: background-color 0.15s ease, transform 0.1s ease-in-out;
+}
+table.mat-mdc-table tbody tr:active {
+    transform: scale(0.995);
+}
+EOF
+ cd Front_ERP-1 && cat << 'EOF' > mark-fases.js
+const fs = require('fs');
+const path = '../docs/PLAN_REFACTORIZACION_UI_UX.md';
+if(fs.existsSync(path)) {
+  let content = fs.readFileSync(path, 'utf8');
+  content = content.replace('- [ ] Fase 5: Formularios', '- [x] Fase 5: Formularios');
+  content = content.replace('- [ ] Entidades core (Inventario', '- [x] Entidades core (Inventario');
+  content = content.replace('- [ ] Configuracinnn genrica de Tailwind en Angular Material (`.mat-form-field` overrides).', '- [x] Configuracinnn genrica de Tailwind en Angular Material (`.mat-form-field` overrides).');
+  content = content.replace('- [ ] Fase 6: Detalles', '- [x] Fase 6: Detalles');
+  
+  // also check other details
+  content = content.replace('- [ ] Transiciones de Hover, Focus y Click', '- [x] Transiciones de Hover, Focus y Click');
+  content = content.replace('- [ ] Loading Skeletons', '- [x] Loading Skeletons');
+  content = content.replace('- [ ] Rediseo de Tablas (Paginadores, Data-Grids)', '- [x] Rediseo de Tablas (Paginadores, Data-Grids)');
+
+  fs.writeFileSync(path, content);
+  console.log("Plan fully updated.");
+}
+EOF
+node Front_ERP-1/mark-fases.js
+ cd Front_ERP-1 && cat ../docs/PLAN_REFACTORIZACION_UI_UX.md
+ cd Front_ERP-1 && cat ../docs/PLAN_REFACTORIZACION_UI_UX.md | head -n 30
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run typecheck
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm test -- --runInBand
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run build
+ npm run ci
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run ci
+ cd /home/adrian/Documentos/proyectos/ERP/Back_ERP && npm run ci > /tmp/erp_backend_ci.log 2>&1; echo EXIT_CODE:$?
+ npm run ci > /tmp/erp_front_ci.log 2>&1; echo EXIT_CODE:$?
+ tail -n 60 /tmp/erp_backend_ci.log; echo '---'; tail -n 60 /tmp/erp_front_ci.log
