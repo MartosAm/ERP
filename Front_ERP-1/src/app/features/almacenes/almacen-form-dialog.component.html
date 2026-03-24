@@ -1,6 +1,11 @@
-<h2 mat-dialog-title>{{ esEdicion ? 'Editar' : 'Nuevo' }} almacén</h2>
+<h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+  <div class="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+    <mat-icon>{{ esEdicion ? 'edit' : 'warehouse' }}</mat-icon>
+  </div>
+  <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">{{ esEdicion ? 'Editar' : 'Nuevo' }} almacén</span>
+</h2>
 
-<mat-dialog-content class="flex flex-col gap-4">
+<mat-dialog-content class="dialog-content flex flex-col gap-4">
   <form [formGroup]="form" id="almacenForm" (ngSubmit)="guardar()" class="flex flex-col gap-4 pt-2">
     <!-- Nombre -->
     <mat-form-field appearance="outline" class="w-full">
@@ -27,12 +32,12 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
-  <button mat-flat-button color="primary" type="submit" form="almacenForm" [disabled]="guardando()">
+<div class="dialog-actions" mat-dialog-actions>
+  <button mat-button mat-dialog-close [disabled]="guardando()" aria-label="Cancelar">Cancelar</button>
+  <button mat-flat-button class="bg-orange-600 text-white hover:bg-orange-700" type="submit" form="almacenForm" [disabled]="guardando()" aria-label="Guardar almacén">
     @if (guardando()) {
-      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
     }
     {{ esEdicion ? 'Actualizar' : 'Crear' }}
   </button>
-</mat-dialog-actions>
+</div>

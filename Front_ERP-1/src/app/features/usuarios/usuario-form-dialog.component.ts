@@ -20,40 +20,8 @@ import type { UsuarioAdmin, Rol } from '../../core/models/api.model';
         MatFormFieldModule, MatInputModule, MatSelectModule,
         MatButtonModule, MatIconModule,
     ],
-    template: `
-    <h2 mat-dialog-title class="flex items-center gap-2">
-      <mat-icon class="text-indigo-600">edit</mat-icon>
-      Editar usuario
-    </h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" class="flex flex-col gap-1">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
-          <input matInput formControlName="nombre" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono</mat-label>
-          <input matInput formControlName="telefono" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Rol</mat-label>
-          <mat-select formControlName="rol">
-            <mat-option value="ADMIN">Admin</mat-option>
-            <mat-option value="CAJERO">Cajero</mat-option>
-            <mat-option value="REPARTIDOR">Repartidor</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancelar</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid || guardando" (click)="guardar()">
-        Guardar
-      </button>
-    </mat-dialog-actions>
-  `
+    templateUrl: './usuario-form-dialog.component.html',
+    styleUrl: './usuario-form-dialog.component.css'
 })
 export class UsuarioFormDialogComponent {
   private readonly fb = inject(FormBuilder);

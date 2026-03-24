@@ -1,9 +1,11 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-indigo-500">shopping_cart</mat-icon>
-  Nueva orden de compra
+<h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+  <div class="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+    <mat-icon>shopping_cart</mat-icon>
+  </div>
+  <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">Nueva orden de compra</span>
 </h2>
 
-<mat-dialog-content class="pt-2">
+<mat-dialog-content class="dialog-content pt-2">
   <form [formGroup]="form" class="flex flex-col gap-4">
     <div class="grid grid-cols-2 gap-4">
       <mat-form-field appearance="outline">
@@ -25,15 +27,15 @@
     </div>
 
     <!-- Líneas de detalle -->
-    <div class="border rounded-lg">
-      <div class="bg-gray-50 px-4 py-2 flex items-center justify-between">
-        <h4 class="text-sm font-semibold text-gray-700">Productos</h4>
-        <button mat-icon-button color="primary" (click)="agregarLinea()" type="button">
+    <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden relative">
+      <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+        <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Productos</h4>
+        <button mat-icon-button color="primary" (click)="agregarLinea()" type="button" aria-label="Agregar línea de producto">
           <mat-icon>add_circle</mat-icon>
         </button>
       </div>
 
-      <div class="divide-y">
+      <div class="divide-y divide-slate-100 dark:divide-slate-800">
         @for (linea of detallesArray.controls; track $index) {
           <div class="px-4 py-3 flex items-center gap-3" [formGroup]="getLinea($index)">
             <mat-form-field appearance="outline" class="flex-1">
@@ -56,11 +58,12 @@
               <input matInput type="number" formControlName="costoUnitario" min="0.01" step="0.01" />
             </mat-form-field>
 
-            <span class="w-28 text-right font-medium text-sm">
+            <span class="w-28 text-right font-medium text-sm text-slate-800 dark:text-slate-200">
               {{ (getLinea($index).get('cantidad')?.value || 0) * (getLinea($index).get('costoUnitario')?.value || 0) | moneda }}
             </span>
 
             <button mat-icon-button color="warn" (click)="eliminarLinea($index)" type="button"
+                    aria-label="Eliminar producto"
                     [disabled]="detallesArray.length <= 1">
               <mat-icon>delete</mat-icon>
             </button>
@@ -68,9 +71,8 @@
         }
       </div>
 
-      <mat-divider />
-      <div class="px-4 py-3 flex justify-end">
-        <span class="text-base font-bold">Total: {{ total | moneda }}</span>
+      <div class="px-4 py-3 flex justify-end bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
+        <span class="text-base font-bold text-slate-900 dark:text-white">Total: {{ total | moneda }}</span>
       </div>
     </div>
 
@@ -81,16 +83,17 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="gap-2">
-  <button mat-button mat-dialog-close>Cancelar</button>
+<div class="dialog-actions" mat-dialog-actions>
+  <button mat-button mat-dialog-close aria-label="Cancelar">Cancelar</button>
   <button
-    mat-raised-button
-    color="primary"
+    mat-flat-button
+    class="bg-emerald-600 text-white hover:bg-emerald-700"
     [disabled]="guardando()"
+    aria-label="Crear compra"
     (click)="guardar()">
     @if (guardando()) {
-      <mat-spinner diameter="20" class="inline-block mr-2" />
+      <mat-spinner diameter="18" class="inline-block mr-2" />
     }
     Crear compra
   </button>
-</mat-dialog-actions>
+</div>

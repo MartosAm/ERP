@@ -1,6 +1,11 @@
-<h2 mat-dialog-title>{{ esEdicion ? 'Editar' : 'Nuevo' }} cliente</h2>
+<h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+  <div class="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+    <mat-icon>{{ esEdicion ? 'edit' : 'person_add' }}</mat-icon>
+  </div>
+  <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">{{ esEdicion ? 'Editar' : 'Nuevo' }} cliente</span>
+</h2>
 
-<mat-dialog-content class="flex flex-col gap-4">
+<mat-dialog-content class="dialog-content flex flex-col gap-4">
   <form [formGroup]="form" id="clienteForm" (ngSubmit)="guardar()" class="flex flex-col gap-4 pt-2">
     <!-- Nombre -->
     <mat-form-field appearance="outline" class="w-full">
@@ -70,12 +75,12 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close [disabled]="guardando()">Cancelar</button>
-  <button mat-flat-button color="primary" type="submit" form="clienteForm" [disabled]="guardando()">
+<div class="dialog-actions" mat-dialog-actions>
+  <button mat-button mat-dialog-close [disabled]="guardando()" aria-label="Cancelar">Cancelar</button>
+  <button mat-flat-button class="bg-cyan-600 text-white hover:bg-cyan-700" type="submit" form="clienteForm" [disabled]="guardando()" aria-label="Guardar cliente">
     @if (guardando()) {
-      <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
     }
     {{ esEdicion ? 'Actualizar' : 'Crear' }}
   </button>
-</mat-dialog-actions>
+</div>

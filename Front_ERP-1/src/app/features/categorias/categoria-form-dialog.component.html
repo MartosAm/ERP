@@ -1,9 +1,11 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-primary">category</mat-icon>
-  {{ esEdicion ? 'Editar' : 'Nueva' }} categoría
+<h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+  <div class="h-10 w-10 rounded-full bg-fuchsia-100 dark:bg-fuchsia-900/30 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400">
+    <mat-icon>{{ esEdicion ? 'edit' : 'category' }}</mat-icon>
+  </div>
+  <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">{{ esEdicion ? 'Editar' : 'Nueva' }} categoría</span>
 </h2>
 
-<mat-dialog-content class="flex flex-col gap-4 pt-2 min-w-[400px]">
+<mat-dialog-content class="dialog-content flex flex-col gap-4 pt-2 min-w-[400px]">
   <form [formGroup]="form" class="flex flex-col gap-3">
     <mat-form-field appearance="outline">
       <mat-label>Nombre</mat-label>
@@ -50,16 +52,17 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="gap-2">
-  <button mat-button mat-dialog-close>Cancelar</button>
+<div class="dialog-actions" mat-dialog-actions>
+  <button mat-button mat-dialog-close aria-label="Cancelar">Cancelar</button>
   <button
-    mat-raised-button
-    color="primary"
+    mat-flat-button
+    class="bg-fuchsia-600 text-white hover:bg-fuchsia-700"
     [disabled]="guardando()"
+    aria-label="Guardar categoría"
     (click)="guardar()">
     @if (guardando()) {
-      <mat-spinner diameter="20" class="inline-block mr-2" />
+      <mat-spinner diameter="18" class="inline-block mr-2" />
     }
     {{ esEdicion ? 'Actualizar' : 'Crear' }}
   </button>
-</mat-dialog-actions>
+</div>

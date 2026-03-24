@@ -1,14 +1,16 @@
 <div class="cobrar-dialog">
-  <h2 mat-dialog-title class="flex items-center gap-2">
-    <mat-icon class="text-green-600">payments</mat-icon>
-    Cobrar venta
+  <h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+    <div class="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+      <mat-icon>payments</mat-icon>
+    </div>
+    <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">Cobrar venta</span>
   </h2>
 
-  <mat-dialog-content>
+  <mat-dialog-content class="dialog-content">
     <!-- Total a cobrar -->
-    <div class="text-center py-3 mb-4 bg-gray-50 rounded-lg">
-      <p class="text-sm text-gray-500">Total a cobrar</p>
-      <p class="text-3xl font-bold text-gray-900">{{ data.total | moneda }}</p>
+    <div class="text-center py-3 mb-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Total a cobrar</p>
+      <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ data.total | moneda }}</p>
     </div>
 
     @if (pagoUnico()) {
@@ -122,16 +124,16 @@
     </div>
   </mat-dialog-content>
 
-  <mat-dialog-actions align="end" class="gap-2 p-4">
-    <button mat-button mat-dialog-close>Cancelar</button>
+  <div class="dialog-actions" mat-dialog-actions>
+    <button mat-button mat-dialog-close aria-label="Cancelar">Cancelar</button>
     <button
-      mat-raised-button
-      color="primary"
+      mat-flat-button
+      class="bg-emerald-600 text-white hover:bg-emerald-700"
       [disabled]="!puedeCobrar"
-      (click)="confirmar()"
-      class="!bg-green-600 !text-white">
+      aria-label="Confirmar cobro"
+      (click)="confirmar()">
       <mat-icon>check</mat-icon>
       Confirmar cobro
     </button>
-  </mat-dialog-actions>
+  </div>
 </div>

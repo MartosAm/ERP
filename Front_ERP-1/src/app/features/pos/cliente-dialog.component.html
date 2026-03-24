@@ -1,9 +1,11 @@
-<h2 mat-dialog-title class="flex items-center gap-2">
-  <mat-icon class="text-indigo-600">person_search</mat-icon>
-  Seleccionar cliente
+<h2 mat-dialog-title class="dialog-title flex items-center gap-2">
+  <div class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+    <mat-icon>person_search</mat-icon>
+  </div>
+  <span class="text-slate-800 dark:text-slate-100 font-semibold text-lg">Seleccionar cliente</span>
 </h2>
 
-<mat-dialog-content class="min-h-[280px]">
+<mat-dialog-content class="dialog-content min-h-[280px]">
   <!-- Búsqueda -->
   <mat-form-field appearance="outline" class="w-full">
     <mat-label>Buscar cliente</mat-label>
@@ -46,6 +48,6 @@
   }
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Cancelar</button>
-</mat-dialog-actions>
+<div class="dialog-actions" mat-dialog-actions>
+  <button mat-button mat-dialog-close aria-label="Cancelar">Cancelar</button>
+</div>
