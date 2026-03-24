@@ -11,12 +11,12 @@ Alcance: rutas core frontend
 
 ## Resumen ejecutivo
 
-Resultado general: APTO CON OBSERVACIONES
+Resultado general: APTO
 
 - Hallazgos criticos: 0
 - Hallazgos altos: 0
 - Hallazgos medios: 4 (resueltos en esta iteracion)
-- Hallazgos bajos: 3 (2 resueltos, 1 pendiente)
+- Hallazgos bajos: 3 (3 resueltos)
 
 ## Hallazgos y estado
 
@@ -69,8 +69,11 @@ Resultado general: APTO CON OBSERVACIONES
 7. Severidad baja
 - Hallazgo: uso de colores utilitarios claros en algunas tablas (text-gray-400/500) puede degradar contraste en combinaciones especificas.
 - Impacto: legibilidad reducida en ciertos dispositivos/brightness.
-- Estado: pendiente.
-- Recomendacion: levantar auditoria visual de contraste con checklist en mobile y dark mode antes de release.
+- Estado: resuelto.
+- Evidencia:
+  - src/app/features/proveedores/proveedores.component.html
+  - src/app/features/inventario/inventario.component.html
+  - src/app/features/ordenes/ordenes.component.html
 
 ## Validacion de salida
 
@@ -79,4 +82,4 @@ Checklist aplicado:
 
 Conclusion:
 - No hay bloqueantes UX de severidad alta/critica.
-- Recomendado ejecutar pasada visual final de contraste y foco en entorno real de QA.
+- Hallazgos del alcance core cerrados en esta iteracion.
