@@ -11,6 +11,7 @@
   <div class="card mb-4">
     <app-search-input
       placeholder="Buscar proveedor..."
+      ariaLabel="Buscar proveedores por nombre o contacto"
       (buscar)="onBuscar($event)" />
   </div>
 
@@ -61,10 +62,10 @@
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
-              <button mat-menu-item (click)="editar(p)">
+              <button mat-menu-item (click)="editar(p)" [attr.aria-label]="'Editar proveedor ' + p.nombre">
                 <mat-icon>edit</mat-icon> Editar
               </button>
-              <button mat-menu-item (click)="eliminar(p)" class="!text-red-600">
+              <button mat-menu-item (click)="eliminar(p)" class="!text-red-600" [attr.aria-label]="'Eliminar proveedor ' + p.nombre">
                 <mat-icon class="!text-red-600">delete</mat-icon> Eliminar
               </button>
             </mat-menu>

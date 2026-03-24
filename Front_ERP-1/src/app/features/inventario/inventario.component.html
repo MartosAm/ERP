@@ -11,7 +11,7 @@
     </button>
   </app-page-header>
 
-  <mat-tab-group (selectedIndexChange)="onTabChange($event)" animationDuration="200ms">
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" animationDuration="200ms" aria-label="Secciones de inventario">
     <!-- ═══ Tab Existencias ═══ -->
     <mat-tab>
       <ng-template mat-tab-label>
@@ -24,6 +24,7 @@
             <app-search-input
               class="flex-1 min-w-[200px]"
               placeholder="Buscar producto..."
+              ariaLabel="Buscar existencias por producto"
               (buscar)="onBuscarExist($event)" />
 
             <mat-form-field appearance="outline" class="w-52">
@@ -38,6 +39,7 @@
 
             <button mat-raised-button
                     [color]="soloStockBajo ? 'warn' : ''"
+                  [attr.aria-pressed]="soloStockBajo"
                     (click)="toggleStockBajo()">
               <mat-icon>{{ soloStockBajo ? 'warning' : 'filter_list' }}</mat-icon>
               Stock bajo

@@ -74,6 +74,7 @@
                  autocomplete="new-password"
                  placeholder="Mínimo 6 caracteres" />
           <button mat-icon-button matSuffix type="button"
+              aria-label="Mostrar u ocultar contraseña"
                   (click)="ocultarPass.set(!ocultarPass())" class="text-slate-400">
             <mat-icon>{{ ocultarPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
@@ -91,6 +92,7 @@
                  [type]="ocultarConfirmar() ? 'password' : 'text'"
                  autocomplete="new-password" />
           <button mat-icon-button matSuffix type="button"
+              aria-label="Mostrar u ocultar confirmación de contraseña"
                   (click)="ocultarConfirmar.set(!ocultarConfirmar())" class="text-slate-400">
             <mat-icon>{{ ocultarConfirmar() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>

@@ -23,6 +23,7 @@
       <app-search-input
         class="flex-1 min-w-[200px]"
         placeholder="Buscar por número, cliente..."
+        ariaLabel="Buscar ordenes por numero o cliente"
         (buscar)="onBuscar($event)" />
 
       <mat-form-field appearance="outline" class="w-40">
@@ -58,10 +59,12 @@
         <ng-container matColumnDef="numeroOrden">
           <th mat-header-cell *matHeaderCellDef>N° Orden</th>
           <td mat-cell *matCellDef="let o">
-            <span class="font-medium text-indigo-600 cursor-pointer hover:underline"
-                  (click)="verDetalle(o)">
+            <button type="button"
+                    class="font-medium text-indigo-600 cursor-pointer hover:underline"
+                    [attr.aria-label]="'Ver detalle de orden ' + o.numeroOrden"
+                    (click)="verDetalle(o)">
               {{ o.numeroOrden }}
-            </span>
+            </button>
           </td>
         </ng-container>
 
