@@ -1,7 +1,7 @@
 # Progreso de Desarrollo — Front ERP
 
 > Documento de seguimiento del avance por fases según la [GUIA_DESARROLLO.md](../GUIA_DESARROLLO.md).
-> Última actualización: 1 de marzo de 2026.
+> Última actualización: 23 de marzo de 2026.
 
 ---
 
@@ -197,6 +197,22 @@
 | `docker/nginx.conf` | **REESCRITO** — gzip, security headers, SW cache |
 | `docker-compose.yml` | **CORREGIDO** — contexto raíz, sin volume erróneo |
 | `package.json` | +@angular/service-worker |
+| `docs/CHECKLIST_UX_MODULOS_2026.md` | **NUEVO** — checklist UX por rutas/módulos para releases |
+
+### Delta 23-mar-2026 (continuidad del plan estratégico)
+
+- `SearchInputComponent` endurecido en a11y:
+	- `type="search"`
+	- `aria-label` configurable
+	- limpieza con tecla `Escape`
+- `EmptyStateComponent` mejorado para lectores de pantalla:
+	- `aria-live` configurable (`polite`/`assertive`)
+	- `aria-atomic="true"`
+	- `aria-label` configurable en acción
+- `EstadoBadgeComponent`:
+	- `aria-label` semántico por tipo/estado
+	- corrección de clase visual en estado `ASIGNADO`
+- Nuevo documento operativo UX: `CHECKLIST_UX_MODULOS_2026.md`
 
 ---
 

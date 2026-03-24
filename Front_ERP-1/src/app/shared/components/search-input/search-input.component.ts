@@ -4,7 +4,6 @@ import {
   Output,
   EventEmitter,
   OnInit,
-  OnDestroy,
   DestroyRef,
   inject,
 } from '@angular/core';
@@ -30,6 +29,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class SearchInputComponent implements OnInit {
   @Input() placeholder = 'Buscar...';
+  @Input() ariaLabel = '';
   @Input() debounce = 300;
   @Output() buscar = new EventEmitter<string>();
 

@@ -13,5 +13,7 @@ export class EmptyStateComponent {
   @Input() mensaje = 'No se encontraron resultados';
   @Input() submensaje = '';
   @Input() textoAccion = '';
+  @Input() ariaLive: 'polite' | 'assertive' = 'polite';
+  @Input() accionAriaLabel = '';
   @Output() accion = new EventEmitter<void>();
 }

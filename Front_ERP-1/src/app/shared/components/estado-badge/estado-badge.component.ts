@@ -21,7 +21,7 @@ const ESTADOS_ORDEN: Record<string, BadgeConfig> = {
 };
 
 const ESTADOS_ENTREGA: Record<string, BadgeConfig> = {
-  ASIGNADO:      { bg: 'bg-indigo-50 dark:bg-indigo-500/10',   text: 'text-indigo-700 dark:text-indigo-400', border: 'border-indigo-200 flex border border-indigo-500/20', dot: 'bg-indigo-500', label: 'Asignado' },
+  ASIGNADO:      { bg: 'bg-indigo-50 dark:bg-indigo-500/10',   text: 'text-indigo-700 dark:text-indigo-400', border: 'border-indigo-200 border border-indigo-500/20', dot: 'bg-indigo-500', label: 'Asignado' },
   EN_RUTA:       { bg: 'bg-cyan-50 dark:bg-cyan-500/10', text: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-200 border border-cyan-500/20', dot: 'bg-cyan-500', label: 'En ruta' },
   ENTREGADO:     { bg: 'bg-emerald-50 dark:bg-emerald-500/10',  text: 'text-emerald-700 dark:text-emerald-400',  border: 'border-emerald-200 border border-emerald-500/20', dot: 'bg-emerald-500', label: 'Entregado' },
   NO_ENTREGADO:  { bg: 'bg-rose-50 dark:bg-rose-500/10',    text: 'text-rose-700 dark:text-rose-400',    border: 'border-rose-200 border border-rose-500/20', dot: 'bg-rose-500', label: 'No entregado' },
@@ -85,6 +85,8 @@ const DEFAULT_CONFIG: BadgeConfig = {
   imports: [CommonModule],
   template: `
     <span
+      role="status"
+      [attr.aria-label]="ariaLabel"
       class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border shadow-sm w-fit"
       [ngClass]="[config.bg, config.text, config.border]">
       
@@ -104,5 +106,9 @@ export class EstadoBadgeComponent {
     // Si estado es null/undefined, lo volvemos string
     const key = String(this.estado);
     return mapa[key] ?? { ...DEFAULT_CONFIG, label: key };
+  }
+
+  get ariaLabel(): string {
+    return `Estado ${this.tipo}: ${this.config.label}`;
   }
 }
