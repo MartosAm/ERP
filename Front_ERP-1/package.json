@@ -46,6 +46,7 @@
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.1.0",
     "postcss": "^8.4.38",
+    "puppeteer": "^24.5.0",
     "tailwindcss": "^4.0.0",
     "typescript": "~5.5.4"
   }
