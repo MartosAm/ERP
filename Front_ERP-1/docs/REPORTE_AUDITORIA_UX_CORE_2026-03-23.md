@@ -84,26 +84,18 @@ Conclusion:
 - No hay bloqueantes UX de severidad alta/critica.
 - Hallazgos del alcance core cerrados en esta iteracion.
 
-## Extension transaccional (Inventario y Ordenes)
+## Extension general de Diálogos
 
 Aplicado en esta continuidad:
-- Dialogos reforzados con estilos consistentes en HTML + CSS + TS.
+- Dialogos de todo el sistema reforzados con estilos consistentes en HTML + CSS + TS + Tailwind v4.
 - Contraste y legibilidad en dark/light ajustados.
-- Controles clave con `aria-label` en acciones sensibles.
+- Headers color-coded y controles clave con `aria-label` en acciones sensibles.
 
-Archivos intervenidos:
-- src/app/features/inventario/ajuste-dialog.component.html
-- src/app/features/inventario/ajuste-dialog.component.ts
-- src/app/features/inventario/ajuste-dialog.component.css
-- src/app/features/inventario/traslado-dialog.component.html
-- src/app/features/inventario/traslado-dialog.component.ts
-- src/app/features/inventario/traslado-dialog.component.css
-- src/app/features/ordenes/cancelar-orden-dialog.component.html
-- src/app/features/ordenes/cancelar-orden-dialog.component.ts
-- src/app/features/ordenes/cancelar-orden-dialog.component.css
-- src/app/features/ordenes/devolucion-dialog.component.html
-- src/app/features/ordenes/devolucion-dialog.component.ts
-- src/app/features/ordenes/devolucion-dialog.component.css
-- src/app/features/ordenes/confirmar-cotizacion-dialog.component.html
-- src/app/features/ordenes/confirmar-cotizacion-dialog.component.ts
-- src/app/features/ordenes/confirmar-cotizacion-dialog.component.css
+Rutas y módulos intervenidos:
+- **Inventario**: Ajuste manual, Traslado interno.
+- **Órdenes**: Cancelar, Devolución, Confirmar cotización.
+- **Compras**: Formulario de recepción/órdenes.
+- **Catálogos**: Formularios de Clientes, Proveedores, Productos, Categorías, Almacenes.
+- **Usuarios**: Formulario de usuarios (extraído de template en línea).
+- **POS**: Punto de venta (Buscar cliente, Cobrar, Ticket).
+- **Caja**: Diálogos (Abrir turno, Cerrar turno). Todas las capas modales del sistema completadas a nivel de stack.

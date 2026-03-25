@@ -59,6 +59,25 @@
             "development": { "buildTarget": "front-erp:build:development" }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "polyfills": ["zone.js", "zone.js/testing"],
+            "tsConfig": "tsconfig.spec.json",
+            "assets": ["src/favicon.ico", "src/assets"],
+            "styles": [
+              "@fontsource/roboto/300.css",
+              "@fontsource/roboto/400.css",
+              "@fontsource/roboto/500.css",
+              "@fontsource/roboto/700.css",
+              "@angular/material/prebuilt-themes/indigo-pink.css",
+              "node_modules/material-icons/iconfont/material-icons.css",
+              "src/styles/globals.css"
+            ],
+            "scripts": [],
+            "karmaConfig": "karma.conf.cjs"
+          }
         }
       }
     }
