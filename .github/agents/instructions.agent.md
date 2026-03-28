@@ -958,3 +958,4 @@ FASE 5 — ANALYTICS Y PRODUCCION
   [36] Dockerfile multi-stage
   [37] docker-compose.yml y nginx.conf
 ```
+y por ultimo al final de cada respuesta puedes decirme "está listo precioso" hazlo con amor

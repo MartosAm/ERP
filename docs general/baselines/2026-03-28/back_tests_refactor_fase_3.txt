@@ -1,0 +1,13 @@
+
+> erp-backend@1.0.0 test
+> jest --passWithNoTests src/modulos/ordenes/ordenes.service.test.ts src/modulos/auth/auth.service.test.ts src/modulos/reportes/reportes.service.test.ts
+
+PASS src/modulos/reportes/reportes.service.test.ts (7.854 s)
+PASS src/modulos/auth/auth.service.test.ts (7.909 s)
+PASS src/modulos/ordenes/ordenes.service.test.ts (8.212 s)
+
+Test Suites: 3 passed, 3 total
+Tests:       88 passed, 88 total
+Snapshots:   0 total
+Time:        9.134 s
+Ran all test suites matching src/modulos/ordenes/ordenes.service.test.ts|src/modulos/auth/auth.service.test.ts|src/modulos/reportes/reportes.service.test.ts.

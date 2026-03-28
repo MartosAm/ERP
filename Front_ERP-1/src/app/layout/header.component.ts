@@ -4,12 +4,13 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../core/services/auth.service';
 import { TurnosService } from '../core/services/turnos.service';
 
 @Component({
     selector: 'app-header',
-    imports: [CommonModule, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule],
+    imports: [CommonModule, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatDividerModule],
     templateUrl: './header.component.html',
     styleUrl: './header.component.css'
 })

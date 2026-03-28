@@ -17,7 +17,7 @@
  * ------------------------------------------------------------------
  */
 
-import { Prisma } from '@prisma/client';
+import { EstadoOrden, MetodoPago, Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 import { prisma } from '../../config/database';
 import { cache, CacheTTL, invalidarCacheModulo } from '../../config/cache';
@@ -28,6 +28,7 @@ import {
   ErrorPeticion,
 } from '../../compartido/errores';
 import { logger } from '../../compartido/logger';
+import { registrarAuditoria } from '../../compartido/auditoria';
 import type {
   CrearOrdenDto,
   CrearCotizacionDto,
@@ -38,6 +39,94 @@ import type {
 } from './ordenes.schema';
 
 const MODULO = 'ORDENES';
+const METODO_CREDITO_CLIENTE = MetodoPago.CREDITO_CLIENTE;
+
+type PagoConMetodo = {
+  metodo: MetodoPago;
+  monto: number | Prisma.Decimal;
+};
+
+type OrdenNumeracionRepo = {
+  findFirst: (args: Prisma.OrdenFindFirstArgs) => Promise<{ numeroOrden: string } | null>;
+};
+
+function calcularTotalPagos(pagos: PagoConMetodo[]): number {
+  return pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
+}
+
+function calcularMontoCredito(pagos: PagoConMetodo[]): number {
+  return pagos
+    .filter((pago) => pago.metodo === METODO_CREDITO_CLIENTE)
+    .reduce((sum, pago) => sum + Number(pago.monto), 0);
+}
+
+function obtenerMetodoPagoPrincipal(pagos: PagoConMetodo[]): MetodoPago {
+  return pagos.length === 1 ? pagos[0].metodo : MetodoPago.MIXTO;
+}
+
+function calcularCambio(totalPagos: number, total: number): number {
+  return totalPagos > total ? totalPagos - total : 0;
+}
+
+function validarMontoPagado(totalPagos: number, total: number): void {
+  if (totalPagos < total) {
+    throw new ErrorNegocio(
+      `Monto pagado ($${totalPagos.toFixed(2)}) es menor al total ($${total.toFixed(2)})`,
+    );
+  }
+}
+
+function obtenerSiguienteSecuencial(numeroOrden: string): number {
+  const partes = numeroOrden.split('-');
+  const secuencialActual = parseInt(partes[2] ?? '', 10);
+  return Number.isNaN(secuencialActual) ? 1 : secuencialActual + 1;
+}
+
+async function generarNumeroDocumento(
+  ordenRepo: OrdenNumeracionRepo,
+  empresaId: string,
+  prefijo: 'VTA' | 'COT',
+): Promise<string> {
+  const anio = dayjs().format('YYYY');
+  const ultimaOrden = await ordenRepo.findFirst({
+    where: {
+      empresaId,
+      numeroOrden: { startsWith: `${prefijo}-${anio}-` },
+    },
+    orderBy: { creadoEn: 'desc' },
+    select: { numeroOrden: true },
+  });
+
+  const siguiente = ultimaOrden ? obtenerSiguienteSecuencial(ultimaOrden.numeroOrden) : 1;
+  return `${prefijo}-${anio}-${String(siguiente).padStart(5, '0')}`;
+}
+
+async function validarCreditoClienteDisponible(
+  empresaId: string,
+  clienteId: string | null | undefined,
+  montoCredito: number,
+): Promise<void> {
+  if (montoCredito <= 0) return;
+
+  if (!clienteId) {
+    throw new ErrorPeticion('Se requiere un cliente para pago a credito');
+  }
+
+  const cliente = await prisma.cliente.findFirst({
+    where: { id: clienteId, empresaId, activo: true },
+  });
+
+  if (!cliente) {
+    throw new ErrorNoEncontrado('Cliente no encontrado');
+  }
+
+  const creditoDisponible = Number(cliente.limiteCredito) - Number(cliente.creditoUtilizado);
+  if (montoCredito > creditoDisponible) {
+    throw new ErrorNegocio(
+      `Credito insuficiente. Disponible: $${creditoDisponible.toFixed(2)}, Solicitado: $${montoCredito.toFixed(2)}`,
+    );
+  }
+}
 
 export const OrdenesService = {
 
@@ -134,72 +223,24 @@ export const OrdenesService = {
     const total = totalOrden;
 
     // 3. Validar pagos (cash + credito debe cubrir el total)
-    const totalPagos = dto.pagos.reduce((sum, p) => sum + p.monto, 0);
-    const usaCredito = dto.pagos.some((p) => p.metodo === 'CREDITO_CLIENTE');
+    const totalPagos = calcularTotalPagos(dto.pagos);
+    const montoCredito = calcularMontoCredito(dto.pagos);
 
-    if (totalPagos < total) {
-      throw new ErrorNegocio(
-        `Monto pagado ($${totalPagos.toFixed(2)}) es menor al total ($${total.toFixed(2)})`,
-      );
-    }
+    validarMontoPagado(totalPagos, total);
 
     // 4. Validar credito del cliente si se usa
-    let cliente = null;
-    if (usaCredito) {
-      if (!dto.clienteId) {
-        throw new ErrorPeticion('Se requiere un cliente para pago a credito');
-      }
-
-      cliente = await prisma.cliente.findFirst({
-        where: { id: dto.clienteId, empresaId, activo: true },
-      });
-
-      if (!cliente) {
-        throw new ErrorNoEncontrado('Cliente no encontrado');
-      }
-
-      const montoCredito = dto.pagos
-        .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-        .reduce((sum, p) => sum + p.monto, 0);
-
-      const creditoDisponible =
-        Number(cliente.limiteCredito) - Number(cliente.creditoUtilizado);
-
-      if (montoCredito > creditoDisponible) {
-        throw new ErrorNegocio(
-          `Credito insuficiente. Disponible: $${creditoDisponible.toFixed(2)}, Solicitado: $${montoCredito.toFixed(2)}`,
-        );
-      }
-    }
+    await validarCreditoClienteDisponible(empresaId, dto.clienteId, montoCredito);
 
     // Determinar metodo de pago principal
-    const metodoPago = dto.pagos.length === 1
-      ? dto.pagos[0].metodo
-      : 'MIXTO';
+    const metodoPago = obtenerMetodoPagoPrincipal(dto.pagos);
 
     // Calcular cambio (solo aplica a efectivo)
-    const cambio = totalPagos > total ? totalPagos - total : 0;
+    const cambio = calcularCambio(totalPagos, total);
 
     // 6. Transaccion atomica: generar numero + verificar stock + crear orden + descontar stock + credito
     const orden = await prisma.$transaction(async (tx) => {
       // 6a. Generar numero de orden secuencial (DENTRO de la transaccion para evitar race condition)
-      const anio = dayjs().format('YYYY');
-      const ultimaOrden = await tx.orden.findFirst({
-        where: {
-          empresaId,
-          numeroOrden: { startsWith: `VTA-${anio}-` },
-        },
-        orderBy: { creadoEn: 'desc' },
-        select: { numeroOrden: true },
-      });
-
-      let secuencial = 1;
-      if (ultimaOrden) {
-        const partes = ultimaOrden.numeroOrden.split('-');
-        secuencial = parseInt(partes[2], 10) + 1;
-      }
-
-      const numeroOrden = `VTA-${anio}-${String(secuencial).padStart(5, '0')}`;
+      const numeroOrden = await generarNumeroDocumento(tx.orden, empresaId, 'VTA');
 
       // 6b. Re-verificar stock dentro de la transaccion (evita race condition)
       for (const detalle of detallesCalculados) {
@@ -235,7 +276,7 @@ export const OrdenesService = {
           montoImpuesto,
           montoDescuento,
           total,
-          metodoPago: metodoPago as any,
+          metodoPago,
           montoPagado: totalPagos,
           cambio,
           pagado: true,
@@ -255,7 +296,7 @@ export const OrdenesService = {
       await tx.pago.createMany({
         data: dto.pagos.map((p) => ({
           ordenId: nuevaOrden.id,
-          metodo: p.metodo as any,
+          metodo: p.metodo,
           monto: p.monto,
           referencia: p.referencia ?? null,
         })),
@@ -303,11 +344,7 @@ export const OrdenesService = {
       }
 
       // Actualizar credito del cliente si aplica
-      if (usaCredito && dto.clienteId) {
-        const montoCredito = dto.pagos
-          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-          .reduce((sum, p) => sum + p.monto, 0);
-
+      if (montoCredito > 0 && dto.clienteId) {
         await tx.cliente.update({
           where: { id: dto.clienteId },
           data: {
@@ -317,6 +354,26 @@ export const OrdenesService = {
           },
         });
       }
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: 'CREAR_ORDEN',
+        entidad: 'ORDEN',
+        entidadId: nuevaOrden.id,
+        valoresNuevos: {
+          numeroOrden,
+          estado: 'COMPLETADA',
+          total,
+          montoPagado: totalPagos,
+          metodoPago,
+          items: detallesCalculados.map((detalle) => ({
+            productoId: detalle.productoId,
+            cantidad: detalle.cantidad,
+            subtotal: detalle.subtotal,
+          })),
+        },
+      });
 
       // Retornar orden con relaciones
       return tx.orden.findUnique({
@@ -429,9 +486,7 @@ export const OrdenesService = {
 
       // Liberar credito del cliente si se uso
       if (orden.clienteId) {
-        const montoCredito = orden.pagos
-          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-          .reduce((sum, p) => sum + Number(p.monto), 0);
+        const montoCredito = calcularMontoCredito(orden.pagos);
 
         if (montoCredito > 0) {
           await tx.cliente.update({
@@ -442,6 +497,22 @@ export const OrdenesService = {
           });
         }
       }
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: 'CANCELAR_ORDEN',
+        entidad: 'ORDEN',
+        entidadId: ordenId,
+        valoresAnteriores: {
+          estado: orden.estado,
+          total: Number(orden.total),
+        },
+        valoresNuevos: {
+          estado: 'CANCELADA',
+          motivoCancelacion: dto.motivoCancelacion,
+        },
+      });
 
       return actualizada;
     });
@@ -507,13 +578,14 @@ export const OrdenesService = {
     }
 
     if (filtros.fechaDesde || filtros.fechaHasta) {
-      where.creadoEn = {};
+      const creadoEn: Prisma.DateTimeFilter = {};
       if (filtros.fechaDesde) {
-        (where.creadoEn as any).gte = new Date(filtros.fechaDesde);
+        creadoEn.gte = new Date(filtros.fechaDesde);
       }
       if (filtros.fechaHasta) {
-        (where.creadoEn as any).lte = new Date(filtros.fechaHasta);
+        creadoEn.lte = new Date(filtros.fechaHasta);
       }
+      where.creadoEn = creadoEn;
     }
 
     if (filtros.buscar) {
@@ -597,23 +669,7 @@ export const OrdenesService = {
     const total = subtotal - montoDescuento + (productos[0]?.impuestoIncluido ? 0 : montoImpuesto);
 
     // Generar numero de cotizacion secuencial
-    const anio = dayjs().format('YYYY');
-    const ultimaCotizacion = await prisma.orden.findFirst({
-      where: {
-        empresaId,
-        numeroOrden: { startsWith: `COT-${anio}-` },
-      },
-      orderBy: { creadoEn: 'desc' },
-      select: { numeroOrden: true },
-    });
-
-    let secuencial = 1;
-    if (ultimaCotizacion) {
-      const partes = ultimaCotizacion.numeroOrden.split('-');
-      secuencial = parseInt(partes[2], 10) + 1;
-    }
-
-    const numeroCotizacion = `COT-${anio}-${String(secuencial).padStart(5, '0')}`;
+    const numeroCotizacion = await generarNumeroDocumento(prisma.orden, empresaId, 'COT');
 
     const cotizacion = await prisma.orden.create({
       data: {
@@ -719,44 +775,21 @@ export const OrdenesService = {
     const total = Number(cotizacion.total);
 
     // Validar pagos
-    const totalPagos = dto.pagos.reduce((sum, p) => sum + p.monto, 0);
-    const usaCredito = dto.pagos.some((p) => p.metodo === 'CREDITO_CLIENTE');
+    const totalPagos = calcularTotalPagos(dto.pagos);
+    const montoCredito = calcularMontoCredito(dto.pagos);
+    const usaCredito = montoCredito > 0;
 
-    if (!usaCredito && totalPagos < total) {
-      throw new ErrorNegocio(
-        `Monto pagado ($${totalPagos.toFixed(2)}) es menor al total ($${total.toFixed(2)})`,
-      );
+    if (!usaCredito) {
+      validarMontoPagado(totalPagos, total);
     }
 
     // Validar credito del cliente si aplica
     if (usaCredito) {
-      if (!cotizacion.clienteId) {
-        throw new ErrorPeticion('Se requiere un cliente para pago a credito');
-      }
-
-      const cliente = await prisma.cliente.findFirst({
-        where: { id: cotizacion.clienteId, empresaId, activo: true },
-      });
-
-      if (!cliente) {
-        throw new ErrorNoEncontrado('Cliente no encontrado');
-      }
-
-      const montoCredito = dto.pagos
-        .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-        .reduce((sum, p) => sum + p.monto, 0);
-
-      const creditoDisponible = Number(cliente.limiteCredito) - Number(cliente.creditoUtilizado);
-
-      if (montoCredito > creditoDisponible) {
-        throw new ErrorNegocio(
-          `Credito insuficiente. Disponible: $${creditoDisponible.toFixed(2)}, Solicitado: $${montoCredito.toFixed(2)}`,
-        );
-      }
+      await validarCreditoClienteDisponible(empresaId, cotizacion.clienteId, montoCredito);
     }
 
-    const metodoPago = dto.pagos.length === 1 ? dto.pagos[0].metodo : 'MIXTO';
-    const cambio = totalPagos > total ? totalPagos - total : 0;
+    const metodoPago = obtenerMetodoPagoPrincipal(dto.pagos);
+    const cambio = calcularCambio(totalPagos, total);
 
     // Transaccion atomica: confirmar cotizacion + descontar stock + registrar pagos
     const ordenConfirmada = await prisma.$transaction(async (tx) => {
@@ -767,7 +800,7 @@ export const OrdenesService = {
           estado: 'COMPLETADA',
           cajaRegistradoraId: turnoActivo.cajaRegistradoraId,
           turnoCajaId: turnoActivo.id,
-          metodoPago: metodoPago as any,
+          metodoPago,
           montoPagado: totalPagos,
           cambio,
           pagado: true,
@@ -778,7 +811,7 @@ export const OrdenesService = {
       await tx.pago.createMany({
         data: dto.pagos.map((p) => ({
           ordenId: cotizacionId,
-          metodo: p.metodo as any,
+          metodo: p.metodo,
           monto: p.monto,
           referencia: p.referencia ?? null,
         })),
@@ -815,16 +848,29 @@ export const OrdenesService = {
       }
 
       // Actualizar credito del cliente si aplica
-      if (usaCredito && cotizacion.clienteId) {
-        const montoCredito = dto.pagos
-          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-          .reduce((sum, p) => sum + p.monto, 0);
-
+      if (montoCredito > 0 && cotizacion.clienteId) {
         await tx.cliente.update({
           where: { id: cotizacion.clienteId },
           data: { creditoUtilizado: { increment: montoCredito } },
         });
       }
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: 'CONFIRMAR_COTIZACION',
+        entidad: 'ORDEN',
+        entidadId: cotizacionId,
+        valoresAnteriores: {
+          estado: 'COTIZACION',
+          total,
+        },
+        valoresNuevos: {
+          estado: 'COMPLETADA',
+          metodoPago,
+          montoPagado: totalPagos,
+        },
+      });
 
       return tx.orden.findUnique({
         where: { id: cotizacionId },
@@ -968,11 +1014,11 @@ export const OrdenesService = {
       }
 
       // Actualizar estado de la orden
-      const nuevoEstado = esTotal ? 'DEVUELTA' : 'COMPLETADA';
+      const nuevoEstado: EstadoOrden = esTotal ? EstadoOrden.DEVUELTA : EstadoOrden.COMPLETADA;
       const ordenActualizada = await tx.orden.update({
         where: { id: ordenId },
         data: {
-          estado: nuevoEstado as any,
+          estado: nuevoEstado,
           notas: esTotal
             ? `${orden.notas ?? ''}\n[DEVOLUCION TOTAL] ${dto.motivo}`.trim()
             : `${orden.notas ?? ''}\n[DEVOLUCION PARCIAL $${montoDevolucion.toFixed(2)}] ${dto.motivo}`.trim(),
@@ -981,9 +1027,7 @@ export const OrdenesService = {
 
       // Liberar credito del cliente si aplica
       if (orden.clienteId) {
-        const montoCredito = orden.pagos
-          .filter((p) => p.metodo === 'CREDITO_CLIENTE')
-          .reduce((sum, p) => sum + Number(p.monto), 0);
+        const montoCredito = calcularMontoCredito(orden.pagos);
 
         if (montoCredito > 0) {
           // Liberar proporcionalmente al monto devuelto
@@ -1001,6 +1045,27 @@ export const OrdenesService = {
           }
         }
       }
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: esTotal ? 'DEVOLUCION_TOTAL_ORDEN' : 'DEVOLUCION_PARCIAL_ORDEN',
+        entidad: 'ORDEN',
+        entidadId: ordenId,
+        valoresAnteriores: {
+          estado: orden.estado,
+          total: Number(orden.total),
+        },
+        valoresNuevos: {
+          estado: nuevoEstado,
+          motivo: dto.motivo,
+          montoDevolucion,
+          items: dto.items.map((item) => ({
+            productoId: item.productoId,
+            cantidad: item.cantidad,
+          })),
+        },
+      });
 
       return {
         orden: ordenActualizada,

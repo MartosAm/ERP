@@ -500,6 +500,7 @@ function configurarTransaction() {
     existencia: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
     movimientoInventario: { create: jest.fn() },
     cliente: { update: jest.fn() },
+    registroAuditoria: { create: jest.fn() },
   };
 
   mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -535,6 +536,7 @@ describe('OrdenesService.crear — transacción completa', () => {
     // Verifica que se descuenta inventario
     expect(mockTx.existencia.update).toHaveBeenCalledTimes(1);
     expect(mockTx.movimientoInventario.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('genera número secuencial correcto cuando hay ordenes previas', async () => {
@@ -739,6 +741,7 @@ describe('OrdenesService.cancelar — transacción completa', () => {
       data: { cantidad: 50 }, // 48 + 2 devueltas
     });
     expect(mockTx.movimientoInventario.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('libera crédito del cliente al cancelar', async () => {
@@ -839,6 +842,7 @@ describe('OrdenesService.confirmarCotizacion — transacción completa', () => {
     expect(mockTx.pago.createMany).toHaveBeenCalledTimes(1);
     expect(mockTx.existencia.update).toHaveBeenCalledTimes(1);
     expect(mockTx.movimientoInventario.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('actualiza crédito del cliente al confirmar con pago a crédito', async () => {
@@ -937,6 +941,7 @@ describe('OrdenesService.devolver — transacción completa', () => {
         data: expect.objectContaining({ estado: 'DEVUELTA' }),
       }),
     );
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('procesa devolución parcial sin cambiar estado', async () => {

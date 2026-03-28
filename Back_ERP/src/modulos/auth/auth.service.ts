@@ -43,6 +43,113 @@ const MAX_INTENTOS_FALLIDOS = 5;
 // Duracion del bloqueo en minutos
 const MINUTOS_BLOQUEO = 30;
 
+type RolSistema = 'ADMIN' | 'CAJERO' | 'REPARTIDOR';
+
+type UsuarioAuthBasico = {
+  id: string;
+  nombre: string;
+  correo: string;
+  rol: RolSistema;
+  avatarUrl: string | null;
+};
+
+function construirRespuestaAuth(
+  token: string,
+  usuario: UsuarioAuthBasico,
+  empresa: { id: string; nombre: string },
+) {
+  return {
+    token,
+    usuario: {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      rol: usuario.rol,
+      avatarUrl: usuario.avatarUrl,
+      empresa,
+    },
+  };
+}
+
+async function verificarCorreoDisponible(correo: string): Promise<void> {
+  const existente = await prisma.usuario.findUnique({ where: { correo } });
+  if (existente) {
+    throw new ErrorConflicto('Ya existe un usuario con ese correo');
+  }
+}
+
+async function hashearValorSecreto(valor: string): Promise<string> {
+  return bcrypt.hash(valor, env.BCRYPT_SALT_ROUNDS);
+}
+
+function calcularExpiracionJWTInterna(expiresIn: string): Date {
+  const match = expiresIn.match(/^(\d+)([hmds]?)$/i);
+  if (!match) {
+    return dayjs().add(8, 'hour').toDate(); // fallback seguro
+  }
+
+  const valor = parseInt(match[1], 10);
+  const unidad = (match[2] || 'h').toLowerCase();
+
+  const unidadMap: Record<string, dayjs.ManipulateType> = {
+    h: 'hour',
+    m: 'minute',
+    d: 'day',
+    s: 'second',
+  };
+
+  return dayjs().add(valor, unidadMap[unidad] || 'hour').toDate();
+}
+
+function firmarJwt(payload: JwtPayload): string {
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN as string & { __brand: 'StringValue' },
+  } as jwt.SignOptions);
+}
+
+async function crearHashToken(token: string): Promise<string> {
+  const { createHash } = await import('crypto');
+  return createHash('sha256').update(token).digest('hex');
+}
+
+async function crearSesionConToken(params: {
+  usuarioId: string;
+  empresaId: string;
+  rol: RolSistema;
+  ip?: string;
+  agenteUsuario?: string;
+}): Promise<string> {
+  const expiraEn = calcularExpiracionJWTInterna(env.JWT_EXPIRES_IN);
+
+  const sesion = await prisma.sesion.create({
+    data: {
+      usuarioId: params.usuarioId,
+      token: '', // Se actualiza despues de generar el JWT
+      direccionIp: params.ip ?? null,
+      agenteUsuario: params.agenteUsuario ?? null,
+      activo: true,
+      expiraEn,
+    },
+  });
+
+  const payload: JwtPayload = {
+    usuarioId: params.usuarioId,
+    empresaId: params.empresaId,
+    rol: params.rol,
+    sesionId: sesion.id,
+  };
+
+  const token = firmarJwt(payload);
+  const tokenHash = await crearHashToken(token);
+
+  await prisma.sesion.update({
+    where: { id: sesion.id },
+    data: { token: tokenHash },
+  });
+
+  return token;
+}
+
 export const AuthService = {
 
   // ================================================================
@@ -65,16 +172,10 @@ export const AuthService = {
    */
   async registrar(dto: RegistroDto, empresaId: string) {
     // 1. Verificar unicidad del correo
-    const existente = await prisma.usuario.findUnique({
-      where: { correo: dto.correo },
-    });
-
-    if (existente) {
-      throw new ErrorConflicto('Ya existe un usuario con ese correo');
-    }
+    await verificarCorreoDisponible(dto.correo);
 
     // 2. Hashear la contrasena con bcrypt (salt rounds desde env)
-    const hashContrasena = await bcrypt.hash(dto.contrasena, env.BCRYPT_SALT_ROUNDS);
+    const hashContrasena = await hashearValorSecreto(dto.contrasena);
 
     // 3. Crear usuario en BD
     const usuario = await prisma.usuario.create({
@@ -83,7 +184,7 @@ export const AuthService = {
         nombre: dto.nombre,
         correo: dto.correo,
         hashContrasena,
-        rol: dto.rol as 'ADMIN' | 'CAJERO' | 'REPARTIDOR',
+        rol: dto.rol as RolSistema,
         telefono: dto.telefono ?? null,
         horarioInicio: dto.horarioInicio ?? null,
         horarioFin: dto.horarioFin ?? null,
@@ -137,16 +238,10 @@ export const AuthService = {
    */
   async registroPublico(dto: RegistroPublicoDto, ip?: string, agenteUsuario?: string) {
     // 1. Verificar unicidad del correo
-    const existente = await prisma.usuario.findUnique({
-      where: { correo: dto.correo },
-    });
-
-    if (existente) {
-      throw new ErrorConflicto('Ya existe un usuario con ese correo');
-    }
+    await verificarCorreoDisponible(dto.correo);
 
     // 2. Hashear la contrasena
-    const hashContrasena = await bcrypt.hash(dto.contrasena, env.BCRYPT_SALT_ROUNDS);
+    const hashContrasena = await hashearValorSecreto(dto.contrasena);
 
     // 3. Transaccion atomica: empresa + usuario
     const { empresa, usuario } = await prisma.$transaction(async (tx) => {
@@ -173,36 +268,12 @@ export const AuthService = {
     });
 
     // 4. Crear sesion y generar JWT (auto-login)
-    const expiracion = this.calcularExpiracionJWT(env.JWT_EXPIRES_IN);
-
-    const sesion = await prisma.sesion.create({
-      data: {
-        usuarioId: usuario.id,
-        token: '',
-        direccionIp: ip ?? null,
-        agenteUsuario: agenteUsuario ?? null,
-        activo: true,
-        expiraEn: expiracion,
-      },
-    });
-
-    const payload: JwtPayload = {
+    const token = await crearSesionConToken({
       usuarioId: usuario.id,
       empresaId: empresa.id,
-      rol: usuario.rol,
-      sesionId: sesion.id,
-    };
-
-    const token = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as string & { __brand: 'StringValue' },
-    } as jwt.SignOptions);
-
-    const { createHash } = await import('crypto');
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-
-    await prisma.sesion.update({
-      where: { id: sesion.id },
-      data: { token: tokenHash },
+      rol: usuario.rol as RolSistema,
+      ip,
+      agenteUsuario,
     });
 
     logger.info({
@@ -214,20 +285,20 @@ export const AuthService = {
     });
 
     // 5. Retornar misma estructura que login
-    return {
+    return construirRespuestaAuth(
       token,
-      usuario: {
+      {
         id: usuario.id,
         nombre: usuario.nombre,
         correo: usuario.correo,
-        rol: usuario.rol,
+        rol: usuario.rol as RolSistema,
         avatarUrl: usuario.avatarUrl,
-        empresa: {
-          id: empresa.id,
-          nombre: empresa.nombre,
-        },
       },
-    };
+      {
+        id: empresa.id,
+        nombre: empresa.nombre,
+      },
+    );
   },
 
   // ================================================================
@@ -333,39 +404,13 @@ export const AuthService = {
       },
     });
 
-    // 7. Crear sesion en BD
-    const expiracion = this.calcularExpiracionJWT(env.JWT_EXPIRES_IN);
-
-    const sesion = await prisma.sesion.create({
-      data: {
-        usuarioId: usuario.id,
-        token: '', // Se actualiza despues de generar el JWT
-        direccionIp: ip ?? null,
-        agenteUsuario: agenteUsuario ?? null,
-        activo: true,
-        expiraEn: expiracion,
-      },
-    });
-
-    // 8. Generar JWT con el payload tipado
-    const payload: JwtPayload = {
+    // 7. Crear sesion en BD y 8. Generar JWT
+    const token = await crearSesionConToken({
       usuarioId: usuario.id,
       empresaId: usuario.empresaId,
-      rol: usuario.rol,
-      sesionId: sesion.id,
-    };
-
-    const token = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as string & { __brand: 'StringValue' },
-    } as jwt.SignOptions);
-
-    // Actualizar la sesion con el hash del token (nunca almacenar JWT en claro)
-    const { createHash } = await import('crypto');
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-
-    await prisma.sesion.update({
-      where: { id: sesion.id },
-      data: { token: tokenHash },
+      rol: usuario.rol as RolSistema,
+      ip,
+      agenteUsuario,
     });
 
     logger.info({
@@ -376,20 +421,20 @@ export const AuthService = {
     });
 
     // Retornar datos para la respuesta (sin datos sensibles)
-    return {
+    return construirRespuestaAuth(
       token,
-      usuario: {
+      {
         id: usuario.id,
         nombre: usuario.nombre,
         correo: usuario.correo,
-        rol: usuario.rol,
+        rol: usuario.rol as RolSistema,
         avatarUrl: usuario.avatarUrl,
-        empresa: {
-          id: usuario.empresa.id,
-          nombre: usuario.empresa.nombre,
-        },
       },
-    };
+      {
+        id: usuario.empresa.id,
+        nombre: usuario.empresa.nombre,
+      },
+    );
   },
 
   // ================================================================
@@ -513,7 +558,7 @@ export const AuthService = {
     }
 
     // Hashear el PIN con bcrypt
-    const hashPin = await bcrypt.hash(dto.nuevoPin, env.BCRYPT_SALT_ROUNDS);
+    const hashPin = await hashearValorSecreto(dto.nuevoPin);
 
     await prisma.usuario.update({
       where: { id: dto.usuarioId },
@@ -568,21 +613,6 @@ export const AuthService = {
    * Si no tiene sufijo valido, asume horas.
    */
   calcularExpiracionJWT(expiresIn: string): Date {
-    const match = expiresIn.match(/^(\d+)([hmds]?)$/i);
-    if (!match) {
-      return dayjs().add(8, 'hour').toDate(); // fallback seguro
-    }
-
-    const valor = parseInt(match[1], 10);
-    const unidad = (match[2] || 'h').toLowerCase();
-
-    const unidadMap: Record<string, dayjs.ManipulateType> = {
-      h: 'hour',
-      m: 'minute',
-      d: 'day',
-      s: 'second',
-    };
-
-    return dayjs().add(valor, unidadMap[unidad] || 'hour').toDate();
+    return calcularExpiracionJWTInterna(expiresIn);
   },
 };

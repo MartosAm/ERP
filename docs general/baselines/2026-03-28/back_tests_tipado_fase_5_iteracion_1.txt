@@ -1,0 +1,13 @@
+
+> erp-backend@1.0.0 test
+> jest --passWithNoTests src/modulos/ordenes/ordenes.service.test.ts src/modulos/inventario/inventario.service.test.ts src/modulos/compras/compras.service.test.ts
+
+PASS src/modulos/ordenes/ordenes.service.test.ts (17.36 s)
+PASS src/modulos/compras/compras.service.test.ts (18.519 s)
+PASS src/modulos/inventario/inventario.service.test.ts (19.266 s)
+
+Test Suites: 3 passed, 3 total
+Tests:       87 passed, 87 total
+Snapshots:   0 total
+Time:        21.204 s
+Ran all test suites matching src/modulos/ordenes/ordenes.service.test.ts|src/modulos/inventario/inventario.service.test.ts|src/modulos/compras/compras.service.test.ts.

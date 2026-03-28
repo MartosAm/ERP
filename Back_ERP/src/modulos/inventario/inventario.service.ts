@@ -21,6 +21,7 @@ import { Prisma, TipoMovimiento } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { paginar, construirMeta } from '../../compartido/paginacion';
 import { logger } from '../../compartido/logger';
+import { registrarAuditoria } from '../../compartido/auditoria';
 import {
   ErrorNoEncontrado,
   ErrorNegocio,
@@ -51,6 +52,21 @@ const mapearTipoMovimiento = (tipo: string, referenciaTipo?: string): TipoMovimi
       return TipoMovimiento.TRASLADO;
     default:
       return TipoMovimiento.AJUSTE_MANUAL;
+  }
+};
+
+const mapearAccionAuditoriaInventario = (tipo: string): string => {
+  switch (tipo) {
+    case 'ENTRADA':
+      return 'ENTRADA_INVENTARIO';
+    case 'SALIDA':
+      return 'SALIDA_INVENTARIO';
+    case 'AJUSTE':
+      return 'AJUSTE_INVENTARIO';
+    case 'TRASLADO':
+      return 'TRASLADO_INVENTARIO';
+    default:
+      return 'MOVIMIENTO_INVENTARIO';
   }
 };
 
@@ -202,6 +218,28 @@ export const InventarioService = {
           creadoEn: true,
           producto: { select: { id: true, nombre: true, sku: true } },
           almacen: { select: { id: true, nombre: true } },
+        },
+      });
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: mapearAccionAuditoriaInventario(dto.tipoMovimiento),
+        entidad: 'MOVIMIENTO_INVENTARIO',
+        entidadId: movimiento.id,
+        valoresAnteriores: {
+          cantidadAnterior,
+        },
+        valoresNuevos: {
+          tipoMovimiento: dto.tipoMovimiento,
+          cantidad: dto.cantidad,
+          cantidadPosterior,
+          productoId: dto.productoId,
+          almacenId: dto.almacenId,
+          almacenDestinoId: dto.almacenDestinoId ?? null,
+          referenciaId: dto.referenciaId ?? null,
+          referenciaTipo: dto.referenciaTipo ?? null,
+          motivo: dto.motivo ?? null,
         },
       });
 

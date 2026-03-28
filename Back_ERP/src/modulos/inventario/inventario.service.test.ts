@@ -171,6 +171,7 @@ describe('InventarioService.registrarMovimiento', () => {
     expect(mockTx.existencia.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { cantidad: 30 } }),
     );
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('ejecuta SALIDA restando stock dentro de TX', async () => {
@@ -232,6 +233,7 @@ describe('InventarioService.registrarMovimiento', () => {
         update: { cantidad: { increment: 10 } },
       }),
     );
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('lanza error en TRASLADO si stock insuficiente', async () => {
@@ -283,6 +285,7 @@ function configurarTx() {
       upsert: jest.fn(),
     },
     movimientoInventario: { create: jest.fn() },
+    registroAuditoria: { create: jest.fn() },
   };
   mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(mockTx));
   return mockTx;

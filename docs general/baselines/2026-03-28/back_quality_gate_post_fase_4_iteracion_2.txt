@@ -1,0 +1,74 @@
+
+> erp-backend@1.0.0 quality:gate
+> ./deploy/scripts/quality_gate.sh
+
+Arquitectura valida: capas por modulo OK.
+
+> erp-backend@1.0.0 typecheck
+> tsc --noEmit
+
+
+> erp-backend@1.0.0 test
+> jest --passWithNoTests --runInBand
+
+PASS src/modulos/inventario/inventario.service.test.ts (7.716 s)
+PASS src/modulos/compras/compras.service.test.ts
+PASS src/modulos/ordenes/ordenes.service.test.ts
+PASS src/middlewares/limitarRates.test.ts
+  ● Console
+
+    console.error
+      ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+          at Object.xForwardedForHeader (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:371:13)
+          at Object.wrappedValidations.<computed> [as xForwardedForHeader] (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:685:22)
+          at Object.keyGenerator (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:788:20)
+          at /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:849:32
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at async /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:830:5 {
+        code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+        help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+      }
+
+      at Object.wrappedValidations.<computed> [as xForwardedForHeader] (node_modules/express-rate-limit/dist/index.cjs:691:24)
+      at Object.keyGenerator (node_modules/express-rate-limit/dist/index.cjs:788:20)
+      at node_modules/express-rate-limit/dist/index.cjs:849:32
+      at async /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:830:5
+
+PASS src/middlewares/manejarErrores.test.ts
+PASS src/middlewares/idempotencia.test.ts
+PASS src/modulos/auth/auth.routes.test.ts
+PASS src/modulos/productos/productos.routes.test.ts
+PASS src/middlewares/requerirRol.test.ts
+PASS src/middlewares/validar.test.ts
+PASS src/middlewares/seguridad.test.ts
+PASS src/modulos/auth/auth.service.test.ts
+PASS src/modulos/entregas/entregas.service.test.ts
+PASS src/config/metrics.test.ts
+PASS src/modulos/productos/productos.schema.test.ts
+PASS src/modulos/auth/auth.schema.test.ts
+PASS src/modulos/clientes/clientes.service.test.ts
+PASS src/modulos/proveedores/proveedores.service.test.ts
+PASS src/modulos/usuarios/usuarios.service.test.ts
+PASS src/modulos/ordenes/ordenes.schema.test.ts
+PASS src/modulos/almacenes/almacenes.service.test.ts
+PASS src/modulos/reportes/reportes.service.test.ts
+PASS src/modulos/inventario/inventario.schema.test.ts
+PASS src/modulos/clientes/clientes.schema.test.ts
+PASS src/modulos/entregas/entregas.schema.test.ts
+PASS src/modulos/turnos-caja/turnos-caja.service.test.ts
+PASS src/modulos/productos/productos.service.test.ts
+PASS src/modulos/categorias/categorias.service.test.ts
+PASS src/middlewares/autenticar.test.ts
+PASS src/compartido/sanitizar.test.ts
+PASS src/middlewares/sanitizarBody.test.ts
+
+Test Suites: 31 passed, 31 total
+Tests:       451 passed, 451 total
+Snapshots:   0 total
+Time:        29.149 s, estimated 45 s
+Ran all test suites.
+
+> erp-backend@1.0.0 build
+> rm -rf dist && tsc
+
+Quality gate backend: OK

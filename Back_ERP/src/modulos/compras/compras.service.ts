@@ -22,6 +22,7 @@ import {
   ErrorPeticion,
 } from '../../compartido/errores';
 import { logger } from '../../compartido/logger';
+import { registrarAuditoria } from '../../compartido/auditoria';
 import type { CrearCompraDto, RecibirCompraDto, FiltroComprasDto } from './compras.schema';
 
 const MODULO = 'COMPRAS';
@@ -225,6 +226,26 @@ export const ComprasService = {
           data: { precioCosto: detalle.costoUnitario },
         });
       }
+
+      await registrarAuditoria(tx.registroAuditoria, {
+        empresaId,
+        usuarioId,
+        accion: 'RECIBIR_COMPRA',
+        entidad: 'COMPRA',
+        entidadId: compraId,
+        valoresAnteriores: {
+          recibidaEn: compra.recibidaEn,
+        },
+        valoresNuevos: {
+          recibidaEn: true,
+          almacenId: dto.almacenId,
+          items: compra.detalles.map((detalle) => ({
+            productoId: detalle.productoId,
+            cantidad: Number(detalle.cantidad),
+            costoUnitario: Number(detalle.costoUnitario),
+          })),
+        },
+      });
 
       return actualizada;
     });

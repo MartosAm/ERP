@@ -23,6 +23,32 @@ import type { FiltroFechasDto, TopProductosDto } from './reportes.schema';
 
 const MODULO = 'REPORTES';
 
+type FiltrosConRango = {
+  fechaDesde: string;
+  fechaHasta: string;
+};
+
+function obtenerDesdeHasta(filtros: FiltrosConRango): {
+  desde: Date;
+  hasta: Date;
+  periodo: { desde: string; hasta: string };
+} {
+  return {
+    desde: new Date(`${filtros.fechaDesde}T00:00:00`),
+    hasta: new Date(`${filtros.fechaHasta}T23:59:59`),
+    periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+  };
+}
+
+function calcularPorcentaje(parte: number, total: number): number {
+  return total > 0 ? Math.round((parte / total) * 10000) / 100 : 0;
+}
+
+function obtenerDeCache<T>(cacheKey: string): T | null {
+  const cached = cache.get<T>(cacheKey);
+  return cached ?? null;
+}
+
 export const ReportesService = {
 
   // ================================================================
@@ -43,7 +69,7 @@ export const ReportesService = {
    */
   async dashboard(empresaId: string) {
     const cacheKey = `${MODULO}:dashboard:${empresaId}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
     const hoyInicio = dayjs().startOf('day').toDate();
@@ -197,14 +223,10 @@ export const ReportesService = {
     // Comparativa mensual
     const ventasMesActual = Number(ventasMes._sum.total ?? 0);
     const ventasMesPrevio = Number(ventasMesAnterior._sum.total ?? 0);
-    const variacionMensual = ventasMesPrevio > 0
-      ? Math.round(((ventasMesActual - ventasMesPrevio) / ventasMesPrevio) * 10000) / 100
-      : 0;
+    const variacionMensual = calcularPorcentaje(ventasMesActual - ventasMesPrevio, ventasMesPrevio);
 
     const util = utilidadMes[0] ?? { ingresos: 0, costo: 0, utilidad: 0 };
-    const margenPorcentaje = util.ingresos > 0
-      ? Math.round((util.utilidad / util.ingresos) * 10000) / 100
-      : 0;
+    const margenPorcentaje = calcularPorcentaje(util.utilidad, util.ingresos);
 
     const resultado = {
       ventasHoy: {
@@ -263,11 +285,10 @@ export const ReportesService = {
    */
   async ventasResumen(filtros: FiltroFechasDto, empresaId: string) {
     const cacheKey = `${MODULO}:ventas:${empresaId}:${filtros.fechaDesde}:${filtros.fechaHasta}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
-    const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
-    const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
+    const { desde, hasta, periodo } = obtenerDesdeHasta(filtros);
 
     const [totales, cancelaciones, devoluciones, cotizaciones, utilidad, ventasPorDia] =
       await Promise.all([
@@ -351,12 +372,10 @@ export const ReportesService = {
       ]);
 
     const util = utilidad[0] ?? { ingresos: 0, costo: 0, utilidad: 0 };
-    const margen = util.ingresos > 0
-      ? Math.round((util.utilidad / util.ingresos) * 10000) / 100
-      : 0;
+    const margen = calcularPorcentaje(util.utilidad, util.ingresos);
 
     const resultado = {
-      periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+      periodo,
       totales: {
         ventasBrutas: Number(totales._sum.total ?? 0),
         descuentos: Number(totales._sum.montoDescuento ?? 0),
@@ -400,11 +419,10 @@ export const ReportesService = {
    */
   async topProductos(filtros: TopProductosDto, empresaId: string) {
     const cacheKey = `${MODULO}:top:${empresaId}:${JSON.stringify(filtros)}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
-    const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
-    const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
+    const { desde, hasta, periodo } = obtenerDesdeHasta(filtros);
 
     // Top por cantidad vendida
     const porCantidad = await prisma.$queryRaw<
@@ -463,7 +481,7 @@ export const ReportesService = {
     `;
 
     const resultado = {
-      periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+      periodo,
       porCantidad,
       porIngresos,
     };
@@ -481,11 +499,10 @@ export const ReportesService = {
    */
   async metodosPago(filtros: FiltroFechasDto, empresaId: string) {
     const cacheKey = `${MODULO}:pagos:${empresaId}:${filtros.fechaDesde}:${filtros.fechaHasta}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
-    const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
-    const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
+    const { desde, hasta, periodo } = obtenerDesdeHasta(filtros);
 
     const desglose = await prisma.$queryRaw<
       Array<{ metodo: string; total: number; cantidad: number }>
@@ -507,11 +524,11 @@ export const ReportesService = {
     const totalGeneral = desglose.reduce((sum, d) => sum + d.total, 0);
 
     const resultado = {
-      periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+      periodo,
       totalGeneral,
       desglose: desglose.map((d) => ({
         ...d,
-        porcentaje: totalGeneral > 0 ? Math.round((d.total / totalGeneral) * 10000) / 100 : 0,
+        porcentaje: calcularPorcentaje(d.total, totalGeneral),
       })),
     };
 
@@ -529,7 +546,7 @@ export const ReportesService = {
    */
   async inventarioValorizado(empresaId: string) {
     const cacheKey = `${MODULO}:inventario:${empresaId}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
     // Por almacen
@@ -604,11 +621,10 @@ export const ReportesService = {
    */
   async rendimientoCajeros(filtros: FiltroFechasDto, empresaId: string) {
     const cacheKey = `${MODULO}:cajeros:${empresaId}:${filtros.fechaDesde}:${filtros.fechaHasta}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
-    const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
-    const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
+    const { desde, hasta, periodo } = obtenerDesdeHasta(filtros);
 
     const rendimiento = await prisma.$queryRaw<
       Array<{
@@ -641,7 +657,7 @@ export const ReportesService = {
     `;
 
     const resultado = {
-      periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+      periodo,
       cajeros: rendimiento,
     };
 
@@ -658,11 +674,10 @@ export const ReportesService = {
    */
   async reporteEntregas(filtros: FiltroFechasDto, empresaId: string) {
     const cacheKey = `${MODULO}:entregas:${empresaId}:${filtros.fechaDesde}:${filtros.fechaHasta}`;
-    const cached = cache.get(cacheKey);
+    const cached = obtenerDeCache(cacheKey);
     if (cached) return cached;
 
-    const desde = new Date(`${filtros.fechaDesde}T00:00:00`);
-    const hasta = new Date(`${filtros.fechaHasta}T23:59:59`);
+    const { desde, hasta, periodo } = obtenerDesdeHasta(filtros);
 
     // Totales por estado
     const porEstado = await prisma.$queryRaw<
@@ -719,11 +734,9 @@ export const ReportesService = {
     const entregadas = porEstado.find((e) => e.estado === 'ENTREGADO')?.cantidad ?? 0;
 
     const resultado = {
-      periodo: { desde: filtros.fechaDesde, hasta: filtros.fechaHasta },
+      periodo,
       totalEntregas,
-      tasaExitoGlobal: totalEntregas > 0
-        ? Math.round((entregadas / totalEntregas) * 10000) / 100
-        : 0,
+      tasaExitoGlobal: calcularPorcentaje(entregadas, totalEntregas),
       porEstado,
       porRepartidor,
     };

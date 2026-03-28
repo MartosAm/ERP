@@ -174,6 +174,7 @@ function configurarTx() {
     },
     movimientoInventario: { create: jest.fn() },
     producto: { update: jest.fn() },
+    registroAuditoria: { create: jest.fn() },
   };
   mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(mockTx));
   return mockTx;
@@ -249,6 +250,7 @@ describe('ComprasService.recibir', () => {
       where: { id: 'prod-001' },
       data: { precioCosto: 30 },
     });
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 
   it('crea existencia nueva si producto no estaba en almacén', async () => {
@@ -300,6 +302,7 @@ describe('ComprasService.recibir', () => {
     expect(mockTx.existencia.update).toHaveBeenCalledTimes(2);
     expect(mockTx.movimientoInventario.create).toHaveBeenCalledTimes(2);
     expect(mockTx.producto.update).toHaveBeenCalledTimes(2);
+    expect(mockTx.registroAuditoria.create).toHaveBeenCalledTimes(1);
   });
 });
 
