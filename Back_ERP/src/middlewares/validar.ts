@@ -18,6 +18,20 @@ import { Request, Response, NextFunction } from 'express';
 /** Propiedad del request que contiene los datos a validar */
 type Objetivo = 'body' | 'query' | 'params';
 
+const asignarDatoValidado = (req: Request, objetivo: Objetivo, data: unknown): void => {
+  if (objetivo === 'body') {
+    req.body = data;
+    return;
+  }
+
+  if (objetivo === 'query') {
+    req.query = data as Request['query'];
+    return;
+  }
+
+  req.params = data as Request['params'];
+};
+
 /**
  * Fabrica de middleware que valida una parte del request con un schema Zod.
  *
@@ -36,7 +50,6 @@ export const validar =
     }
 
     // Reemplazar con datos coercionados y tipados
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req as any)[objetivo] = resultado.data;
+    asignarDatoValidado(req, objetivo, resultado.data);
     next();
   };

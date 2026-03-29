@@ -36,6 +36,10 @@ interface ErrorPrismaConocido extends Error {
   code: string;
 }
 
+interface ErrorConTipo extends Error {
+  type: string;
+}
+
 /**
  * Verifica si un error es un error conocido de Prisma.
  * Detecta la presencia de la propiedad 'code' que Prisma incluye
@@ -44,18 +48,23 @@ interface ErrorPrismaConocido extends Error {
 const esErrorPrisma = (err: unknown): err is ErrorPrismaConocido =>
   err instanceof Error && 'code' in err && typeof (err as ErrorPrismaConocido).code === 'string';
 
+const esErrorConTipo = (err: unknown): err is ErrorConTipo =>
+  err instanceof Error &&
+  'type' in err &&
+  typeof (err as { type?: unknown }).type === 'string';
+
 /**
  * Verifica si el error es un SyntaxError de JSON malformado.
  * Express lanza SyntaxError con type='entity.parse.failed' al recibir JSON invalido.
  */
 const esErrorJsonMalformado = (err: unknown): boolean =>
-  err instanceof SyntaxError && 'type' in err && (err as any).type === 'entity.parse.failed';
+  err instanceof SyntaxError && esErrorConTipo(err) && err.type === 'entity.parse.failed';
 
 /**
  * Verifica si el error es PayloadTooLarge (body excede el limite configurado).
  */
 const esPayloadMuyGrande = (err: unknown): boolean =>
-  err instanceof Error && 'type' in err && (err as any).type === 'entity.too.large';
+  esErrorConTipo(err) && err.type === 'entity.too.large';
 
 /**
  * Middleware de error global. Debe ser el ULTIMO middleware registrado en app.ts.
@@ -75,7 +84,7 @@ export const manejarErrores = (
     requestId,
     ruta: req.path,
     metodo: req.method,
-    usuarioId: (req as any).usuario?.id,
+    usuarioId: req.user?.usuarioId,
     error: err instanceof Error ? err.message : String(err),
     stack: env.NODE_ENV !== 'production' && err instanceof Error ? err.stack : undefined,
   });

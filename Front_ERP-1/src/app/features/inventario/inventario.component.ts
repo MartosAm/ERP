@@ -20,7 +20,6 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { EstadoBadgeComponent } from '../../shared/components/estado-badge/estado-badge.component';
 import { AjusteDialogComponent } from './ajuste-dialog.component';
 import { TrasladoDialogComponent } from './traslado-dialog.component';
-import { MonedaPipe } from '../../shared/pipes/moneda.pipe';
 import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { Existencia, MovimientoInventario, Almacen, PaginacionMeta, ApiPaginada } from '../../core/models/api.model';
 
@@ -33,7 +32,7 @@ import type { Existencia, MovimientoInventario, Almacen, PaginacionMeta, ApiPagi
         MatFormFieldModule, MatChipsModule, MatProgressSpinnerModule,
         PageHeaderComponent, SearchInputComponent,
         EmptyStateComponent, EstadoBadgeComponent,
-        MonedaPipe, FechaHoraPipe,
+        FechaHoraPipe,
     ],
     templateUrl: './inventario.component.html',
     styleUrl: './inventario.component.css'

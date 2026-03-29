@@ -1,0 +1,72 @@
+
+> erp-backend@1.0.0 test:release
+> npm run test:core && npm run test:security && npm run test:smoke
+
+
+> erp-backend@1.0.0 test:core
+> jest --runInBand src/modulos/auth/auth.routes.test.ts src/modulos/auth/auth.service.test.ts src/modulos/ordenes/ordenes.service.test.ts src/modulos/inventario/inventario.service.test.ts src/modulos/compras/compras.service.test.ts src/modulos/entregas/entregas.service.test.ts
+
+PASS src/modulos/auth/auth.routes.test.ts
+PASS src/modulos/entregas/entregas.service.test.ts
+PASS src/modulos/ordenes/ordenes.service.test.ts
+PASS src/modulos/inventario/inventario.service.test.ts
+PASS src/modulos/auth/auth.service.test.ts
+PASS src/modulos/compras/compras.service.test.ts
+
+Test Suites: 6 passed, 6 total
+Tests:       154 passed, 154 total
+Snapshots:   0 total
+Time:        5.502 s, estimated 7 s
+Ran all test suites matching src/modulos/auth/auth.routes.test.ts|src/modulos/auth/auth.service.test.ts|src/modulos/ordenes/ordenes.service.test.ts|src/modulos/inventario/inventario.service.test.ts|src/modulos/compras/compras.service.test.ts|src/modulos/entregas/entregas.service.test.ts.
+
+> erp-backend@1.0.0 test:security
+> jest --runInBand src/middlewares/autenticar.test.ts src/middlewares/seguridad.test.ts src/middlewares/idempotencia.test.ts src/middlewares/limitarRates.test.ts src/config/metrics.test.ts
+
+PASS src/middlewares/idempotencia.test.ts
+PASS src/middlewares/limitarRates.test.ts
+  ● Console
+
+    console.error
+      ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+          at Object.xForwardedForHeader (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:371:13)
+          at Object.wrappedValidations.<computed> [as xForwardedForHeader] (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:685:22)
+          at Object.keyGenerator (/home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:788:20)
+          at /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:849:32
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at async /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:830:5 {
+        code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+        help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+      }
+
+      at Object.wrappedValidations.<computed> [as xForwardedForHeader] (node_modules/express-rate-limit/dist/index.cjs:691:24)
+      at Object.keyGenerator (node_modules/express-rate-limit/dist/index.cjs:788:20)
+      at node_modules/express-rate-limit/dist/index.cjs:849:32
+      at async /home/adrian/Documentos/proyectos/ERP/Back_ERP/node_modules/express-rate-limit/dist/index.cjs:830:5
+
+PASS src/middlewares/seguridad.test.ts
+PASS src/middlewares/autenticar.test.ts
+PASS src/config/metrics.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       26 passed, 26 total
+Snapshots:   0 total
+Time:        4.827 s, estimated 5 s
+Ran all test suites matching src/middlewares/autenticar.test.ts|src/middlewares/seguridad.test.ts|src/middlewares/idempotencia.test.ts|src/middlewares/limitarRates.test.ts|src/config/metrics.test.ts.
+
+> erp-backend@1.0.0 test:smoke
+> jest --runInBand src/__tests__/smoke.api.test.ts
+
+PASS src/__tests__/smoke.api.test.ts
+  Smoke API - endpoints criticos
+    ✓ GET /api/health responde 200 y formato ApiResponse (46 ms)
+    ✓ GET /api/v1/productos sin token responde 401 (25 ms)
+    ✓ POST /api/v1/auth/login con payload invalido responde 400 (20 ms)
+    ✓ POST /api/v1/auth/registro-publico sin idempotency key responde 400 (8 ms)
+    ✓ POST /api/v1/auth/login con content-type no JSON responde 415 (5 ms)
+    ✓ Ruta inexistente responde 404 estandar (5 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        4.361 s, estimated 8 s
+Ran all test suites matching src/__tests__/smoke.api.test.ts.

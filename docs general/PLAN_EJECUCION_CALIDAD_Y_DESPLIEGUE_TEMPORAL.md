@@ -28,8 +28,8 @@ Estado de ejecucion (2026-03-28):
 - Fase 2: COMPLETADA
 - Fase 3: COMPLETADA
 - Fase 4: COMPLETADA
-- Fase 5: EN PROGRESO (iteracion 1 en `ordenes.service.ts`)
-- Fase 6: PENDIENTE
+- Fase 5: COMPLETADA (iteraciones 1 y 2)
+- Fase 6: COMPLETADA
 - Fase 7: PENDIENTE
 
 ---
@@ -47,7 +47,7 @@ Estado de ejecucion (2026-03-28):
 Riesgos actuales:
 
 - Servicios muy grandes en `ordenes`, `reportes` y `auth` (riesgo SRP/mantenibilidad).
-- Uso de `as any` en algunos controllers/services.
+- Endurecimiento de tipado runtime completado; mantener cero `any` en nuevas contribuciones.
 - Modelo de auditoria existe en Prisma, pero falta uso sistematico en servicios.
 
 ### 2.2 Frontend
@@ -206,6 +206,10 @@ Criterio de salida:
 
 - Cero `any` en controllers/services de runtime.
 
+Estado actual (2026-03-28):
+
+- Completada en 2 iteraciones con escaneo runtime sin hallazgos y quality gate en verde.
+
 ---
 
 ## Fase 6 - Estrategia de pruebas (uso practico)
@@ -231,6 +235,15 @@ Frontend:
 Criterio de salida:
 
 - Pruebas cubren flujos de mayor riesgo funcional.
+
+Estado actual (2026-03-28):
+
+- Backend: smoke tests de endpoints criticos integrados en release + quality gate en verde.
+- Frontend: pruebas en guards/interceptors/auth.service con 35 tests en verde.
+- Cobertura frontend final:
+   - Statements: 60.93%
+   - Lines: 63.83%
+- `npm run ci` de frontend en verde.
 
 ---
 

@@ -6,8 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../compartido/respuesta';
+import { ApiResponse, type MetaPaginacion } from '../../compartido/respuesta';
 import { OrdenesService } from './ordenes.service';
+import type { FiltroOrdenesDto } from './ordenes.schema';
 
 export const OrdenesController = {
 
@@ -76,9 +77,9 @@ export const OrdenesController = {
   /** GET /api/v1/ordenes -- Listar ordenes con filtros */
   listar: async (req: Request, res: Response): Promise<void> => {
     const resultado = await OrdenesService.listar(
-      req.query as any,
+      req.query as unknown as FiltroOrdenesDto,
       req.user.empresaId,
     );
-    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
+    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as MetaPaginacion));
   },
 };

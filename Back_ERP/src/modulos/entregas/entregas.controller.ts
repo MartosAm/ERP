@@ -6,8 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../compartido/respuesta';
+import { ApiResponse, type MetaPaginacion } from '../../compartido/respuesta';
 import { EntregasService } from './entregas.service';
+import type { FiltroEntregasDto } from './entregas.schema';
 
 export const EntregasController = {
 
@@ -51,9 +52,9 @@ export const EntregasController = {
    * Listar entregas con filtros.
    */
   listar: async (req: Request, res: Response): Promise<void> => {
-    const resultado = await EntregasService.listar(req.query as any, req.user.empresaId);
+    const resultado = await EntregasService.listar(req.query as unknown as FiltroEntregasDto, req.user.empresaId);
 
-    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
+    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as MetaPaginacion));
   },
 
   /**

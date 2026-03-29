@@ -130,13 +130,13 @@ export const TurnosCajaService = {
     // Para ordenes EFECTIVO: total - cambio
     // Para ordenes MIXTO: sumar solo los montos de pagos en EFECTIVO de esa orden
     let ventasEfectivo = 0;
-    for (const o of turno.ordenes as any[]) {
+    for (const o of turno.ordenes) {
       if (o.metodoPago === 'EFECTIVO') {
         ventasEfectivo += Number(o.total) - Number(o.cambio);
       } else if (o.metodoPago === 'MIXTO' && o.pagos) {
         // Sumar solo la parte en efectivo de ordenes MIXTO
         const efectivoEnOrden = o.pagos.reduce(
-          (sum: number, p: { monto: unknown }) => sum + Number(p.monto),
+          (sum, p) => sum + Number(p.monto),
           0,
         );
         ventasEfectivo += efectivoEnOrden - Number(o.cambio);

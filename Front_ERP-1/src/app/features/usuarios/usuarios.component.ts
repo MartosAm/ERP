@@ -30,7 +30,6 @@ import { SearchInputComponent } from '../../shared/components/search-input/searc
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { EstadoBadgeComponent } from '../../shared/components/estado-badge/estado-badge.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import { TiempoRelativoPipe } from '../../shared/pipes/tiempo-relativo.pipe';
 import { UsuarioFormDialogComponent } from './usuario-form-dialog.component';
 import { UsuarioRegistroDialogComponent } from './usuario-registro-dialog.component';
@@ -59,7 +58,6 @@ import type { UsuarioAdmin, PaginacionMeta, Rol } from '../../core/models/api.mo
         SearchInputComponent,
         EmptyStateComponent,
         EstadoBadgeComponent,
-        FechaHoraPipe,
         TiempoRelativoPipe,
     ],
     templateUrl: './usuarios.component.html',

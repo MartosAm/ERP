@@ -7,8 +7,9 @@
  */
 
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../compartido/respuesta';
+import { ApiResponse, type MetaPaginacion } from '../../compartido/respuesta';
 import { TurnosCajaService } from './turnos-caja.service';
+import type { FiltroTurnosDto } from './turnos-caja.schema';
 
 export const TurnosCajaController = {
 
@@ -67,10 +68,10 @@ export const TurnosCajaController = {
    */
   listar: async (req: Request, res: Response): Promise<void> => {
     const resultado = await TurnosCajaService.listar(
-      req.query as any,
+      req.query as unknown as FiltroTurnosDto,
       req.user.empresaId,
     );
 
-    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
+    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as MetaPaginacion));
   },
 };

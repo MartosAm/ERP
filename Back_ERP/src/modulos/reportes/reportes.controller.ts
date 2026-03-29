@@ -10,6 +10,7 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../../compartido/respuesta';
 import { ReportesService } from './reportes.service';
+import type { FiltroFechasDto, TopProductosDto } from './reportes.schema';
 
 export const ReportesController = {
 
@@ -29,7 +30,7 @@ export const ReportesController = {
    */
   ventas: async (req: Request, res: Response): Promise<void> => {
     const datos = await ReportesService.ventasResumen(
-      req.query as any,
+      req.query as unknown as FiltroFechasDto,
       req.user.empresaId,
     );
 
@@ -42,7 +43,7 @@ export const ReportesController = {
    */
   topProductos: async (req: Request, res: Response): Promise<void> => {
     const datos = await ReportesService.topProductos(
-      req.query as any,
+      req.query as unknown as TopProductosDto,
       req.user.empresaId,
     );
 
@@ -55,7 +56,7 @@ export const ReportesController = {
    */
   metodosPago: async (req: Request, res: Response): Promise<void> => {
     const datos = await ReportesService.metodosPago(
-      req.query as any,
+      req.query as unknown as FiltroFechasDto,
       req.user.empresaId,
     );
 
@@ -78,7 +79,7 @@ export const ReportesController = {
    */
   cajeros: async (req: Request, res: Response): Promise<void> => {
     const datos = await ReportesService.rendimientoCajeros(
-      req.query as any,
+      req.query as unknown as FiltroFechasDto,
       req.user.empresaId,
     );
 
@@ -91,7 +92,7 @@ export const ReportesController = {
    */
   entregas: async (req: Request, res: Response): Promise<void> => {
     const datos = await ReportesService.reporteEntregas(
-      req.query as any,
+      req.query as unknown as FiltroFechasDto,
       req.user.empresaId,
     );
 

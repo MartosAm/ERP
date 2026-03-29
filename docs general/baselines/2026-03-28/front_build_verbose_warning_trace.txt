@@ -1,0 +1,170 @@
+
+> front-erp@0.1.0 build
+> ng build --configuration production --verbose
+
+❯ Building...
+
+  polyfills-B6TNHZQ6.js  33.8kb
+
+⚡ Done in 311ms
+
+  chunk-AOM7LCJQ.js  222.0kb
+  chunk-IPTWTT62.js  185.3kb
+  chunk-OIPYKYIX.js  161.6kb
+  chunk-42NAALXZ.js   91.7kb
+  chunk-BNE73T5G.js   76.1kb
+  chunk-OGLMJOYW.js   66.0kb
+  chunk-Q6LT33VQ.js   57.0kb
+  chunk-GXKIZJEF.js   55.1kb
+  chunk-OE3TFVFL.js   43.0kb
+  chunk-TRAIVDXT.js   41.8kb
+  chunk-TLVJIAFX.js   39.7kb
+  chunk-VDHGRJA4.js   38.2kb
+  chunk-72ESGW4U.js   37.2kb
+  chunk-3W3OBCQT.js   28.1kb
+  chunk-WTK5BSZ4.js   26.2kb
+  chunk-IL7LH4UK.js   25.9kb
+  chunk-BMOZQV3Y.js   25.6kb
+  chunk-4EVPL25X.js   25.2kb
+  chunk-7IH72KZK.js   24.7kb
+  chunk-R4XKKKWD.js   23.4kb
+  ...and 52 more output files...
+
+⚡ Done in 42930ms
+✔ Building...
+Initial chunk files   | Names                     |  Raw size | Estimated transfer size
+chunk-IPTWTT62.js     | -                         | 189.71 kB |                42.61 kB
+styles-I7WORSWF.css   | styles                    | 187.14 kB |                19.96 kB
+chunk-OIPYKYIX.js     | -                         | 165.50 kB |                48.95 kB
+chunk-BNE73T5G.js     | -                         |  77.92 kB |                19.32 kB
+chunk-GXKIZJEF.js     | -                         |  56.41 kB |                 9.30 kB
+polyfills-B6TNHZQ6.js | polyfills                 |  34.58 kB |                11.32 kB
+chunk-AOHVCLOK.js     | -                         |  16.32 kB |                 4.33 kB
+main-G5YFOZJP.js      | main                      |  13.21 kB |                 4.10 kB
+chunk-I2W4QA4O.js     | -                         |   2.87 kB |               957 bytes
+chunk-3RK6DDJD.js     | -                         |   0 bytes |                 0 bytes
+
+                      | Initial total             | 743.65 kB |               160.85 kB
+
+Lazy chunk files      | Names                     |  Raw size | Estimated transfer size
+chunk-AOM7LCJQ.js     | reportes-component        | 227.32 kB |                66.53 kB
+chunk-42NAALXZ.js     | -                         |  93.88 kB |                17.68 kB
+chunk-OGLMJOYW.js     | browser                   |  67.60 kB |                17.70 kB
+chunk-Q6LT33VQ.js     | -                         |  58.33 kB |                 7.58 kB
+chunk-OE3TFVFL.js     | -                         |  44.06 kB |                 8.77 kB
+chunk-TRAIVDXT.js     | -                         |  42.83 kB |                 9.17 kB
+chunk-TLVJIAFX.js     | pos-component             |  40.70 kB |                 9.64 kB
+chunk-VDHGRJA4.js     | shell-component           |  39.13 kB |                 8.51 kB
+chunk-72ESGW4U.js     | -                         |  38.12 kB |                 8.09 kB
+chunk-3W3OBCQT.js     | -                         |  28.78 kB |                 6.73 kB
+chunk-WTK5BSZ4.js     | -                         |  26.86 kB |                 4.38 kB
+chunk-IL7LH4UK.js     | inventario-component      |  26.57 kB |                 5.80 kB
+chunk-BMOZQV3Y.js     | -                         |  26.23 kB |                 4.69 kB
+chunk-4EVPL25X.js     | -                         |  25.81 kB |                 6.91 kB
+chunk-7IH72KZK.js     | orden-detalle-component   |  25.34 kB |                 6.08 kB
+chunk-R4XKKKWD.js     | -                         |  23.94 kB |                 6.54 kB
+chunk-RLMR5X4Z.js     | -                         |  22.57 kB |                 4.10 kB
+chunk-JWJPQAUB.js     | usuarios-component        |  21.83 kB |                 5.81 kB
+chunk-LGQX4AUS.js     | productos-component       |  19.90 kB |                 5.48 kB
+chunk-E6LIH24Z.js     | -                         |  17.52 kB |                 4.75 kB
+chunk-MDFVQCD2.js     | compras-component         |  17.15 kB |                 4.93 kB
+chunk-WS5HBTXJ.js     | turnos-caja-component     |  16.85 kB |                 4.56 kB
+chunk-C7PQ7LML.js     | -                         |  14.99 kB |                 4.04 kB
+chunk-OVQ7B5KS.js     | clientes-component        |  14.69 kB |                 4.34 kB
+chunk-SCALNKCJ.js     | proveedores-component     |  13.90 kB |                 4.05 kB
+chunk-72YT5I6W.js     | categorias-component      |  13.50 kB |                 4.08 kB
+chunk-HAGFNWPP.js     | -                         |  13.42 kB |                 4.21 kB
+chunk-HL7T6QGO.js     | almacenes-component       |  12.94 kB |                 3.92 kB
+chunk-M4GWM43X.js     | -                         |  10.47 kB |                 3.00 kB
+chunk-4D4RGVNB.js     | ordenes-component         |  10.19 kB |                 3.23 kB
+chunk-5ZWOC6AV.js     | entrega-detalle-component |   9.88 kB |                 3.16 kB
+chunk-QDYOS5WS.js     | compra-detalle-component  |   9.65 kB |                 3.08 kB
+chunk-XOLONROH.js     | registro-component        |   9.47 kB |                 3.21 kB
+chunk-UG7AQ4LD.js     | -                         |   8.99 kB |                 2.62 kB
+chunk-5YC7FZY4.js     | -                         |   8.77 kB |                 2.19 kB
+chunk-QMCE3OIG.js     | configuracion-component   |   7.82 kB |                 2.97 kB
+chunk-BE6R323A.js     | entregas-component        |   7.43 kB |                 2.56 kB
+chunk-EROY7TXY.js     | login-component           |   7.19 kB |                 2.68 kB
+chunk-UWJX5B2D.js     | -                         |   7.17 kB |                 1.80 kB
+chunk-BVQBY7Y7.js     | -                         |   6.42 kB |                 1.38 kB
+chunk-7YNFGW7N.js     | turno-detalle-component   |   5.76 kB |                 2.05 kB
+chunk-4ZXH6H57.js     | -                         |   5.20 kB |                 1.24 kB
+chunk-QME42MIH.js     | dashboard-component       |   4.74 kB |                 1.74 kB
+chunk-FVFSTTHV.js     | -                         |   2.17 kB |               977 bytes
+chunk-GQT2HZGT.js     | -                         |   1.55 kB |               708 bytes
+chunk-IIRL7VYQ.js     | -                         |   1.45 kB |               533 bytes
+chunk-SSUCHTFG.js     | -                         |   1.27 kB |               639 bytes
+chunk-7AVSP3IM.js     | -                         |   1.23 kB |               475 bytes
+chunk-T3MCMDF7.js     | -                         | 760 bytes |               760 bytes
+chunk-IRGYIYDT.js     | -                         | 730 bytes |               730 bytes
+chunk-G2QXALRZ.js     | -                         | 702 bytes |               702 bytes
+chunk-JD66VAYB.js     | -                         | 663 bytes |               663 bytes
+chunk-UOZID5E2.js     | -                         | 650 bytes |               650 bytes
+chunk-S23RZP6E.js     | -                         | 641 bytes |               641 bytes
+chunk-4OUSZGST.js     | -                         | 617 bytes |               617 bytes
+chunk-3WKXISOK.js     | -                         | 585 bytes |               585 bytes
+chunk-SESIEJPA.js     | -                         | 583 bytes |               583 bytes
+chunk-SGRH6A7R.js     | -                         | 567 bytes |               567 bytes
+chunk-MWDXO7ZO.js     | -                         | 557 bytes |               557 bytes
+chunk-BVR6C4ZD.js     | -                         | 552 bytes |               552 bytes
+chunk-JWMSNVPD.js     | -                         | 500 bytes |               500 bytes
+chunk-V36OZJA6.js     | -                         | 450 bytes |               450 bytes
+chunk-F5X5MWHG.js     | -                         |   0 bytes |                 0 bytes
+chunk-MS4AQ6UA.js     | -                         |   0 bytes |                 0 bytes
+
+Application bundle generation complete. [46.850 seconds]
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m49 rules skipped due to selector errors:
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector
+  & -> Empty sub-selector[0m
+
+
+Output location: /home/adrian/Documentos/proyectos/ERP/Front_ERP-1/dist/front-erp
+

@@ -7,8 +7,9 @@
  */
 
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../compartido/respuesta';
+import { ApiResponse, type MetaPaginacion } from '../../compartido/respuesta';
 import { UsuariosService } from './usuarios.service';
+import type { FiltroUsuariosDto } from './usuarios.schema';
 
 export const UsuariosController = {
 
@@ -18,11 +19,11 @@ export const UsuariosController = {
    */
   listar: async (req: Request, res: Response): Promise<void> => {
     const resultado = await UsuariosService.listar(
-      req.query as any,
+      req.query as unknown as FiltroUsuariosDto,
       req.user.empresaId,
     );
 
-    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
+    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as MetaPaginacion));
   },
 
   /**

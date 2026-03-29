@@ -1,0 +1,28 @@
+
+> front-erp@0.1.0 test
+> ng test --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage
+
+❯ Building...
+✔ Building...
+Application bundle generation failed. [14.228 seconds]
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type '"idem-test-123"' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/interceptors/idempotency.interceptor.spec.ts:9:71:
+[37m      9 │ ...pyOn(window.crypto, 'randomUUID').and.returnValue([32m'idem-test-123'[37m);
+        ╵                                                      [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2769: No overload matches this call.
+  Overload 1 of 5, '(method: "POST", url: string, body: { estado: string; } | null, init?: { headers?: HttpHeaders | undefined; context?: HttpContext | undefined; reportProgress?: boolean | undefined; params?: HttpParams | undefined; responseType?: "arraybuffer" | ... 3 more ... | undefined; withCredentials?: boolean | undefined; transferCache?: boolean | ... 1 more ... | undefined; } | undefined): HttpRequest<...>', gave the following error.
+    Argument of type '"PATCH"' is not assignable to parameter of type '"POST"'.
+  Overload 2 of 5, '(method: "PATCH" | "PUT", url: string, body: { estado: string; } | null, init?: { headers?: HttpHeaders | undefined; context?: HttpContext | undefined; reportProgress?: boolean | undefined; params?: HttpParams | undefined; responseType?: "arraybuffer" | ... 3 more ... | undefined; withCredentials?: boolean | undefined; } | undefined): HttpRequest<...>', gave the following error.
+    Object literal may only specify known properties, and ''X-Idempotency-Key'' does not exist in type 'HttpHeaders'.
+  Overload 3 of 5, '(method: string, url: string, body: { estado: string; } | null, init?: { headers?: HttpHeaders | undefined; context?: HttpContext | undefined; reportProgress?: boolean | undefined; params?: HttpParams | undefined; responseType?: "arraybuffer" | ... 3 more ... | undefined; withCredentials?: boolean | undefined; transferCache?: boolean | ... 1 more ... | undefined; } | undefined): HttpRequest<...>', gave the following error.
+    Object literal may only specify known properties, and ''X-Idempotency-Key'' does not exist in type 'HttpHeaders'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/interceptors/idempotency.interceptor.spec.ts:61:20:
+[37m      61 │     const req = new [32mHttpRequest[37m('PATCH', `${environment.apiUrl}/or...
+         ╵                     [32m~~~~~~~~~~~[0m
+
+

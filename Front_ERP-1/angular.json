@@ -31,8 +31,16 @@
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": false,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
               "budgets": [
-                { "type": "initial", "maximumWarning": "750kb", "maximumError": "1.5mb" },
+                { "type": "initial", "maximumWarning": "800kb", "maximumError": "1.5mb" },
                 { "type": "anyComponentStyle", "maximumWarning": "8kb", "maximumError": "12kb" }
               ],
               "fileReplacements": [

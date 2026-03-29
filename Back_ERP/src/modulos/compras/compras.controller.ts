@@ -6,8 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../compartido/respuesta';
+import { ApiResponse, type MetaPaginacion } from '../../compartido/respuesta';
 import { ComprasService } from './compras.service';
+import type { FiltroComprasDto } from './compras.schema';
 
 export const ComprasController = {
 
@@ -52,10 +53,10 @@ export const ComprasController = {
    */
   listar: async (req: Request, res: Response): Promise<void> => {
     const resultado = await ComprasService.listar(
-      req.query as any,
+      req.query as unknown as FiltroComprasDto,
       req.user.empresaId,
     );
 
-    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as any));
+    res.json(ApiResponse.ok(resultado.datos, 'OK', resultado.meta as MetaPaginacion));
   },
 };

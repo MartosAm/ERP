@@ -14,7 +14,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { EstadoBadgeComponent } from '../../shared/components/estado-badge/estado-badge.component';
 import { MonedaPipe } from '../../shared/pipes/moneda.pipe';
-import { FechaCortaPipe, FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
+import { FechaHoraPipe } from '../../shared/pipes/fecha.pipe';
 import type { Entrega, PaginacionMeta, EstadoEntrega, ApiPaginada } from '../../core/models/api.model';
 
 interface FiltroEstado {
@@ -30,7 +30,7 @@ interface FiltroEstado {
         MatButtonModule, MatMenuModule, MatChipsModule,
         MatProgressSpinnerModule,
         PageHeaderComponent, EmptyStateComponent, EstadoBadgeComponent,
-        MonedaPipe, FechaCortaPipe, FechaHoraPipe,
+        MonedaPipe, FechaHoraPipe,
     ],
     templateUrl: './entregas.component.html',
     styleUrl: './entregas.component.css'

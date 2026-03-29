@@ -177,26 +177,32 @@ Evidencia completa:
 - `docs general/baselines/2026-03-28/back_tests_auditoria_fase_4_iteracion_2.txt`
 - `docs general/baselines/2026-03-28/back_quality_gate_post_fase_4_iteracion_2.txt`
 
-## Paso 7 - Fase 5 en progreso (iteracion 1: tipado runtime en ordenes)
+## Paso 7 - Fase 5 completada (iteraciones 1 y 2: tipado runtime backend)
 
-Estado: OK (parcial)
+Estado: OK (completada)
 
 Acciones aplicadas:
 
-1. Eliminacion de `as any` en `Back_ERP/src/modulos/ordenes/ordenes.service.ts`.
-2. Reemplazo por tipos Prisma concretos (`MetodoPago`, `EstadoOrden`, `Prisma.DateTimeFilter`).
-3. Verificacion de 0 ocurrencias de `as any` en servicio de ordenes.
+1. Iteracion 1 (ordenes):
+	- Eliminacion de `as any` en `Back_ERP/src/modulos/ordenes/ordenes.service.ts`.
+	- Reemplazo por tipos Prisma concretos (`MetodoPago`, `EstadoOrden`, `Prisma.DateTimeFilter`).
+2. Iteracion 2 (controllers/services/middlewares):
+	- Reemplazo de `req.query as any` por DTOs tipados (`unknown -> DTO`) en controllers.
+	- Reemplazo de `meta as any` por `MetaPaginacion` en respuestas paginadas.
+	- Eliminacion de `any` residual en services y middlewares runtime.
+3. Verificacion global:
+	- Escaneo de runtime backend sin hallazgos de `any`.
 
 Validacion ejecutada:
 
 ```bash
-npm run test -- src/modulos/ordenes/ordenes.service.test.ts src/modulos/inventario/inventario.service.test.ts src/modulos/compras/compras.service.test.ts
+grep -RIn "as any\|: any\b" Back_ERP/src --exclude='*.test.ts' --exclude-dir='__tests__'
 npm run quality:gate
 ```
 
 Resultado:
 
-- Suites focalizadas: 3/3 en verde, 87 tests en verde.
+- Escaneo runtime: sin hallazgos de `any`.
 - quality gate backend: OK (31 suites / 451 tests + build OK).
 
 Evidencia completa:
@@ -204,6 +210,58 @@ Evidencia completa:
 - `docs general/baselines/2026-03-28/fase_5_tipado_runtime_iteracion_1.md`
 - `docs general/baselines/2026-03-28/back_tests_tipado_fase_5_iteracion_1.txt`
 - `docs general/baselines/2026-03-28/back_quality_gate_post_fase_5_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/fase_5_tipado_runtime_iteracion_2.md`
+- `docs general/baselines/2026-03-28/back_any_runtime_scan_post_fase_5_iteracion_2.txt`
+- `docs general/baselines/2026-03-28/back_quality_gate_post_fase_5_iteracion_2.txt`
+
+## Paso 8 - Fase 6 completada (estrategia de pruebas operativa)
+
+Estado: OK (completada)
+
+Acciones aplicadas:
+
+1. Backend:
+	- Suite smoke integrada sobre app real en `Back_ERP/src/__tests__/smoke.api.test.ts`.
+	- Scripts de release actualizados en `Back_ERP/package.json`:
+	  - `test:smoke`
+	  - `test:release` con `core + security + smoke`.
+2. Frontend:
+	- Nuevas pruebas en core de alto riesgo:
+	  - guards (`auth`, `role`)
+	  - interceptors (`auth`, `idempotency`, `error`)
+	  - service (`auth.service`)
+	- Incremento de cobertura a objetivo operativo.
+
+Validacion ejecutada:
+
+```bash
+# Backend
+npm run test:smoke
+npm run test:release
+npm run quality:gate
+
+# Frontend
+npm run test -- --code-coverage
+npm run ci
+```
+
+Resultado:
+
+- Backend smoke: 1 suite / 6 tests en verde.
+- Backend quality gate: OK (32 suites / 457 tests + build OK).
+- Frontend tests: 35 success.
+- Frontend cobertura final:
+	- Statements: 60.93%
+	- Lines: 63.83%
+- Frontend CI: OK (typecheck + test + build).
+
+Evidencia completa:
+
+- `docs general/baselines/2026-03-28/fase_6_estrategia_pruebas_completada.md`
+- `docs general/baselines/2026-03-28/back_test_release_post_fase_6_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/back_quality_gate_post_fase_6_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_5.txt`
+- `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_1.txt`
 
 ## Conclusiones operativas
 
@@ -211,5 +269,6 @@ Evidencia completa:
 2. Fase 1 y Fase 2 quedaron ejecutadas con evidencia verificable.
 3. Fase 3 quedo completada en los tres modulos criticos (`ordenes`, `auth`, `reportes`) sin regresiones.
 4. Fase 4 quedo completada con auditoria operativa en ordenes, inventario y compras.
-5. Fase 5 inicio correctamente en modulo critico de ordenes y mantiene calidad global en verde.
-6. Siguiente prioridad tecnica: continuar Fase 5 en controllers/services runtime restantes.
+5. Fase 5 quedo completada con endurecimiento de tipado en runtime backend y evidencia reproducible.
+6. Fase 6 quedo completada con estrategia de pruebas operativa en backend y frontend.
+7. Siguiente prioridad tecnica: iniciar Fase 7 (despliegue temporal gratis y smoke post-deploy).

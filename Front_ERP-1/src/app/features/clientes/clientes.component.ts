@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -22,7 +22,7 @@ import type { Cliente } from '../../core/models/api.model';
 @Component({
     selector: 'app-clientes',
     imports: [
-        CommonModule, CurrencyPipe,
+      CommonModule,
         MatTableModule, MatPaginatorModule, MatButtonModule,
         MatIconModule, MatMenuModule, MatDialogModule,
         MatProgressSpinnerModule,

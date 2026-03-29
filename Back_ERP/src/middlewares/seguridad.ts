@@ -90,16 +90,15 @@ export function medirTiempoRespuesta(
   const inicio = process.hrtime.bigint();
 
   // Guardar referencia original
-  const writeHeadOriginal = res.writeHead;
+  const writeHeadOriginal: typeof res.writeHead = res.writeHead.bind(res);
 
   // Interceptar writeHead para agregar el header antes de enviar
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (res as any).writeHead = function (...args: any[]) {
+  res.writeHead = ((...args: Parameters<typeof writeHeadOriginal>) => {
     const fin = process.hrtime.bigint();
     const duracionMs = Number(fin - inicio) / 1_000_000;
     res.setHeader('X-Response-Time', `${duracionMs.toFixed(2)}ms`);
-    return (writeHeadOriginal as Function).apply(res, args);
-  };
+    return writeHeadOriginal(...args);
+  }) as typeof res.writeHead;
 
   next();
 }

@@ -150,7 +150,7 @@ export const EntregasService = {
       throw new ErrorNegocio('Se requiere nueva fecha para reprogramar la entrega');
     }
 
-    const dataActualizacion: any = {
+    const dataActualizacion: Prisma.EntregaUpdateInput = {
       estado: dto.estado,
       notas: dto.notas ?? entrega.notas,
     };
