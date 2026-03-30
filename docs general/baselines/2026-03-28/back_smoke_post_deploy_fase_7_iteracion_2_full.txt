@@ -1,0 +1,18 @@
+
+> erp-backend@1.0.0 ops:smoke:full
+> bash ./deploy/scripts/post_deploy_smoke_full.sh http://localhost:3001
+
+Ejecutando smoke extendido contra http://localhost:3001
+[OK] health: HTTP 200
+[OK] header x-request-id presente
+[OK] header x-content-type-options presente
+[OK] header x-response-time presente
+[OK] readiness: HTTP 200
+[OK] login: HTTP 200
+[OK] login devuelve token JWT
+[OK] perfil autenticado: HTTP 200
+[OK] productos paginados: HTTP 200
+[OK] turno activo: HTTP 200
+[OK] crear orden POS: HTTP 201
+[OK] orden POS creada: cmnb1nk9f000412le0bcgmg14
+Smoke test extendido post deploy: OK

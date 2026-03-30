@@ -30,7 +30,7 @@ Estado de ejecucion (2026-03-28):
 - Fase 4: COMPLETADA
 - Fase 5: COMPLETADA (iteraciones 1 y 2)
 - Fase 6: COMPLETADA
-- Fase 7: PENDIENTE
+- Fase 7: EN PROGRESO (smoke post-deploy base y extendido validados)
 
 ---
 
@@ -239,10 +239,12 @@ Criterio de salida:
 Estado actual (2026-03-28):
 
 - Backend: smoke tests de endpoints criticos integrados en release + quality gate en verde.
-- Frontend: pruebas en guards/interceptors/auth.service con 35 tests en verde.
+- Frontend: pruebas en guards/interceptors/services core con 48 tests en verde.
 - Cobertura frontend final:
-   - Statements: 60.93%
-   - Lines: 63.83%
+   - Statements: 85.15%
+   - Branches: 62.33%
+   - Functions: 84.50%
+   - Lines: 89.28%
 - `npm run ci` de frontend en verde.
 
 ---

@@ -229,7 +229,7 @@ Acciones aplicadas:
 	- Nuevas pruebas en core de alto riesgo:
 	  - guards (`auth`, `role`)
 	  - interceptors (`auth`, `idempotency`, `error`)
-	  - service (`auth.service`)
+	  - services (`auth.service`, `token.service`, `api.service`)
 	- Incremento de cobertura a objetivo operativo.
 
 Validacion ejecutada:
@@ -249,10 +249,12 @@ Resultado:
 
 - Backend smoke: 1 suite / 6 tests en verde.
 - Backend quality gate: OK (32 suites / 457 tests + build OK).
-- Frontend tests: 35 success.
+- Frontend tests: 48 success.
 - Frontend cobertura final:
-	- Statements: 60.93%
-	- Lines: 63.83%
+	- Statements: 85.15%
+	- Branches: 62.33%
+	- Functions: 84.50%
+	- Lines: 89.28%
 - Frontend CI: OK (typecheck + test + build).
 
 Evidencia completa:
@@ -260,8 +262,49 @@ Evidencia completa:
 - `docs general/baselines/2026-03-28/fase_6_estrategia_pruebas_completada.md`
 - `docs general/baselines/2026-03-28/back_test_release_post_fase_6_iteracion_1.txt`
 - `docs general/baselines/2026-03-28/back_quality_gate_post_fase_6_iteracion_1.txt`
-- `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_5.txt`
-- `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_6.txt`
+- `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_5_cobertura.txt`
+
+## Paso 9 - Fase 7 en ejecucion (despliegue temporal + smoke post deploy)
+
+Estado: EN PROGRESO (smoke post-deploy validado)
+
+Acciones aplicadas:
+
+1. Se ejecuto smoke post-deploy base sobre backend en ejecucion local:
+	- health
+	- readiness
+	- auth protegido sin token
+2. Se agrego smoke post-deploy extendido:
+	- health y readiness
+	- validacion de headers de seguridad
+	- login con credenciales reales
+	- perfil autenticado (sesion activa)
+	- listado de productos paginado
+	- flujo POS minimo (`POST /ordenes`) con idempotencia
+
+Artefactos agregados:
+
+- `Back_ERP/deploy/scripts/post_deploy_smoke_full.sh`
+- `Back_ERP/package.json` (`ops:smoke:full`)
+- `render.yaml` (blueprint para Render)
+
+Validacion ejecutada:
+
+```bash
+npm run ops:smoke -- http://localhost:3001
+SMOKE_CAJA_ID=<id_caja> SMOKE_PRODUCTO_ID=<id_producto> npm run ops:smoke:full -- http://localhost:3001
+```
+
+Resultado:
+
+- Smoke base: OK.
+- Smoke extendido: OK (incluye creacion de orden POS con HTTP 201).
+
+Evidencia completa:
+
+- `docs general/baselines/2026-03-28/back_smoke_post_deploy_fase_7_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/back_smoke_post_deploy_fase_7_iteracion_2_full.txt`
 
 ## Conclusiones operativas
 
@@ -271,4 +314,5 @@ Evidencia completa:
 4. Fase 4 quedo completada con auditoria operativa en ordenes, inventario y compras.
 5. Fase 5 quedo completada con endurecimiento de tipado en runtime backend y evidencia reproducible.
 6. Fase 6 quedo completada con estrategia de pruebas operativa en backend y frontend.
-7. Siguiente prioridad tecnica: iniciar Fase 7 (despliegue temporal gratis y smoke post-deploy).
+7. Cobertura frontend pendiente cerrada con incremento fuerte en core (`token` y `api`).
+8. Fase 7 quedo en ejecucion con smoke post-deploy base y extendido validados; queda pendiente publicar URL publica en proveedor cloud.

@@ -54,6 +54,8 @@ Nuevas pruebas unitarias:
 - `Front_ERP-1/src/app/core/interceptors/idempotency.interceptor.spec.ts`
 - `Front_ERP-1/src/app/core/interceptors/error.interceptor.spec.ts`
 - `Front_ERP-1/src/app/core/services/auth.service.spec.ts`
+- `Front_ERP-1/src/app/core/services/token.service.spec.ts`
+- `Front_ERP-1/src/app/core/services/api.service.spec.ts`
 
 Validacion frontend:
 
@@ -64,17 +66,13 @@ npm run ci
 
 Resultado final:
 
-- Tests frontend: 35 SUCCESS.
+- Tests frontend: 48 SUCCESS.
 - Cobertura final:
-  - Statements: 60.93%
-  - Branches: 46.75%
-  - Functions: 53.52%
-  - Lines: 63.83%
+  - Statements: 85.15%
+  - Branches: 62.33%
+  - Functions: 84.50%
+  - Lines: 89.28%
 - CI frontend: OK (`typecheck + test + build`).
-
-Nota operativa:
-
-- Existen warnings no bloqueantes en build sobre imports no usados en algunos componentes; no afectan salida de CI ni build de produccion.
 
 ## Estado de la fase
 
@@ -92,4 +90,7 @@ Nota operativa:
 - `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_3.txt`
 - `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_4.txt`
 - `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_5.txt`
+- `docs general/baselines/2026-03-28/front_coverage_fase_6_iteracion_6.txt`
 - `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_1.txt`
+- `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_5_cobertura.txt`
+- `docs general/baselines/2026-03-28/front_ci_post_fase_6_iteracion_4_sin_warnings.txt`

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: erp-backend-temp
+    env: node
+    plan: free
+    rootDir: Back_ERP
+    autoDeploy: true
+    healthCheckPath: /api/health
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && node dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: TRUST_PROXY
+        value: 1
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: REDIS_URL
+        sync: false

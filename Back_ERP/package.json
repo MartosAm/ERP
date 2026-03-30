@@ -22,6 +22,7 @@
     "verify:architecture": "./deploy/scripts/verify_architecture.sh",
     "quality:gate": "./deploy/scripts/quality_gate.sh",
     "ops:smoke": "bash ./deploy/scripts/post_deploy_smoke.sh",
+    "ops:smoke:full": "bash ./deploy/scripts/post_deploy_smoke_full.sh",
     "ops:backup": "bash ./deploy/scripts/backup_postgres.sh",
     "ops:restore": "bash ./deploy/scripts/restore_postgres.sh",
     "lint": "tsc --noEmit",

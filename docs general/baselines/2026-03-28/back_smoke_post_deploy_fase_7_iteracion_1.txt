@@ -1,0 +1,5 @@
+Ejecutando smoke test contra http://localhost:3001
+[OK] health HTTP 200
+[OK] readiness HTTP 200
+[OK] auth protegido HTTP 401
+Smoke test post deploy: OK
